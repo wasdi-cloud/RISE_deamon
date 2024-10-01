@@ -4,7 +4,7 @@ from src.rise.business.RiseEntity import RiseEntity
 class Area(RiseEntity):
 
     def __init__(self):
-        self.area = str()
+        self.name = str()
         self.description = str()
         self.plugins = []
         self.fieldOperators = []
@@ -15,6 +15,6 @@ class Area(RiseEntity):
         self.markerCoordinates = str()
         self.shapeFileMask = str()
         self.supportArchive = False
-        self.archiveStartDate = str()
-        self.archiveEndDate = str()
+        self.archiveStartDate = float()
+        self.archiveEndDate = float()
         self.id = str()
