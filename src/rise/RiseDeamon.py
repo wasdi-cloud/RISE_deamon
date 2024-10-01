@@ -71,10 +71,11 @@ class RiseDeamon:
 
                 if oRisePlugin is None:
                     logging.warning("RiseDeamon.runNewApplications: Jumping plugin " + sPluginId)
+                    continue
 
                 oRisePlugin.runNewApplications()
 
-        logging.info("RiseDeamon.runNewApplications: All the new area are processed")
+        logging.info("RiseDeamon.runNewApplications: All the new area have been processed")
 
     def publishBands(self):
         pass
@@ -117,10 +118,15 @@ if __name__ == '__main__':
     # Basic configuration
     logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))
 
-    # Create the Deamon class
-    oDemon = RiseDeamon(oRiseConfig)
+    try:
+        # Create the Deamon class
+        oDemon = RiseDeamon(oRiseConfig)
 
-    # And start!
-    oDemon.run()
+        # And start!
+        oDemon.run()
+
+        logging.info("RiseDeamon finished! bye bye")
+    except Exception as oEx:
+        logging.error("RiseDeamon exception: bye bye " + str(oEx))
 
 
