@@ -23,9 +23,11 @@ class RiseDeamon:
         if not wasdi.init():
             logging.error("RiseDeamon.run: There was an error initializing WASDI")
 
-        self.runNewApplications()
+        self.handleNewAreas()
 
-        self.publishBands()
+        self.handleDailyMaps()
+
+        self.checkResultsAndPublishLayers()
 
         self.cleanLayers()
 
@@ -40,21 +42,21 @@ class RiseDeamon:
             oType = getattr(oType, sComponent)
         return oType
 
-    def getRisePlugin(self, sPluginId):
+    def getRisePlugin(self, sPluginId, oArea):
         try:
             for oPluginMapping in self.m_oConfig.puglinClasses:
                 if oPluginMapping.id == sPluginId:
                     oPluginClass = self.getClass(oPluginMapping.name)
-                    return oPluginClass(self.m_oConfig)
+                    return oPluginClass(self.m_oConfig, oArea)
         except:
             logging.error("RiseDeamon.getRisePlugin: Error creating class for plugin " + sPluginId)
 
         return None
 
-    def runNewApplications(self):
-        logging.info("RiseDeamon.runNewApplications: Run New Applications")
+    def handleNewAreas(self):
+        logging.info("RiseDeamon.handleNewAreas: Run New Applications")
 
-        logging.info("RiseDeamon.runNewApplications: Find new areas")
+        logging.info("RiseDeamon.handleNewAreas: Find new areas")
         oSampleArea = Area()
         oSampleArea.name = "Area 1"
         oSampleArea.bbox = "POLYGON ((1.839965 13.314794, 1.839965 13.771399, 2.339777 13.771399, 2.339777 13.314794, 1.839965 13.314794)))"
@@ -67,17 +69,20 @@ class RiseDeamon:
         for oArea in aoNewAreas:
 
             for sPluginId in oArea.plugins:
-                oRisePlugin = self.getRisePlugin(sPluginId)
+                oRisePlugin = self.getRisePlugin(sPluginId, oArea)
 
                 if oRisePlugin is None:
-                    logging.warning("RiseDeamon.runNewApplications: Jumping plugin " + sPluginId)
+                    logging.warning("RiseDeamon.handleNewAreas: Jumping plugin " + sPluginId)
                     continue
 
-                oRisePlugin.runNewApplications()
+                oRisePlugin.triggerNewAreaMaps()
 
-        logging.info("RiseDeamon.runNewApplications: All the new area have been processed")
+        logging.info("RiseDeamon.handleNewAreas: All the new area have been processed")
 
-    def publishBands(self):
+    def handleDailyMaps(self):
+        pass
+
+    def checkResultsAndPublishLayers(self):
         pass
 
     def cleanLayers(self):

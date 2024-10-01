@@ -2,8 +2,9 @@ import logging
 
 class RisePlugin:
 
-    def __init__(self, oConfig):
+    def __init__(self, oConfig, oArea):
         self.m_oConfig = oConfig
+        self.m_oArea = oArea
 
-    def runNewApplications(self):
-        logging.debug("RisePlugin.runNewApplications")
+    def triggerNewAreaMaps(self):
+        logging.debug("RisePlugin.triggerNewAreaMaps")
