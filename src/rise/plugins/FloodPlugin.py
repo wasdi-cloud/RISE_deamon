@@ -5,15 +5,15 @@ from src.rise.plugins.RisePlugin import RisePlugin
 
 
 class FloodPlugin(RisePlugin):
-    def __init__(self, oConfig, oArea):
-        super().__init__(oConfig, oArea)
+    def __init__(self, oConfig, oArea, oPlugin):
+        super().__init__(oConfig, oArea, oPlugin)
 
     def triggerNewAreaMaps(self):
         logging.debug("FloodPlugin.triggerNewAreaMaps")
 
         try:
             oMapRepository = MapRepository()
-            aoMaps = oMapRepository.findAllMapsById(self.m_oArea.plugins)
+            aoMaps = oMapRepository.findAllMapsById(self.m_oPlugin.maps)
 
             for oMap in aoMaps:
                 logging.info("Starting Archive for map " + oMap.name)

@@ -70,7 +70,8 @@ class RiseDeamon:
             for oPluginMapping in aoPlugins:
                 if oPluginMapping.id == sPluginId:
                     oPluginClass = self.getClass(oPluginMapping.className)
-                    return oPluginClass(self.m_oConfig, oArea)
+                    oPluginRepository = PluginRepository()
+                    return oPluginClass(self.m_oConfig, oArea, oPluginRepository.findPluginById(sPluginId))
         except:
             logging.error("RiseDeamon.getRisePlugin: Error creating class for plugin " + sPluginId)
 
