@@ -3,7 +3,7 @@ from src.rise.business.RiseEntity import RiseEntity
 
 class Area(RiseEntity):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.name = str()
         self.description = str()
         self.plugins = []
@@ -18,3 +18,6 @@ class Area(RiseEntity):
         self.archiveStartDate = float()
         self.archiveEndDate = float()
         self.id = str()
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
