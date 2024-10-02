@@ -125,7 +125,7 @@ if __name__ == '__main__':
         oRiseConfig.logLevel = "INFO"
 
     oAreaRepository = AreaRepository()
-    oArea = oAreaRepository.findById("317e5b8a-f1f0-410f-a17e-b9d3d637cadc")
+    oArea = oAreaRepository.findAreaById("317e5b8a-f1f0-410f-a17e-b9d3d637cadc")
 
     # Basic configuration
     logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))

@@ -7,7 +7,7 @@ class PluginRepository(RiseMongoRepository):
     
     def __init__(self):
         super().__init__()
-        self.m_sCollectionName = "plugin"
+        self.m_sCollectionName = "plugins"
         
     
     def findPluginById(self, sPluginId):

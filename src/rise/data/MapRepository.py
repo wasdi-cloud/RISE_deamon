@@ -7,7 +7,7 @@ class MapRepository(RiseMongoRepository):
 
     def __init__(self):
         super().__init__()
-        self.m_sCollectionName = "map"
+        self.m_sCollectionName = "maps"
 
 
     def findAllMapsById(self, asMapIdsList):

@@ -23,12 +23,14 @@ class AreaRepository(RiseMongoRepository):
                 print(f"AreaRepository.findAreaById. no results retrieved from db")
                 return None
 
-            oRetrievedArea = []
+            aoRetrievedAreas = []
             for oResArea in oRetrievedResult:
-                oRetrievedArea.append(Area(**oResArea))
+                aoRetrievedAreas.append(Area(**oResArea))
 
-            return oRetrievedArea
-
+            if len(aoRetrievedAreas) > 0:
+                return aoRetrievedAreas[0]
+            else:
+                return None
         except:
             print("AreaRepository.findAreaById. Exception")
 
