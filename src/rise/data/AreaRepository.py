@@ -7,7 +7,7 @@ class AreaRepository(RiseMongoRepository):
 
     def __init__(self):
         super().__init__()
-        self.m_sCollectionName = "area"
+        self.m_sCollectionName = "areas"
 
     def findById(self, sEntityId):
         try:
