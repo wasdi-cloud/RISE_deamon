@@ -1,5 +1,6 @@
+import logging
+
 from src.rise.business.Plugin import Plugin
-from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.RiseMongoRepository import RiseMongoRepository
 
 
@@ -13,19 +14,19 @@ class PluginRepository(RiseMongoRepository):
     def findPluginById(self, sPluginId):
         try:
             if sPluginId is None:
-                print("PluginRepository.findPluginById. No plugin id specified")
+                logging.warning("PluginRepository.findPluginById. No plugin id specified")
                 return None
 
             oCollection = self.getCollection()
 
             if oCollection is None:
-                print(f"PluginRepository.findPluginById. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                logging.warning(f"PluginRepository.findPluginById. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
                 return None
 
             oRetrievedResult = oCollection.find({"id": sPluginId})
 
             if oRetrievedResult is None:
-                print(f"PluginRepository.findPluginById. no results retrieved from db")
+                logging.info(f"PluginRepository.findPluginById. no results retrieved from db")
                 return None
 
             aoRetrievedPlugins = []
@@ -37,8 +38,8 @@ class PluginRepository(RiseMongoRepository):
             else:
                 return None
 
-        except:
-            print("PluginRepository.findPluginById. Exception")
+        except Exception as oEx:
+            print(f"PluginRepository.findPluginById. Exception {oEx}")
 
         return None
 
@@ -47,23 +48,23 @@ class PluginRepository(RiseMongoRepository):
             oCollection = self.getCollection()
 
             if oCollection is None:
-                print(f"PluginRepository.listAllPlugins. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                logging.warning(f"PluginRepository.listAllPlugins. Collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
                 return None
 
             oRetrievedResult = oCollection.find({})
 
             if oRetrievedResult is None:
-                print(f"PluginRepository.listAllPlugins. no results retrieved from db")
+                logging.info(f"PluginRepository.listAllPlugins. No results retrieved from db")
                 return None
 
             aoRetrievedPlugins = []
             for oResPlugin in oRetrievedResult:
                 aoRetrievedPlugins.append(Plugin(**oResPlugin))
 
-            print(f"PluginRepository.listAllPlugins. found {len(aoRetrievedPlugins)} plugins")
+            logging.info(f"PluginRepository.listAllPlugins. found {len(aoRetrievedPlugins)} plugins")
             return aoRetrievedPlugins
 
-        except:
-            print("PluginRepository.listAllPlugins. Exception")
+        except Exception as oEx:
+            logging.error(f"PluginRepository.listAllPlugins. Exception {oEx}")
 
         return None
