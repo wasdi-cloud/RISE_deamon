@@ -9,6 +9,7 @@ import wasdi
 from src.rise.business.Area import Area
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.MongoDBClient import MongoDBClient
+from src.rise.data.PluginRepository import PluginRepository
 
 
 class RiseDeamon:
@@ -25,9 +26,27 @@ class RiseDeamon:
         if not wasdi.init():
             logging.error("RiseDeamon.run: There was an error initializing WASDI")
 
-        self.handleNewAreas()
+        oAreaRepository = AreaRepository()
+        aoAreas = oAreaRepository.listAllAreas()
 
-        self.handleDailyMaps()
+        if aoAreas is None:
+            aoAreas = []
+
+        aoNewAreas = []
+
+        for oArea in aoAreas:
+            if oArea.archiveEndDate < 0.0 and oArea.archiveStartDate < 0.0:
+                aoNewAreas.append(oArea)
+
+        if len(aoNewAreas) > 0:
+            self.handleNewAreas(aoNewAreas)
+        else:
+            logging.info("RiseDeamon.run: no new area found")
+
+        if len(aoAreas) > 0:
+            self.handleDailyMaps(aoAreas)
+        else:
+            logging.info("RiseDeamon.run: no areas found")
 
         self.checkResultsAndPublishLayers()
 
@@ -46,31 +65,26 @@ class RiseDeamon:
 
     def getRisePlugin(self, sPluginId, oArea):
         try:
-            for oPluginMapping in self.m_oConfig.puglinClasses:
+            oPluginRepository = PluginRepository()
+            aoPlugins = oPluginRepository.listAllPlugins()
+            for oPluginMapping in aoPlugins:
                 if oPluginMapping.id == sPluginId:
-                    oPluginClass = self.getClass(oPluginMapping.name)
-                    return oPluginClass(self.m_oConfig, oArea)
+                    oPluginClass = self.getClass(oPluginMapping.className)
+                    oPluginRepository = PluginRepository()
+                    return oPluginClass(self.m_oConfig, oArea, oPluginRepository.findPluginById(sPluginId))
         except:
             logging.error("RiseDeamon.getRisePlugin: Error creating class for plugin " + sPluginId)
 
         return None
 
-    def handleNewAreas(self):
-        logging.info("RiseDeamon.handleNewAreas: Run New Applications")
-
-        logging.info("RiseDeamon.handleNewAreas: Find new areas")
-        oSampleArea = Area()
-        oSampleArea.name = "Area 1"
-        oSampleArea.bbox = "POLYGON ((1.839965 13.314794, 1.839965 13.771399, 2.339777 13.771399, 2.339777 13.314794, 1.839965 13.314794)))"
-        oSampleArea.archiveEndDate = -1.0
-        oSampleArea.archiveStartDate = -1.0
-        oSampleArea.plugins = ["dc2f281d-cfa8-4b6e-b59c-609ea52fd6bf", "0245f5c2-3588-4ac5-94cb-edfb0a565142", "717464fe-3f67-4658-b868-16c3bd1f7e70", "bae09d65-6c1f-401e-9d8c-0e7f42c47d22"]
-
-        aoNewAreas = [oSampleArea]
+    def handleNewAreas(self, aoNewAreas):
 
         for oArea in aoNewAreas:
 
+            logging.info("RiseDeamon.handleNewAreas: Trigger archives for new area " + str(oArea.name) + " ["+oArea.id + "]")
+
             for sPluginId in oArea.plugins:
+
                 oRisePlugin = self.getRisePlugin(sPluginId, oArea)
 
                 if oRisePlugin is None:
@@ -81,7 +95,7 @@ class RiseDeamon:
 
         logging.info("RiseDeamon.handleNewAreas: All the new area have been processed")
 
-    def handleDailyMaps(self):
+    def handleDailyMaps(self, aoAreas):
         pass
 
     def checkResultsAndPublishLayers(self):
@@ -89,6 +103,15 @@ class RiseDeamon:
 
     def cleanLayers(self):
         pass
+    @staticmethod
+    def readConfigFile(sConfigFilePath):
+        with open(sConfigFilePath, "r") as oConfigFile:
+            sConfigContent = oConfigFile.read()
+
+        # Get the config as an object
+        oConfig = json.loads(sConfigContent, object_hook=lambda d: SimpleNamespace(**d))
+        oConfig.myFilePath = sConfigFilePath
+        return oConfig
 
 if __name__ == '__main__':
     # Default configuration file Path
@@ -109,14 +132,8 @@ if __name__ == '__main__':
             # Override the config file path
             sConfigFilePath = sArg
 
-    # We read the configuration file
-    sConfigContent = ""
-
-    with open(sConfigFilePath, "r") as oConfigFile:
-        sConfigContent = oConfigFile.read()
-
     # Get the config as an object
-    oRiseConfig = json.loads(sConfigContent, object_hook=lambda d: SimpleNamespace(**d))
+    oRiseConfig = RiseDeamon.readConfigFile(sConfigFilePath)
 
     MongoDBClient._s_oConfig = oRiseConfig
 
@@ -124,11 +141,9 @@ if __name__ == '__main__':
     if oRiseConfig.logLevel is None:
         oRiseConfig.logLevel = "INFO"
 
-    oAreaRepository = AreaRepository()
-    oArea = oAreaRepository.findAreaById("317e5b8a-f1f0-410f-a17e-b9d3d637cadc")
-
     # Basic configuration
     logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))
+    logging.getLogger("pymongo").setLevel(logging.ERROR)
 
     try:
         # Create the Deamon class

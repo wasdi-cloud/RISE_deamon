@@ -13,6 +13,7 @@ class Plugin(RiseEntity):
         self.stringCode = str()
         self.maps = []
         self.id = str()
+        self.className = str()
 
         for key, value in kwargs.items():
             setattr(self, key, value)
