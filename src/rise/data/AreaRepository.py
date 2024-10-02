@@ -9,35 +9,53 @@ class AreaRepository(RiseMongoRepository):
         super().__init__()
         self.m_sCollectionName = "area"
 
-    def findById(self, sEntityId):
+    def findAreaById(self, sAreaId):
         try:
-            oMongoClient = MongoDBClient()
-            oDatabase = oMongoClient.client[RiseMongoRepository.s_sDB_NAME]
-
-            if oDatabase is None:
-                print(f"database named {RiseMongoRepository.s_sDB_NAME} not found in Mongo")
-                return None
-
-            oCollection = oDatabase[self.m_sCollectionName]
+            oCollection = self.getCollection()
 
             if oCollection is None:
-                print(f"collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                print(f"AreaRepository.findAreaById. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
                 return None
 
-            oRetrievedResult = oCollection.find({"id": sEntityId})
+            oRetrievedResult = oCollection.find({"id": sAreaId})
 
             if oRetrievedResult is None:
-                print(f"no results retrieved from db")
+                print(f"AreaRepository.findAreaById. no results retrieved from db")
                 return None
 
             oRetrievedArea = []
-            for oRes in oRetrievedResult:
-                oRetrievedBank = Area(**oRes)
+            for oResArea in oRetrievedResult:
+                oRetrievedArea.append(Area(**oResArea))
 
+            return oRetrievedArea
 
         except:
-            print("Exception")
+            print("AreaRepository.findAreaById. Exception")
 
         return None
 
+    def listAllAreas(self):
+        try:
+            oCollection = self.getCollection()
 
+            if oCollection is None:
+                print(f"AreaRepository.listAllAreas. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                return None
+
+            oRetrievedResult = oCollection.find({})
+
+            if oRetrievedResult is None:
+                print(f"AreaRepository.listAllAreas. no results retrieved from db")
+                return None
+
+            aoRetrievedArea = []
+            for oResArea in oRetrievedResult:
+                aoRetrievedArea.append(Area(**oResArea))
+
+            print(f"AreaRepository.listAllAreas. found {len(aoRetrievedArea)} areas")
+            return aoRetrievedArea
+
+        except:
+            print("AreaRepository.listAllAreas. Exception")
+
+        return None
