@@ -3,7 +3,7 @@ from src.rise.business.RiseEntity import RiseEntity
 
 class Plugin(RiseEntity):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.name = str()
         self.shortDescription = str()
         self.longDescription = str()
@@ -13,3 +13,6 @@ class Plugin(RiseEntity):
         self.stringCode = str()
         self.maps = []
         self.id = str()
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)

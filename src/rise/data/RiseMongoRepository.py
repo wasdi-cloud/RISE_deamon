@@ -11,3 +11,20 @@ class RiseMongoRepository:
     def __init__(self):
         self.m_sCollectionName = None
 
+
+    def getCollection(self):
+        oCollection = None
+        try:
+            oMongoClient = MongoDBClient()
+            oDatabase = oMongoClient.client[RiseMongoRepository.s_sDB_NAME]
+
+            if oDatabase is None:
+                print(f"RiseMongoRepository.getCollection. database named '{RiseMongoRepository.s_sDB_NAME}' not found in Mongo")
+                return None
+
+            oCollection = oDatabase[self.m_sCollectionName]
+        except:
+            print(f"RiseMongoRepository.getCollection. Exception retrieving the collection")
+
+        return oCollection
+
