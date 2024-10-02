@@ -12,7 +12,7 @@ class AreaRepository(RiseMongoRepository):
     def findById(self, sEntityId):
         try:
             oMongoClient = MongoDBClient()
-            oDatabase = oMongoClient[RiseMongoRepository.s_sDB_NAME]
+            oDatabase = oMongoClient.client[RiseMongoRepository.s_sDB_NAME]
 
             if oDatabase is None:
                 print(f"database named {RiseMongoRepository.s_sDB_NAME} not found in Mongo")

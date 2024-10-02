@@ -1,12 +1,14 @@
+import getopt
 import json
-from types import SimpleNamespace
-import sys, getopt
 import logging
+import sys
+from types import SimpleNamespace
+
 import wasdi
 
 from src.rise.business.Area import Area
-from src.rise.plugins.RisePlugin import RisePlugin
-from src.rise.plugins.FloodPlugin import FloodPlugin
+from src.rise.data.AreaRepository import AreaRepository
+from src.rise.data.MongoDBClient import MongoDBClient
 
 
 class RiseDeamon:
@@ -116,9 +118,14 @@ if __name__ == '__main__':
     # Get the config as an object
     oRiseConfig = json.loads(sConfigContent, object_hook=lambda d: SimpleNamespace(**d))
 
+    MongoDBClient._s_oConfig = oRiseConfig
+
     # Set a defaulto log level
     if oRiseConfig.logLevel is None:
         oRiseConfig.logLevel = "INFO"
+
+    oAreaRepository = AreaRepository()
+    oArea = oAreaRepository.findById("317e5b8a-f1f0-410f-a17e-b9d3d637cadc")
 
     # Basic configuration
     logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))
