@@ -103,6 +103,15 @@ class RiseDeamon:
 
     def cleanLayers(self):
         pass
+    @staticmethod
+    def readConfigFile(sConfigFilePath):
+        with open(sConfigFilePath, "r") as oConfigFile:
+            sConfigContent = oConfigFile.read()
+
+        # Get the config as an object
+        oConfig = json.loads(sConfigContent, object_hook=lambda d: SimpleNamespace(**d))
+        oConfig.myFilePath = sConfigFilePath
+        return oConfig
 
 if __name__ == '__main__':
     # Default configuration file Path
@@ -123,14 +132,8 @@ if __name__ == '__main__':
             # Override the config file path
             sConfigFilePath = sArg
 
-    # We read the configuration file
-    sConfigContent = ""
-
-    with open(sConfigFilePath, "r") as oConfigFile:
-        sConfigContent = oConfigFile.read()
-
     # Get the config as an object
-    oRiseConfig = json.loads(sConfigContent, object_hook=lambda d: SimpleNamespace(**d))
+    oRiseConfig = RiseDeamon.readConfigFile(sConfigFilePath)
 
     MongoDBClient._s_oConfig = oRiseConfig
 
@@ -140,6 +143,7 @@ if __name__ == '__main__':
 
     # Basic configuration
     logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))
+    logging.getLogger("pymongo").setLevel(logging.ERROR)
 
     try:
         # Create the Deamon class
