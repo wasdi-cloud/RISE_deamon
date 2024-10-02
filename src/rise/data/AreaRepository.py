@@ -8,6 +8,7 @@ class AreaRepository(RiseMongoRepository):
     def __init__(self):
         super().__init__()
         self.m_sCollectionName = "areas"
+        self.m_sEntityClassName = f"{Area.__module__}.{Area.__qualname__}"
 
     def findAreaById(self, sAreaId):
         try:
