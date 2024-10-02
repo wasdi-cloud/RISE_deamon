@@ -67,35 +67,3 @@ class PluginRepository(RiseMongoRepository):
             print("PluginRepository.listAllPlugins. Exception")
 
         return None
-
-    def getMapsIdForPluging(self, sPluginId):
-        try:
-            if sPluginId is None:
-                print("PluginRepository.getMapsIdForPluging. No plugin id specified")
-                return None
-
-            oCollection = self.getCollection()
-
-            if oCollection is None:
-                print(f"PluginRepository.getMapsIdForPluging. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
-                return None
-
-            oRetrievedResult = oCollection.find({"id": sPluginId})
-
-            if oRetrievedResult is None:
-                print(f"PluginRepository.getMapsIdForPluging. no results retrieved from db")
-                return None
-
-            asRetrievedMapIds = []
-            for oResPlugin in oRetrievedResult:
-                oResPlugin = Plugin(**oResPlugin)
-                asRetrievedMapIds.extend(oResPlugin.maps)
-
-            print(f"PluginRepository.getMapsIdForPluging. Retrieved {len(asRetrievedMapIds)} maps for pluging {sPluginId}")
-
-            return asRetrievedMapIds
-
-        except:
-            print("PluginRepository.getMapsIdForPluging. Exception")
-
-        return None
