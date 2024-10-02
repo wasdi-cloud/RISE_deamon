@@ -11,6 +11,8 @@ class WasdiTask(RiseEntity):
         self.startDate = float()
         self.workspaceId = str()
         self.pluginPayload = {}
+        self.inputParams = {}
+        self.status = str()
 
         for key, value in kwargs.items():
             setattr(self, key, value)

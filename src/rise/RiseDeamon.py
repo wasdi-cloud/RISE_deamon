@@ -7,14 +7,17 @@ from types import SimpleNamespace
 import wasdi
 
 from src.rise.business.Area import Area
+from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.PluginRepository import PluginRepository
+from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 
 
 class RiseDeamon:
     def __init__(self, oConfig):
         self.m_oConfig = oConfig
+        self.m_aoPlugins = []
 
     def run(self):
         logging.info("RiseDeamon.run: Rise deamon start")
@@ -65,9 +68,11 @@ class RiseDeamon:
 
     def getRisePlugin(self, sPluginId, oArea):
         try:
-            oPluginRepository = PluginRepository()
-            aoPlugins = oPluginRepository.listAllPlugins()
-            for oPluginMapping in aoPlugins:
+            if len(self.m_aoPlugins)<=0:
+                oPluginRepository = PluginRepository()
+                self.m_aoPlugins = oPluginRepository.listAllPlugins()
+
+            for oPluginMapping in self.m_aoPlugins:
                 if oPluginMapping.id == sPluginId:
                     oPluginClass = self.getClass(oPluginMapping.className)
                     oPluginRepository = PluginRepository()
