@@ -32,7 +32,10 @@ class PluginRepository(RiseMongoRepository):
             for oResPlugin in oRetrievedResult:
                 aoRetrievedPlugins.append(Plugin(**oResPlugin))
 
-            return aoRetrievedPlugins
+            if len(aoRetrievedPlugins) > 0:
+                return aoRetrievedPlugins[0]
+            else:
+                return None
 
         except:
             print("PluginRepository.findPluginById. Exception")
