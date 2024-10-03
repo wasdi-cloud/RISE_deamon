@@ -28,7 +28,7 @@ class RisePlugin:
     def getWasdiBbxFromWKT(self, sWkt, bJson=False):
         try:
             oGeom = shapely.from_wkt(sWkt)
-            sBbox = str(oGeom.bounds[3]) + ";" + str(oGeom.bounds[0]) + ";" + str(oGeom.bounds[1]) + ";" + str(oGeom.bounds[2])
+            sBbox = str(oGeom.bounds[3]) + "," + str(oGeom.bounds[0]) + "," + str(oGeom.bounds[1]) + "," + str(oGeom.bounds[2])
 
             if bJson:
                 return wasdi.bboxStringToObject(sBbox)
@@ -47,3 +47,14 @@ class RisePlugin:
     def getWorkspaceName(self, oMap):
         sWorkspaceName = self.m_oArea.id + "|" + self.m_oPlugin.id + "|" + oMap.id
         return sWorkspaceName
+
+    def createOrOpenWorkspace(self, oMap):
+        sWorkspaceName = self.getWorkspaceName(oMap)
+        sWorkspaceId = wasdi.getWorkspaceIdByName(sWorkspaceName)
+
+        if sWorkspaceId == "":
+            wasdi.createWorkspace(sWorkspaceName)
+            sWorkspaceId = wasdi.getWorkspaceIdByName(sWorkspaceName)
+
+        wasdi.openWorkspaceById(sWorkspaceId)
+        return sWorkspaceId
