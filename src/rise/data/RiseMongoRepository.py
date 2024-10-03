@@ -152,6 +152,97 @@ class RiseMongoRepository:
 
         return False
 
+    def updateEntity(self, oEntity):
+        """
+        Given an entity, updates the entry with the same id in the database
+        :param oEntity: the entity to update
+        :return: True if the update was successful, False otherwise
+        """
+        if oEntity is None or 'id' not in vars(oEntity):
+            logging.warning("RiseMongoRepository.updateEntity. The provided entity is None or is missing the 'id' filed")
+            return False
+
+        oQuery = {"id": oEntity.id}
+        oUpdatedDocument = {"$set": vars(oEntity)}
+
+        try:
+            oCollection = self.getCollection()
+
+            if oCollection is None:
+                logging.warning(f"RiseMongoRepository.updateEntity. Collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                return False
+
+            oResult = oCollection.update_one(oQuery, oUpdatedDocument)
+
+            if oResult.modified_count > 0:
+                return True
+
+            logging.warning("RiseMongoRepository.updateEntity. No document updated in the database")
+
+        except Exception as oEx:
+            logging.error(f"RiseMongoRepository.updateEntity. Exception {oEx}")
+
+        return False
+
+    def deleteEntity(self, sEntityId):
+        """
+        Given an entity id, delete the corresponding entry in the database
+        :param sEntityId: the id of the entity to delete
+        :return: True if the deletion was successful, False otherwise
+        """
+        if sEntityId is None or sEntityId == '':
+            logging.warning("RiseMongoRepository.deleteEntity. The provided entity is None or empty")
+            return False
+
+        try:
+            oCollection = self.getCollection()
+
+            if oCollection is None:
+                logging.warning(f"RiseMongoRepository.deleteEntity. Collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                return False
+
+            oResult = oCollection.delete_one({"id": sEntityId})
+
+            if oResult.deleted_count > 0:
+                return True
+
+            logging.warning("RiseMongoRepository.deleteEntity. No entity deleted from the database")
+
+        except Exception as oEx:
+            logging.error(f"RiseMongoRepository.deleteEntity. Exception {oEx}")
+
+        return False
+
+
+    def deleteAllEntitesById(self, asEntityIds):
+        """
+        Given a list of entity ids, delete the corresponding entries in the database
+        :param asEntityIds: the list of ids of the entity to delete
+        :return: True if the deletion was successful, False otherwise
+        """
+        if asEntityIds is None or len(asEntityIds) == 0:
+            logging.warning("RiseMongoRepository.deleteAllEntitiesById. The provided entity is None or empty")
+            return False
+
+        try:
+            oCollection = self.getCollection()
+
+            if oCollection is None:
+                logging.warning(f"RiseMongoRepository.deleteAllEntitiesById. Collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                return False
+
+            oResult = oCollection.delete_many({"id": {"$in": asEntityIds}})
+
+            if oResult.deleted_count > 0:
+                return True
+
+            logging.warning("RiseMongoRepository.deleteAllEntitiesById. No entity deleted from the database")
+
+        except Exception as oEx:
+            logging.error(f"RiseMongoRepository.deleteAllEntitiesById. Exception {oEx}")
+
+        return False
+
     def getClass(self, sClassName):
         asParts = sClassName.split('.')
         oModule = ".".join(asParts[:-1])
