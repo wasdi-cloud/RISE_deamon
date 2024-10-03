@@ -1,9 +1,7 @@
 import logging
 
 from src.rise.business.WasdiTask import WasdiTask
-from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.RiseMongoRepository import RiseMongoRepository
-from src.rise.business.Area import Area
 
 
 class WasdiTaskRepository(RiseMongoRepository):
@@ -11,6 +9,7 @@ class WasdiTaskRepository(RiseMongoRepository):
     def __init__(self):
         super().__init__()
         self.m_sCollectionName = "wasdi_tasks"
+        self.m_sEntityClassName = f"{WasdiTask.__module__}.{WasdiTask.__qualname__}"
 
     def add(self, oEntity):
         try:

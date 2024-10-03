@@ -18,7 +18,7 @@ class FloodPlugin(RisePlugin):
 
         try:
             oMapRepository = MapRepository()
-            aoMaps = oMapRepository.findAllMapsById(self.m_oPlugin.maps)
+            aoMaps = oMapRepository.getAllEntitiesById(self.m_oPlugin.maps)
 
             for oMap in aoMaps:
                 logging.info("Starting Archive for map " + oMap.name)
@@ -80,7 +80,7 @@ class FloodPlugin(RisePlugin):
             oWasdiTask.status = "CREATED"
             oWasdiTask.pluginPayload["shortArchive"] = True
 
-            oWasdiTaskRepository.add(oWasdiTask)
+            oWasdiTaskRepository.addEntity(oWasdiTask)
             logging.info("FloodPlugin.runHasardLastWeek: Started " + oMapConfig.processor + " in Workspace " + self.getWorkspaceName(oMap) + " for Area " + self.m_oArea.name)
 
             return True
@@ -139,7 +139,7 @@ class FloodPlugin(RisePlugin):
             oWasdiTask.status = "CREATED"
             oWasdiTask.pluginPayload["shortArchive"] = True
 
-            oWasdiTaskRepository.add(oWasdiTask)
+            oWasdiTaskRepository.addEntity(oWasdiTask)
             logging.info(
                 "FloodPlugin.runHasardLastWeek: Started " + oMapConfig.processor + " in Workspace " + self.getWorkspaceName(oMap) + " for Area " + self.m_oArea.name)
 

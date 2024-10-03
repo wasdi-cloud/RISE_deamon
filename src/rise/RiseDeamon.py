@@ -6,12 +6,9 @@ from types import SimpleNamespace
 
 import wasdi
 
-from src.rise.business.Area import Area
-from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.PluginRepository import PluginRepository
-from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 
 
 class RiseDeamon:
@@ -30,7 +27,7 @@ class RiseDeamon:
             logging.error("RiseDeamon.run: There was an error initializing WASDI")
 
         oAreaRepository = AreaRepository()
-        aoAreas = oAreaRepository.listAllAreas()
+        aoAreas = oAreaRepository.listAllEntities()
 
         if aoAreas is None:
             aoAreas = []
@@ -70,13 +67,13 @@ class RiseDeamon:
         try:
             if len(self.m_aoPlugins)<=0:
                 oPluginRepository = PluginRepository()
-                self.m_aoPlugins = oPluginRepository.listAllPlugins()
+                self.m_aoPlugins = oPluginRepository.listAllEntities()
 
             for oPluginMapping in self.m_aoPlugins:
                 if oPluginMapping.id == sPluginId:
                     oPluginClass = self.getClass(oPluginMapping.className)
                     oPluginRepository = PluginRepository()
-                    return oPluginClass(self.m_oConfig, oArea, oPluginRepository.findPluginById(sPluginId))
+                    return oPluginClass(self.m_oConfig, oArea, oPluginRepository.getEntityById(sPluginId))
         except:
             logging.error("RiseDeamon.getRisePlugin: Error creating class for plugin " + sPluginId)
 
