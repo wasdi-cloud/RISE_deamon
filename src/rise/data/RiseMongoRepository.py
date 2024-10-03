@@ -131,6 +131,41 @@ class RiseMongoRepository:
 
         return None
 
+    def getEntitiesByField(self, aoAttributeMap):
+        """
+        Given a dictionary, returns the list of the entities matching all the key-value pairs in the dictionary
+        :param aoAttributeMap: a dictionary of all the key-value pairs that the retrieved entities should match
+        :return: the list of entities matching the ket-value pairs in the dictionary
+        """
+
+        if aoAttributeMap is None or aoAttributeMap.items() == 0:
+            return None
+
+        try:
+            oCollection = self.getCollection()
+
+            if oCollection is None:
+                logging.warning(f"RiseMongoRepository.getEntitiesByField. Collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                return None
+
+            oRetrievedResult = oCollection.find(aoAttributeMap)
+
+            if oRetrievedResult is None:
+                logging.info(f"RiseMongoRepository.findEntityById. No results retrieved from db")
+                return None
+
+            aoRetrievedEntities = []
+            for oResEntity in oRetrievedResult:
+                oEntityClass = self.getClass(self.m_sEntityClassName)
+                aoRetrievedEntities.append(oEntityClass(**oResEntity))
+
+            return aoRetrievedEntities
+
+        except Exception as oEx:
+            logging.error(f"RiseMongoRepository.getEntitiesByField. Exception {oEx}")
+
+        return None
+
     def addEntity(self, oEntity):
         """
         Insert an entity in a collection
@@ -141,14 +176,14 @@ class RiseMongoRepository:
             oCollection = self.getCollection()
 
             if oCollection is None:
-                logging.warning(f"RiseMongoRepository.add. Collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                logging.warning(f"RiseMongoRepository.addEntity. Collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
                 return False
 
             oCollection.insert_one(vars(oEntity))
 
             return True
         except Exception as oEx:
-            logging.error(f"RiseMongoRepository.add. Exception {oEx}")
+            logging.error(f"RiseMongoRepository.addEntity. Exception {oEx}")
 
         return False
 
@@ -250,3 +285,4 @@ class RiseMongoRepository:
         for sComponent in asParts[1:]:
             oType = getattr(oType, sComponent)
         return oType
+
