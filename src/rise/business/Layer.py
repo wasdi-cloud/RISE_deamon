@@ -3,7 +3,7 @@ from src.rise.business.RiseEntity import RiseEntity
 
 class Layer(RiseEntity):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.link = str()
         self.referenceDate = float()
         self.source = str()
@@ -12,3 +12,6 @@ class Layer(RiseEntity):
         self.pluginId = str()
         self.areaId = str()
         self.id = str()
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
