@@ -11,6 +11,7 @@ from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.PluginRepository import PluginRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
+from src.rise.geoserver.GeoserverClient import GeoserverClient
 from src.rise.utils import RiseUtils
 
 
@@ -193,6 +194,7 @@ if __name__ == '__main__':
     oRiseConfig = RiseDeamon.readConfigFile(sConfigFilePath)
 
     MongoDBClient._s_oConfig = oRiseConfig
+    GeoserverClient._s_oConfig = oRiseConfig
 
     # Set a defaulto log level
     if oRiseConfig.logLevel is None:

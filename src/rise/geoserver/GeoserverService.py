@@ -1,4 +1,5 @@
 import logging
+import os
 
 from src.rise.geoserver.GeoserverClient import GeoserverClient
 
@@ -28,6 +29,10 @@ class GeoserverService:
             logging.warning(f"GeoserverService.publishRasterLayer. Raster file path or workspace name not specified")
             return None
 
+        if not os.path.exists(sRasterFilePath):
+            logging.warning(f"GeoserverService.publishRasterLayer. Path does not exist: {sRasterFilePath}")
+            return None
+
         try:
             oGeoClient = GeoserverClient().client
             logging.info("GeoserverService.publishRasterLayer. Adding layer on Geoserver")
@@ -53,8 +58,9 @@ class GeoserverService:
         try:
             oGeoClient = GeoserverClient().client
             logging.info("GeoserverService.deleteRasterLayer. Delete raster layer on Geoserver")
-            print(oGeoClient.delete_coveragestore(coveragestore_name=sLayerName, workspace=sWorkspace))
-
+            oResult = oGeoClient.delete_coveragestore(coveragestore_name=sLayerName, workspace=sWorkspace)
+            # TODO: improve error handling
+            logging.info(f"GeoserverService.deleteRasterLayer. Result of the deletion {oResult}")
             return True
 
         except Exception as oEx:
@@ -69,6 +75,14 @@ class GeoserverService:
                 or sWorkspace is None or sWorkspace == '' \
                 or sDataStoreName is None or sDataStoreName == '':
             logging.warning("GeoserverService.publishShapeLayer. One or more input parameters are empty")
+            return None
+
+        if not sShapeFilePath.endswith(".zip"):
+            logging.warning(f"GeoserverService.publishShapeLayer. Not a zip file: {sShapeFilePath}")
+            return None
+
+        if not os.path.exists(sShapeFilePath):
+            logging.warning(f"GeoserverService.publishRasterLayer. Path does not exist: {sShapeFilePath}")
             return None
 
         try:
@@ -97,14 +111,25 @@ class GeoserverService:
         try:
             oGeoClient = GeoserverClient().client
             logging.info("GeoserverService.deleteShapeLayer. Delete shape layer on Geoserver")
-            print(oGeoClient.delete_featurestore(featurestore_name=sDataStoreName, workspace=sWorkspace))
+            # TODO: improve the error handling
+            oResult = oGeoClient.delete_featurestore(featurestore_name=sDataStoreName, workspace=sWorkspace)
+            logging.info(f"GeoserverService.deleteShapeLayer. Deletion of the feature store: {oResult}")
 
             return True
-
         except Exception as oEx:
             logging.error(f"GeoserverService.deleteShapeLayer. Exception {oEx}")
 
         return False
+
+    def listAllLayers(self, sWorkspace):
+        try:
+            oGeoClient = GeoserverClient().client
+            oLayers = oGeoClient.get_layers(workspace=sWorkspace)
+            return oLayers
+
+        except Exception as oEx:
+            logging.error(f"GeoserverService.listAllLayers. Exception {oEx}")
+        return None
 
 
 

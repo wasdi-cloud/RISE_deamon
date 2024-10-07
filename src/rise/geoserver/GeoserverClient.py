@@ -25,6 +25,11 @@ class GeoserverClient:
         sUrl = 'http://127.0.0.1:8080/geoserver'
         sUserName = 'admin'
         sPassword = 'geoserver'
+
+        if GeoserverClient._s_oConfig is not None:
+            sUrl = GeoserverClient._s_oConfig.geoserver.address
+            sUserName = GeoserverClient._s_oConfig.geoserver.user
+            sPassword = GeoserverClient._s_oConfig.geoserver.password
         return sUrl, sUserName, sPassword
 
 
