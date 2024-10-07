@@ -7,7 +7,7 @@ class Layer(RiseEntity):
         self.link = str()
         self.referenceDate = float()
         self.source = str()
-        self.profile = dict()
+        self.properties = dict()
         self.mapId = str()
         self.pluginId = str()
         self.areaId = str()

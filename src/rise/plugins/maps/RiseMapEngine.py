@@ -2,7 +2,10 @@ import logging
 import os
 from pathlib import Path
 
+import wasdi
+
 from src.rise.RiseDeamon import RiseDeamon
+from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 
 
 class RiseMapEngine:
@@ -33,4 +36,25 @@ class RiseMapEngine:
         return ""
 
     def handleTask(self, oTask):
-        logging.info("RiseMapEngine.handleTask")
+        try:
+            logging.info("RiseMapEngine.handleTask: handle task " + oTask.id)
+            oTaskRepo = WasdiTaskRepository()
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+            sNewStatus = wasdi.getProcessStatus(oTask.id)
+
+            if sNewStatus == "ERROR" or sNewStatus == "STOPPED":
+                logging.warning("RiseMapEngine.handleTask: the new status is not done but " + sNewStatus + " update status and exit")
+                oTask.status = sNewStatus
+                oTaskRepo.updateEntity(oTask)
+                return False
+
+            if sNewStatus == "DONE":
+                logging.info("RiseMapEngine.handleTask: task done, lets proceed!")
+                return True
+            else:
+                logging.info("RiseMapEngine.handleTask: task is still ongoing, for now we do nothing (state = " + sNewStatus + ")")
+                return False
+
+        except Exception as oEx:
+            logging.error("RiseMapEngine.handleTask: exception " + str(oEx))
+            return False
