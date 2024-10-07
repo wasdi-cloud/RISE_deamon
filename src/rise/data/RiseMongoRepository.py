@@ -1,6 +1,7 @@
 import logging
 
 from src.rise.data.MongoDBClient import MongoDBClient
+from src.rise.utils import RiseUtils
 
 
 class RiseMongoRepository:
@@ -53,7 +54,7 @@ class RiseMongoRepository:
 
             aoRetrievedEntities = []
             for oResEntity in oRetrievedResult:
-                oEntityClass = self.getClass(self.m_sEntityClassName)
+                oEntityClass = RiseUtils.getClass(self.m_sEntityClassName)
                 aoRetrievedEntities.append(oEntityClass(**oResEntity))
 
             if len(aoRetrievedEntities) > 0:
@@ -85,7 +86,7 @@ class RiseMongoRepository:
 
             aoRetrievedEntities = []
             for oResEntity in oRetrievedResult:
-                oEntityClass = self.getClass(self.m_sEntityClassName)
+                oEntityClass = RiseUtils.getClass(self.m_sEntityClassName)
                 aoRetrievedEntities.append(oEntityClass(**oResEntity))
 
             return aoRetrievedEntities
@@ -120,7 +121,7 @@ class RiseMongoRepository:
 
             aoRetrievedEntities = []
             for oResMap in oRetrievedResult:
-                oEntityClass = self.getClass(self.m_sEntityClassName)
+                oEntityClass = RiseUtils.getClass(self.m_sEntityClassName)
                 aoRetrievedEntities.append(oEntityClass(**oResMap))
 
             logging.info(f"RiseMongoRepository.findAllEntitiesById. Retrieved {len(aoRetrievedEntities)} entities")
@@ -156,7 +157,7 @@ class RiseMongoRepository:
 
             aoRetrievedEntities = []
             for oResEntity in oRetrievedResult:
-                oEntityClass = self.getClass(self.m_sEntityClassName)
+                oEntityClass = RiseUtils.getClass(self.m_sEntityClassName)
                 aoRetrievedEntities.append(oEntityClass(**oResEntity))
 
             return aoRetrievedEntities
@@ -277,12 +278,4 @@ class RiseMongoRepository:
             logging.error(f"RiseMongoRepository.deleteAllEntitiesById. Exception {oEx}")
 
         return False
-
-    def getClass(self, sClassName):
-        asParts = sClassName.split('.')
-        oModule = ".".join(asParts[:-1])
-        oType = __import__(oModule)
-        for sComponent in asParts[1:]:
-            oType = getattr(oType, sComponent)
-        return oType
 

@@ -11,7 +11,6 @@ class MapRepository(RiseMongoRepository):
         self.m_sCollectionName = "maps"
         self.m_sEntityClassName = f"{Map.__module__}.{Map.__qualname__}"
 
-
     def findAllMapsById(self, asMapIdsList):
         try:
             if asMapIdsList is None or len(asMapIdsList) == 0:
