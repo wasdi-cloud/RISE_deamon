@@ -4,7 +4,8 @@ from src.rise.business.RiseEntity import RiseEntity
 class Layer(RiseEntity):
 
     def __init__(self, **kwargs):
-        self.link = str()
+        self.layerId = str()
+        self.geoserverUrl = str()
         self.referenceDate = float()
         self.source = str()
         self.properties = dict()

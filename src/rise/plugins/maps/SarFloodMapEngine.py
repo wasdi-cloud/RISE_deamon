@@ -142,29 +142,15 @@ class SarFloodMapEngine(RiseMapEngine):
                     continue
 
                 logging.info("SarFloodMapEngine.handleShortArchiveTask: Found " + sFileName + ", publish it")
-                sLocalFilePath = wasdi.getPath(sFileName)
-                #sNameOnly = os.path.basename(sLocalFilePath)
-                #sGeoserverFolder = self.m_oConfig.geoserver.geoserverDataFolder
-                #sDestinationFile = os.path.join(sGeoserverFolder, sNameOnly)
-                #os.rename(sLocalFilePath, sDestinationFile)
-                oGeoserverService = GeoserverService()
-                sLayerName = Path(str(sLocalFilePath)).stem
-                oStore = oGeoserverService.publishRasterLayer(sLocalFilePath, "rise", sLayerName)
-                os.remove(sLocalFilePath)
 
-                if oStore is None:
-                    logging.error("SarFloodMapEngine.handleShortArchiveTask: impossible to get the coverage store for " + sFileName)
+                sLayerName = Path(sFileName).stem
+
+                if not self.publishRasterLayer(sFileName):
+                    logging.error(
+                        "SarFloodMapEngine.handleShortArchiveTask: impossible to get the coverage store for " + sFileName)
                 else:
                     oLayerRepository = LayerRepository()
-                    oLayer = Layer()
-                    oLayer.mapId = self.m_oMapEntity.id
-                    oLayer.areaId = self.m_oArea.id
-                    oLayer.pluginId = self.m_oPluginEntity.id
-                    oLayer.link = "rise:" + sLayerName
-                    oLayer.referenceDate = oActualDate.timestamp()
-                    #oLayer.properties
-                    oLayer.source = self.m_oPluginEntity.name
-                    oLayer.id = sLayerName
+                    oLayer = self.getLayerEntity(sLayerName, oActualDate.timestamp())
                     oLayerRepository.addEntity(oLayer)
 
                     if fFirstMapTimestamp == -1.0:
@@ -201,5 +187,5 @@ class SarFloodMapEngine(RiseMapEngine):
 
             if bChanged:
                 # Update the area if needed
-                oAreaRepository = AreaRepository
+                oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)

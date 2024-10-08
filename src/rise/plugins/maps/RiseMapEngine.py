@@ -5,7 +5,9 @@ from pathlib import Path
 import wasdi
 
 from src.rise.RiseDeamon import RiseDeamon
+from src.rise.business.Layer import Layer
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
+from src.rise.geoserver.GeoserverService import GeoserverService
 
 
 class RiseMapEngine:
@@ -58,3 +60,46 @@ class RiseMapEngine:
         except Exception as oEx:
             logging.error("RiseMapEngine.handleTask: exception " + str(oEx))
             return False
+
+    def getLayerEntity(self, sLayerName, fTimestamp, aoProperties=None):
+
+        if aoProperties is None:
+            aoProperties = {}
+        oLayer = Layer()
+        oLayer.mapId = self.m_oMapEntity.id
+        oLayer.areaId = self.m_oArea.id
+        oLayer.pluginId = self.m_oPluginEntity.id
+        oLayer.layerId = "rise:" + sLayerName
+        oLayer.geoserverUrl = self.m_oConfig.geoserver.address
+        if not oLayer.geoserverUrl.endswith('/'):
+            oLayer.geoserverUrl = oLayer.geoserverUrl + '/'
+        oLayer.geoserverUrl = oLayer.geoserverUrl + "ows?"
+        oLayer.referenceDate = fTimestamp
+        oLayer.properties = aoProperties
+        oLayer.source = self.m_oPluginEntity.name
+        oLayer.id = sLayerName
+
+        return oLayer
+
+    def publishRasterLayer(self, sFileName):
+        try:
+            sLocalFilePath = wasdi.getPath(sFileName)
+            oGeoserverService = GeoserverService()
+            sLayerName = Path(str(sLocalFilePath)).stem
+
+            oWorkspace = oGeoserverService.getWorkspace(self.m_oConfig.geoserver.workspace)
+
+            if oWorkspace is None:
+                oGeoserverService.createWorkspace(self.m_oConfig.geoserver.workspace)
+
+            oStore = oGeoserverService.publishRasterLayer(sLocalFilePath, self.m_oConfig.geoserver.workspace, sLayerName)
+            os.remove(sLocalFilePath)
+
+            if oStore is not None:
+                return True
+            else:
+                return False
+        except Exception as oEx:
+            logging.error("RiseMap Engine exception " + str(oEx))
+
+        return False
