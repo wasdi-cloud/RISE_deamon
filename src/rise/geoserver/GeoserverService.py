@@ -117,12 +117,13 @@ class GeoserverService:
         return False
 
 
-    def publishShapeLayer(self, sShapeFilePath, sWorkspace, sDataStoreName):
+    def publishShapeLayer(self, sShapeFilePath, sWorkspace, sDataStoreName, sStyleName=None):
         """
         Publish a layer starting from a shapefile in Geoserver
         :param sShapeFilePath: the path to the shapefile
         :param sWorkspace: the name of the workspace
         :param sDataStoreName: the name of the datastore
+        :param sStyleName: the style for the layer
         :return: the newly created storage
         """
 
@@ -147,8 +148,17 @@ class GeoserverService:
 
             if oShapeDatastore is None:
                 logging.warning("GeoserverService.publishShapeLayer. Shape layer not published in Geoserver")
+                return None
 
             logging.info("GeoserverService.publishShapeLayer Shape layer published in Geoserver")
+
+            if sStyleName is not None:
+                sFileNameWithoutExtension = os.path.basename(sShapeFilePath)[:-4]
+                bStyleResult = oService.publishStyle(sStyleName, sLayerName=sFileNameWithoutExtension, sWorkspaceName=sWorkspaceName)
+
+                if not bStyleResult:
+                    logging.warning("GeoserverService.publishShapeLayer. There was an error adding the style to the layer")
+
             return oShapeDatastore
 
         except Exception as oEx:
@@ -220,6 +230,7 @@ class GeoserverService:
         return None
 
     def publishStyle(self, sStyleName, sLayerName, sWorkspaceName):
+        # TODO: so far we assume that the style is already in geoserver. We should handle the case where the style it is not there
         """
         Add a style to a layer
         :param sStyleName: the style name (should be already in Geoserver)
