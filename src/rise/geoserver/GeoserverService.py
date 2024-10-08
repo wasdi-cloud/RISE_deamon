@@ -7,6 +7,11 @@ from src.rise.geoserver.GeoserverClient import GeoserverClient
 class GeoserverService:
 
     def getWorkspace(self, sWorkspaceName):
+        """
+        Retrieve the workspace, given its name
+        :param sWorkspaceName: the workspace name
+        :return: the workspace with the given name, None if the workspace was not found
+        """
 
         if sWorkspaceName is None or sWorkspaceName == '':
             logging.warning(f"GeoserverService.getWorkspace. Workspace named {sWorkspaceName} not in Geoserver")
@@ -22,7 +27,37 @@ class GeoserverService:
 
         return None
 
-    def publishRasterLayer(self, sRasterFilePath, sWorkspaceName, sLayerName = None):
+    def createWorkspace(self, sWorkspaceName):
+        """
+        Create a workspace with a given name
+        :param sWorkspaceName: the name
+        :return: True if the workspace has been correctly created, False otherwise
+        """
+
+        if sWorkspaceName is None or sWorkspaceName == '':
+            logging.warning("GeoserverService.createWorkspace. Workspace name is null or empty")
+            return None
+        try:
+            oGeoClient = GeoserverClient().client
+            oGeoClient.create_workspace(sWorkspaceName)
+
+            # to make sure that the workspace has been correctly created, we try to retrieve it after creation
+            oWorkspace = oGeoClient.get_workspace(sWorkspaceName)
+
+            return oWorkspace is not None
+        except Exception as oEx:
+            logging.error(f"GeoserverService.createWorkspace. Exception {oEx}")
+
+        return False
+
+    def publishRasterLayer(self, sRasterFilePath, sWorkspaceName, sLayerName, sStyleName = None):
+        """
+        Publish a raster layer on Geoserver
+        :param sRasterFilePath: path to the raster file
+        :param sWorkspaceName: name of the workspace in Geoserver
+        :param sLayerName: the name of the layer
+        :return: the newly created storage
+        """
 
         if sRasterFilePath is None or sRasterFilePath == '' \
                 or sWorkspaceName is None or sWorkspaceName == '':
@@ -43,6 +78,13 @@ class GeoserverService:
                 return None
 
             logging.info("GeoserverService.publishRasterLayer. Layer published on Geoserver")
+
+            if sLayerName is not None:
+                bStyleResult = self.publishStyle(sStyleName, sLayerName, sWorkspaceName)
+
+                if not bStyleResult:
+                    logging.warning("GeoserverService.publishRasterLayer. There was an error adding the style to the layer")
+
             return oCoverageStore
 
         except Exception as oEx:
@@ -50,6 +92,12 @@ class GeoserverService:
 
 
     def deleteRasterLayer(self, sLayerName, sWorkspace):
+        """
+        Delete the raster layer and the corresponding storage from Geoserver
+        :param sLayerName: the name of the layer to delete
+        :param sWorkspace: the name of the workspace on Geoserver
+        :return: True if the layer was successfully deleted, False otherwise
+        """
         if sWorkspace is None or sWorkspace == '' \
                 or sLayerName is None or sLayerName == '':
             logging.warning("GeoserverService.deleteRasterLayer. One or more input parameters are empty")
@@ -70,6 +118,13 @@ class GeoserverService:
 
 
     def publishShapeLayer(self, sShapeFilePath, sWorkspace, sDataStoreName):
+        """
+        Publish a layer starting from a shapefile in Geoserver
+        :param sShapeFilePath: the path to the shapefile
+        :param sWorkspace: the name of the workspace
+        :param sDataStoreName: the name of the datastore
+        :return: the newly created storage
+        """
 
         if sShapeFilePath is None or sShapeFilePath == '' \
                 or sWorkspace is None or sWorkspace == '' \
@@ -102,6 +157,12 @@ class GeoserverService:
         return None
 
     def deleteShapeLayer(self, sDataStoreName, sWorkspace):
+        """
+        Delete a vector layer from Geoserver
+        :param sDataStoreName: the name of the datastore
+        :param sWorkspace: the name of the workspace
+        :return: True if the layer was correctly removed from Geoserver, False otherwise
+        """
 
         if sWorkspace is None or sWorkspace == '' \
                 or sDataStoreName is None or sDataStoreName == '':
@@ -122,6 +183,11 @@ class GeoserverService:
         return False
 
     def listAllLayers(self, sWorkspace):
+        """
+        List all the layers published in a given workspace
+        :param sWorkspace: the name of the workspace
+        :return: the list of layers in a given workspace
+        """
         try:
             oGeoClient = GeoserverClient().client
             oLayers = oGeoClient.get_layers(workspace=sWorkspace)
@@ -130,6 +196,63 @@ class GeoserverService:
         except Exception as oEx:
             logging.error(f"GeoserverService.listAllLayers. Exception {oEx}")
         return None
+
+    def existsLayer(self, sLayerName):
+        """
+        Check the existance of a layer in Geoserver
+        :param sLayerName: the name of the layer
+        :return: True if the layer with the existing name exists in Geoserver, False otherwise
+        """
+
+        if sLayerName is None or sLayerName == '':
+            logging.warning("GeoserverService.existsLayer. Layer name not specified")
+            return None
+
+        try:
+            oGeoClient = GeoserverClient().client
+            oLayer = oGeoClient.get_layer(layer_name='layer_name')
+
+            return oLayer is not None
+
+        except Exception as oEx:
+            logging.error(f"GeoserverService.existsLayer. Exception {oEx}")
+
+        return None
+
+    def publishStyle(self, sStyleName, sLayerName, sWorkspaceName):
+        """
+        Add a style to a layer
+        :param sStyleName: the style name (should be already in Geoserver)
+        :param sLayerName: the name of the layer
+        :param sWorkspaceName: the name of the workspace
+        :return: True if the style was added successfully, False otherwise
+        """
+
+        if sStyleName is None:
+            logging.warning(f"GeoserverService.existsLayer. Style name not specified")
+            return None
+
+        if sLayerName is None:
+            logging.warning(f"GeoserverService.existsLayer. Layer name not specified")
+            return None
+
+        if sWorkspaceName is None:
+            logging.warning(f"GeoserverService.existsLayer. Workspace name not specified")
+            return None
+
+        try:
+            oGeoClient = GeoserverClient().client
+            iStatusCode = oGeoClient.publish_style(layer_name=sLayerName, style_name=sStyleName, workspace=sWorkspaceName)
+
+            if 200 <= iStatusCode <= 299:
+                return True
+
+            return False
+
+        except Exception as oEx:
+            logging.error(f"GeoserverService.existsLayer. Exception {oEx}")
+
+        return False
 
 
 
