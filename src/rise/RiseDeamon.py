@@ -61,7 +61,7 @@ class RiseDeamon:
                 aoNewAreas.append(oArea)
 
         if len(aoNewAreas) > 0:
-            logging.info("RiseDeamon.run: handle new areas")
+            logging.info("RiseDeamon.run: handle new areas found " + str(len(aoNewAreas)))
             self.handleNewAreas(aoNewAreas)
         else:
             logging.info("RiseDeamon.run: no new area found")

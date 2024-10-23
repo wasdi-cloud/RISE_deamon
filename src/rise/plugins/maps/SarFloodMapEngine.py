@@ -20,31 +20,29 @@ class SarFloodMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        self.runHasardArchive(self.m_oMapEntity, True)
+        self.runHasardArchive(True)
 
         if self.m_oArea.supportArchive:
-            self.runHasardArchive(self.m_oMapEntity, False)
+            self.runHasardArchive(False)
 
-    def runHasardArchive(self, oMap, bOnlyLastWeek):
+    def runHasardArchive(self, bOnlyLastWeek):
         try:
-            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(oMap)
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
-            aoSarArchiveParameters = None
+            oMapConfig = self.getMapConfig()
 
-            oMapConfig = None
+            if oMapConfig is None:
+                logging.warning("SarFloodMapEngine.runHasardArchive: impossible to find configuration for map " + self.m_oMapEntity.id)
+                return
 
-            for oMapConfig in self.m_oPluginConfig.maps:
-                if oMapConfig.id == oMap.id:
-                    aoSarArchiveParameters = oMapConfig.params
-                    break
+            aoSarArchiveParameters = oMapConfig.params
 
             if aoSarArchiveParameters is None:
-                logging.warning("SarFloodMapEngine.runHasardArchive: impossible to find parameters for map " + oMap.id)
+                logging.warning("SarFloodMapEngine.runHasardArchive: impossible to find parameters for map " + self.m_oMapEntity.id)
                 return
 
             oWasdiTaskRepository = WasdiTaskRepository()
-            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, oMap.id, self.m_oPluginEntity.id,
-                                                                sWorkspaceId)
+            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id, sWorkspaceId)
 
             if aoExistingTasks is not None:
                 if len(aoExistingTasks) > 0:
@@ -67,12 +65,12 @@ class SarFloodMapEngine(RiseMapEngine):
                 iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
 
             aoSarArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
-            aoSarArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + oMap.id.replace("_", "")
+            aoSarArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoSarArchiveParameters)
             oWasdiTask = WasdiTask()
             oWasdiTask.areaId = self.m_oArea.id
-            oWasdiTask.mapId = oMap.id
+            oWasdiTask.mapId = self.m_oMapEntity.id
             oWasdiTask.id = sProcessorId
             oWasdiTask.pluginId = self.m_oPluginEntity.id
             oWasdiTask.workspaceId = sWorkspaceId
@@ -84,7 +82,7 @@ class SarFloodMapEngine(RiseMapEngine):
             oWasdiTaskRepository.addEntity(oWasdiTask)
             logging.info(
                 "SarFloodMapEngine.runHasardArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                    oMap) + " for Area " + self.m_oArea.name)
+                    self.m_oMapEntity) + " for Area " + self.m_oArea.name)
 
             return True
         except Exception as oEx:
@@ -103,22 +101,22 @@ class SarFloodMapEngine(RiseMapEngine):
                 logging.warning("SarFloodMapEngine.handleTask: we do not have files in the workspace... ")
                 return False
 
+            bShortArchive = False
             if "shortArchive" in oTask.pluginPayload:
-                if oTask.pluginPayload["shortArchive"]:
-                    return self.handleShortArchiveTask(oTask, asWorkspaceFiles)
+                bShortArchive = oTask.pluginPayload["shortArchive"]
 
-            return True
+            return self.handleArchiveTask(oTask, asWorkspaceFiles, bShortArchive)
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleTask: exception " + str(oEx))
             return False
 
-    def handleShortArchiveTask(self, oTask, asWorkspaceFiles):
+    def handleArchiveTask(self, oTask, asWorkspaceFiles, bOnlyLastWeek):
 
         fFirstMapTimestamp = -1.0
         fLastMapTimestamp = -1.0
 
         try:
-            logging.info("SarFloodMapEngine.handleTask: task done, lets proceed!")
+            logging.info("SarFloodMapEngine.handleArchiveTask: task done, lets proceed!")
 
             sBaseName = oTask.inputParams["MOSAICBASENAME"]
             sStartDate = oTask.inputParams["ARCHIVE_START_DATE"]
@@ -127,13 +125,13 @@ class SarFloodMapEngine(RiseMapEngine):
             try:
                 oStartDay = datetime.strptime(sStartDate, '%Y-%m-%d')
             except:
-                logging.error('SarFloodMapEngine.handleShortArchiveTask: Start Date not valid')
+                logging.error('SarFloodMapEngine.handleArchiveTask: Start Date not valid')
                 return False
 
             try:
                 oEndDay = datetime.strptime(sEndDate, '%Y-%m-%d')
             except:
-                logging.error('SarFloodMapEngine.handleShortArchiveTask: End Date not valid')
+                logging.error('SarFloodMapEngine.handleArchiveTask: End Date not valid')
                 return False
 
             oTimeDelta = timedelta(days=1)
@@ -145,36 +143,40 @@ class SarFloodMapEngine(RiseMapEngine):
                 sFileName = sBaseName + "_" +sDate + "_flood.tif"
 
                 if sFileName not in asWorkspaceFiles:
-                    logging.info("SarFloodMapEngine.handleShortArchiveTask: " + sFileName + " not present, continue")
                     oActualDate = oActualDate + oTimeDelta
                     continue
 
-                logging.info("SarFloodMapEngine.handleShortArchiveTask: Found " + sFileName + ", publish it")
+                logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
 
                 sLayerName = Path(sFileName).stem
 
-                if not self.publishRasterLayer(sFileName):
-                    logging.error(
-                        "SarFloodMapEngine.handleShortArchiveTask: impossible to get the coverage store for " + sFileName)
-                else:
-                    oLayerRepository = LayerRepository()
-                    oLayer = self.getLayerEntity(sLayerName, oActualDate.timestamp())
-                    oLayerRepository.addEntity(oLayer)
+                oLayer = self.getLayerEntity(sLayerName, oActualDate.timestamp())
 
-                    if fFirstMapTimestamp == -1.0:
-                        fFirstMapTimestamp = oLayer.referenceDate
-                    elif oLayer.referenceDate < fFirstMapTimestamp:
-                        fFirstMapTimestamp = oLayer.referenceDate
+                if bOnlyLastWeek:
+                    logging.info("SarFloodMapEngine.handleArchiveTask: publish " + sFileName)
+                    sStyle = self.getStyleForMap()
+                    if not self.publishRasterLayer(sFileName, sStyle):
+                        logging.error("SarFloodMapEngine.handleArchiveTask: impossible to publish " + sFileName)
+                    else:
+                        oLayer.published = True
 
-                    if fLastMapTimestamp == -1.0:
-                        fLastMapTimestamp = oLayer.referenceDate
-                    elif oLayer.referenceDate > fLastMapTimestamp:
-                        fLastMapTimestamp = oLayer.referenceDate
+                oLayerRepository = LayerRepository()
+                oLayerRepository.addEntity(oLayer)
+
+                if fFirstMapTimestamp == -1.0:
+                    fFirstMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate < fFirstMapTimestamp:
+                    fFirstMapTimestamp = oLayer.referenceDate
+
+                if fLastMapTimestamp == -1.0:
+                    fLastMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate > fLastMapTimestamp:
+                    fLastMapTimestamp = oLayer.referenceDate
 
                 oActualDate = oActualDate + oTimeDelta
             return True
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.handleShortArchiveTask: exception " + str(oEx))
+            logging.error("SarFloodMapEngine.handleArchiveTask: exception " + str(oEx))
             return False
         finally:
             # In any case, this task is done

@@ -13,6 +13,7 @@ class Layer(RiseEntity):
         self.pluginId = str()
         self.areaId = str()
         self.id = str()
+        self.published = False
 
         for key, value in kwargs.items():
             setattr(self, key, value)

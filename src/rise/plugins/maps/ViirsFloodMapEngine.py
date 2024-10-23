@@ -17,30 +17,25 @@ class ViirsFloodMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        self.runViirsArchive(self.m_oMapEntity, True)
+        self.runViirsArchive(True)
 
         if self.m_oArea.supportArchive:
-            self.runViirsArchive(self.m_oMapEntity, False)
+            self.runViirsArchive(False)
 
-    def runViirsArchive(self, oMap, bOnlyLastWeek):
+    def runViirsArchive(self, bOnlyLastWeek):
         try:
-            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(oMap)
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
-            aoViirsArchiveParameters = None
+            oMapConfig = self.getMapConfig()
 
-            oMapConfig = None
-
-            for oMapConfig in self.m_oPluginConfig.maps:
-                if oMapConfig.id == oMap.id:
-                    aoViirsArchiveParameters = oMapConfig.params
-                    break
+            aoViirsArchiveParameters = oMapConfig.params
 
             if aoViirsArchiveParameters is None:
-                logging.warning("ViirsFloodMapEngine.runViirsArchive: impossible to find parameters for map " + oMap.id)
+                logging.warning("ViirsFloodMapEngine.runViirsArchive: impossible to find parameters for map " + self.m_oMapEntity.id)
                 return
 
             oWasdiTaskRepository = WasdiTaskRepository()
-            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, oMap.id, self.m_oPluginEntity.id,                                                                sWorkspaceId)
+            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id,                                                                sWorkspaceId)
 
             if aoExistingTasks is not None:
                 if len(aoExistingTasks) > 0:
@@ -63,12 +58,12 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
 
             aoViirsArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
-            aoViirsArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + oMap.id.replace("_", "")
+            aoViirsArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsArchiveParameters)
             oWasdiTask = WasdiTask()
             oWasdiTask.areaId = self.m_oArea.id
-            oWasdiTask.mapId = oMap.id
+            oWasdiTask.mapId = self.m_oMapEntity.id
             oWasdiTask.id = sProcessorId
             oWasdiTask.pluginId = self.m_oPluginEntity.id
             oWasdiTask.workspaceId = sWorkspaceId
@@ -79,7 +74,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             oWasdiTaskRepository.addEntity(oWasdiTask)
             logging.info(
-                "ViirsFloodMapEngine.runViirsArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(oMap) + " for Area " + self.m_oArea.name)
+                "ViirsFloodMapEngine.runViirsArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(self.m_oMapEntity) + " for Area " + self.m_oArea.name)
 
             return True
         except Exception as oEx:
@@ -98,11 +93,11 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.warning("ViirsFloodMapEngine.handleTask: we do not have files in the workspace... ")
                 return False
 
+            bShortArchive = False
             if "shortArchive" in oTask.pluginPayload:
-                if oTask.pluginPayload["shortArchive"]:
-                    return self.handleArchiveTask(oTask, asWorkspaceFiles, oTask.pluginPayload["shortArchive"])
+                bShortArchive = oTask.pluginPayload["shortArchive"]
 
-            return True
+            return self.handleArchiveTask(oTask, asWorkspaceFiles, bShortArchive)
         except Exception as oEx:
             logging.error("ViirsFloodMapEngine.handleTask: exception " + str(oEx))
             return False
@@ -140,32 +135,35 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 sFileName = sBaseName + "_" +sDate + "_bbox.tif"
 
                 if sFileName not in asWorkspaceFiles:
-                    logging.info("ViirsFloodMapEngine.handleShortArchiveTask: " + sFileName + " not present, continue")
                     oActualDate = oActualDate + oTimeDelta
                     continue
 
+                logging.info("ViirsFloodMapEngine.handleShortArchiveTask: Found " + sFileName + ", publish it")
+
+                sLayerName = Path(sFileName).stem
+
+                oLayer = self.getLayerEntity(sLayerName, oActualDate.timestamp())
+
                 if bOnlyLastWeek:
-                    logging.info("ViirsFloodMapEngine.handleShortArchiveTask: Found " + sFileName + ", publish it")
-
-                    sLayerName = Path(sFileName).stem
-
-                    if not self.publishRasterLayer(sFileName):
-                        logging.error(
-                            "ViirsFloodMapEngine.handleShortArchiveTask: impossible to get the coverage store for " + sFileName)
+                    logging.info("ViirsFloodMapEngine.handleArchiveTask: publish " + sFileName)
+                    sStyle = self.getStyleForMap()
+                    if not self.publishRasterLayer(sFileName, sStyle):
+                        logging.error("ViirsFloodMapEngine.handleArchiveTask: impossible to publish " + sFileName)
                     else:
-                        oLayerRepository = LayerRepository()
-                        oLayer = self.getLayerEntity(sLayerName, oActualDate.timestamp())
-                        oLayerRepository.addEntity(oLayer)
+                        oLayer.published = True
 
-                        if fFirstMapTimestamp == -1.0:
-                            fFirstMapTimestamp = oLayer.referenceDate
-                        elif oLayer.referenceDate < fFirstMapTimestamp:
-                            fFirstMapTimestamp = oLayer.referenceDate
+                oLayerRepository = LayerRepository()
+                oLayerRepository.addEntity(oLayer)
 
-                        if fLastMapTimestamp == -1.0:
-                            fLastMapTimestamp = oLayer.referenceDate
-                        elif oLayer.referenceDate > fLastMapTimestamp:
-                            fLastMapTimestamp = oLayer.referenceDate
+                if fFirstMapTimestamp == -1.0:
+                    fFirstMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate < fFirstMapTimestamp:
+                    fFirstMapTimestamp = oLayer.referenceDate
+
+                if fLastMapTimestamp == -1.0:
+                    fLastMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate > fLastMapTimestamp:
+                    fLastMapTimestamp = oLayer.referenceDate
 
                 oActualDate = oActualDate + oTimeDelta
             return True

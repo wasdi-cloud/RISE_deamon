@@ -29,6 +29,27 @@ class RiseMapEngine:
         except Exception as oEx:
             logging.error("RiseMapEngine.init: exception " + str(oEx))
 
+    def getMapConfig(self):
+        for oMapConfig in self.m_oPluginConfig.maps:
+            if oMapConfig.id == self.m_oMapEntity.id:
+                return oMapConfig
+
+        return None
+
+    def getStyleForMap(self):
+        oMapConfig = self.getMapConfig()
+
+        if oMapConfig is None:
+            return None
+
+        sStyle = None
+        try:
+            sStyle = oMapConfig.style
+        except:
+            sStyle = None
+
+        return sStyle
+
     def triggerNewAreaMaps(self):
         logging.info("RiseMapEngine.triggerNewAreaMaps")
 
@@ -73,7 +94,7 @@ class RiseMapEngine:
         oLayer.geoserverUrl = self.m_oConfig.geoserver.address
         if not oLayer.geoserverUrl.endswith('/'):
             oLayer.geoserverUrl = oLayer.geoserverUrl + '/'
-        oLayer.geoserverUrl = oLayer.geoserverUrl + "ows?"
+        oLayer.geoserverUrl = oLayer.geoserverUrl + self.m_oConfig.geoserver.workspace + "/wms?"
         oLayer.referenceDate = fTimestamp
         oLayer.properties = aoProperties
         oLayer.source = self.m_oPluginEntity.name
@@ -81,7 +102,7 @@ class RiseMapEngine:
 
         return oLayer
 
-    def publishRasterLayer(self, sFileName):
+    def publishRasterLayer(self, sFileName, sStyleName=None):
         try:
             sLocalFilePath = wasdi.getPath(sFileName)
             oGeoserverService = GeoserverService()
@@ -92,7 +113,7 @@ class RiseMapEngine:
             if oWorkspace is None:
                 oGeoserverService.createWorkspace(self.m_oConfig.geoserver.workspace)
 
-            oStore = oGeoserverService.publishRasterLayer(sLocalFilePath, self.m_oConfig.geoserver.workspace, sLayerName)
+            oStore = oGeoserverService.publishRasterLayer(sLocalFilePath, self.m_oConfig.geoserver.workspace, sLayerName, sStyleName)
             os.remove(sLocalFilePath)
 
             if oStore is not None:
