@@ -137,5 +137,7 @@ class RisePlugin:
 
         return oMapEngine.handleTask(oTask)
 
+    def getPluginConfig(self):
+        return self.m_oPluginConfig
 
 

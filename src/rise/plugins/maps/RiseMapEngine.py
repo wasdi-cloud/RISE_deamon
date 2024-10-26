@@ -30,8 +30,11 @@ class RiseMapEngine:
             logging.error("RiseMapEngine.init: exception " + str(oEx))
 
     def getMapConfig(self):
+        return self.getMapConfig(self.m_oMapEntity.id)
+
+    def getMapConfig(self, sMapId):
         for oMapConfig in self.m_oPluginConfig.maps:
-            if oMapConfig.id == self.m_oMapEntity.id:
+            if oMapConfig.id == sMapId:
                 return oMapConfig
 
         return None

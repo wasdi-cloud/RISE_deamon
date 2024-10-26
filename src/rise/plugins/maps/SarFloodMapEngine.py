@@ -23,7 +23,7 @@ class SarFloodMapEngine(RiseMapEngine):
         self.runHasardArchive(True)
 
         if self.m_oArea.supportArchive:
-            self.runHasardArchive(False)
+            self.runIntegratedArchive()
 
     def runHasardArchive(self, bOnlyLastWeek):
         try:
@@ -87,6 +87,87 @@ class SarFloodMapEngine(RiseMapEngine):
             return True
         except Exception as oEx:
             logging.error("SarFloodMapEngine.runHasardArchive: exception " + str(oEx))
+
+    def runIntegratedArchive(self):
+        try:
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+            oMapConfig = self.getMapConfig("integrated_archive")
+
+            if oMapConfig is None:
+                logging.warning("SarFloodMapEngine.runIntegratedArchive: impossible to find configuration for map " + self.m_oMapEntity.id)
+                return
+
+            aoIntegratedArchiveParameters = oMapConfig.params
+
+            if aoIntegratedArchiveParameters is None:
+                logging.warning("SarFloodMapEngine.runIntegratedArchive: impossible to find parameters for map " + self.m_oMapEntity.id)
+                return
+
+            oWasdiTaskRepository = WasdiTaskRepository()
+            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id, sWorkspaceId)
+
+            if aoExistingTasks is not None:
+                if len(aoExistingTasks) > 0:
+                    for oTask in aoExistingTasks:
+                        if "integratedArchive" in oTask.pluginPayload:
+                            logging.info("SarFloodMapEngine.runIntegratedArchive: task already on-going")
+                            return True
+
+            aoIntegratedArchiveParameters = vars(aoIntegratedArchiveParameters)
+            aoIntegratedArchiveParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
+
+            iEnd = datetime.today()
+
+            aoIntegratedArchiveParameters["ARCHIVE_START_DATE"] = oMapConfig.startArchiveDate
+            iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
+
+            aoIntegratedArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
+            aoIntegratedArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+
+            oPluginConfig = self.m_oPluginEngine.getPluginConfig()
+
+            sUrbanMapsPluginId = "rise_building_plugin"
+
+            if oPluginConfig is not None:
+                try:
+                    sUrbanMapsPluginId = oPluginConfig.building_plugin_id
+                except:
+                    pass
+
+            sUrbanMapsMapId = "building_cw"
+
+            if oPluginConfig is not None:
+                try:
+                    sUrbanMapsMapId = oPluginConfig.building_map_id
+                except:
+                    pass
+
+            # We need to interact with the buildings. Here we pass to the app the workspace and the area name
+            sUrbanMapsWorkspaceName = self.m_oArea.id + "|" + sUrbanMapsPluginId + "|" + sUrbanMapsMapId
+            aoIntegratedArchiveParameters["URBAN_MAPS_WS_NAME"] = sUrbanMapsWorkspaceName
+            aoIntegratedArchiveParameters["areaName"] = self.m_oArea.id.replace("-", "") + sUrbanMapsMapId.replace("_", "")
+
+            sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoIntegratedArchiveParameters)
+            oWasdiTask = WasdiTask()
+            oWasdiTask.areaId = self.m_oArea.id
+            oWasdiTask.mapId = self.m_oMapEntity.id
+            oWasdiTask.id = sProcessorId
+            oWasdiTask.pluginId = self.m_oPluginEntity.id
+            oWasdiTask.workspaceId = sWorkspaceId
+            oWasdiTask.startDate = datetime.now().timestamp()
+            oWasdiTask.inputParams = aoIntegratedArchiveParameters
+            oWasdiTask.status = "CREATED"
+            oWasdiTask.pluginPayload["integratedArchive"] = True
+
+            oWasdiTaskRepository.addEntity(oWasdiTask)
+            logging.info(
+                "SarFloodMapEngine.runIntegratedArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                    self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+
+            return True
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.runIntegratedArchive: exception " + str(oEx))
 
     def handleTask(self, oTask):
         try:

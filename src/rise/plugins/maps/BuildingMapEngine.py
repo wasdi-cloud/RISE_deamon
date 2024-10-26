@@ -58,7 +58,7 @@ class BuildingMapEngine(RiseMapEngine):
                 iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
 
             aoAppParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
-            aoAppParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+            aoAppParameters["OUTPUT_BASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
             oWasdiTask = WasdiTask()
