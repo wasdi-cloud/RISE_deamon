@@ -20,12 +20,13 @@ class SarFloodMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        self.runHasardArchive(True)
+        self.runHasardArchive()
 
+    def triggerNewAreaArchives(self):
         if self.m_oArea.supportArchive:
             self.runIntegratedArchive()
 
-    def runHasardArchive(self, bOnlyLastWeek):
+    def runHasardArchive(self):
         try:
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
@@ -48,7 +49,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 if len(aoExistingTasks) > 0:
                     for oTask in aoExistingTasks:
                         if "shortArchive" in oTask.pluginPayload:
-                            if oTask.pluginPayload["shortArchive"] == bOnlyLastWeek:
+                            if oTask.pluginPayload["shortArchive"]:
                                 logging.info("SarFloodMapEngine.runHasardArchive: task already on-going")
                                 return True
 
@@ -57,12 +58,8 @@ class SarFloodMapEngine(RiseMapEngine):
 
             iEnd = datetime.today()
 
-            if bOnlyLastWeek:
-                iStart = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
-                aoSarArchiveParameters["ARCHIVE_START_DATE"] = iStart.strftime("%Y-%m-%d")
-            else:
-                aoSarArchiveParameters["ARCHIVE_START_DATE"] = oMapConfig.startArchiveDate
-                iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
+            iStart = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
+            aoSarArchiveParameters["ARCHIVE_START_DATE"] = iStart.strftime("%Y-%m-%d")
 
             aoSarArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
             aoSarArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
@@ -77,7 +74,7 @@ class SarFloodMapEngine(RiseMapEngine):
             oWasdiTask.startDate = datetime.now().timestamp()
             oWasdiTask.inputParams = aoSarArchiveParameters
             oWasdiTask.status = "CREATED"
-            oWasdiTask.pluginPayload["shortArchive"] = bOnlyLastWeek
+            oWasdiTask.pluginPayload["shortArchive"] = True
 
             oWasdiTaskRepository.addEntity(oWasdiTask)
             logging.info(
@@ -280,3 +277,6 @@ class SarFloodMapEngine(RiseMapEngine):
                 # Update the area if needed
                 oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)
+
+    def updateNewMaps(self):
+        pass

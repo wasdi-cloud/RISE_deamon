@@ -15,8 +15,8 @@ class BuildingMapEngine(RiseMapEngine):
     def triggerNewAreaMaps(self):
         self.runBuildingsArchive(True)
 
-        if self.m_oArea.supportArchive:
-            self.runBuildingsArchive(False)
+    def triggerNewAreaArchives(self):
+        logging.info("Building long archive is handled by the integrated chain")
 
     def runBuildingsArchive(self, bOnlyLastWeek):
         try:
@@ -86,3 +86,6 @@ class BuildingMapEngine(RiseMapEngine):
             logging.info("BuildingMapEngine.handleTask: handle task " + oTask.id)
         except Exception as oEx:
             logging.error("BuildingMapEngine.handleTask: exception " + str(oEx))
+
+    def updateNewMaps(self):
+        pass

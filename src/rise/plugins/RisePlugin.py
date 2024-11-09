@@ -91,8 +91,12 @@ class RisePlugin:
         logging.debug("RisePlugin.triggerNewAreaMaps")
         try:
             for oMapEngine in self.m_aoMapEngines:
-                logging.info("RisePlugin.triggerNewAreaMaps: Starting Archive for map " + oMapEngine.getName())
+                logging.info("RisePlugin.triggerNewAreaMaps: Starting Last Period for map " + oMapEngine.getName())
                 oMapEngine.triggerNewAreaMaps()
+
+            for oMapEngine in self.m_aoMapEngines:
+                logging.info("RisePlugin.triggerNewAreaMaps: Starting Archive for map " + oMapEngine.getName())
+                oMapEngine.triggerNewAreaArchives()
 
         except Exception as oEx:
             logging.error("RisePlugin.triggerNewAreaMaps: exception " + str(oEx))
@@ -140,4 +144,16 @@ class RisePlugin:
     def getPluginConfig(self):
         return self.m_oPluginConfig
 
+    def updateNewMaps(self):
+        """
+        Trigger new area processors for this plugin
+        :return:
+        """
+        logging.debug("RisePlugin.updateNewMaps")
+        try:
+            for oMapEngine in self.m_aoMapEngines:
+                logging.info("RisePlugin.updateNewMaps: Starting today map for " + oMapEngine.getName())
+                oMapEngine.updateNewMaps()
 
+        except Exception as oEx:
+            logging.error("RisePlugin.updateNewMaps: exception " + str(oEx))

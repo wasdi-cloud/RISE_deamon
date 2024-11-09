@@ -11,8 +11,14 @@ class DroughtEcostressMapEngine(RiseMapEngine):
     def triggerNewAreaMaps(self):
         pass
 
+    def triggerNewAreaArchives(self):
+        pass
+
     def handleTask(self, oTask):
         try:
             logging.info("DroughtEcostressMapEngine.handleTask: handle task " + oTask.id)
         except Exception as oEx:
             logging.error("DroughtEcostressMapEngine.handleTask: exception " + str(oEx))
+
+    def updateNewMaps(self):
+        pass

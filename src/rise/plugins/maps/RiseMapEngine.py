@@ -29,10 +29,10 @@ class RiseMapEngine:
         except Exception as oEx:
             logging.error("RiseMapEngine.init: exception " + str(oEx))
 
-    def getMapConfig(self):
-        return self.getMapConfig(self.m_oMapEntity.id)
+    def getMapConfig(self, sMapId=None):
+        if sMapId is None:
+            sMapId = self.m_oMapEntity.id
 
-    def getMapConfig(self, sMapId):
         for oMapConfig in self.m_oPluginConfig.maps:
             if oMapConfig.id == sMapId:
                 return oMapConfig
@@ -55,6 +55,9 @@ class RiseMapEngine:
 
     def triggerNewAreaMaps(self):
         logging.info("RiseMapEngine.triggerNewAreaMaps")
+
+    def triggerNewAreaArchives(self):
+        logging.info("RiseMapEngine.triggerNewAreaArchives")
 
     def getName(self):
         if self.m_oMapEntity is not None:
@@ -127,3 +130,6 @@ class RiseMapEngine:
             logging.error("RiseMap Engine exception " + str(oEx))
 
         return False
+
+    def updateNewMaps(self):
+        pass

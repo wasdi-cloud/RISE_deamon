@@ -19,8 +19,8 @@ class ViirsFloodMapEngine(RiseMapEngine):
     def triggerNewAreaMaps(self):
         self.runViirsArchive(True)
 
-        if self.m_oArea.supportArchive:
-            self.runViirsArchive(False)
+    def triggerNewAreaArchives(self):
+        self.runViirsArchive(False)
 
     def runViirsArchive(self, bOnlyLastWeek):
         try:
@@ -191,3 +191,6 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 # Update the area if needed
                 oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)
+
+    def updateNewMaps(self):
+        pass

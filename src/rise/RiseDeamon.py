@@ -57,7 +57,7 @@ class RiseDeamon:
 
         # That we recognize from the archive start and end date
         for oArea in aoAreas:
-            if oArea.archiveEndDate < 0.0 and oArea.archiveStartDate < 0.0:
+            if oArea.newCreatedArea:
                 aoNewAreas.append(oArea)
 
         if len(aoNewAreas) > 0:
@@ -116,6 +116,8 @@ class RiseDeamon:
         :param aoNewAreas: List of new area to process
         :return:
         """
+        oAreaRepository = AreaRepository()
+
         # For all the new area
         for oArea in aoNewAreas:
 
@@ -124,21 +126,50 @@ class RiseDeamon:
             # For all the plugins activated
             for sPluginId in oArea.plugins:
 
-                # Create instance of this plugin
-                oRisePlugin = self.getRisePluginEngine(sPluginId, oArea)
+                try:
+                    # Create instance of this plugin
+                    oRisePlugin = self.getRisePluginEngine(sPluginId, oArea)
 
-                if oRisePlugin is None:
-                    # We should find it!
-                    logging.warning("RiseDeamon.handleNewAreas: Jumping plugin " + sPluginId)
-                    continue
+                    if oRisePlugin is None:
+                        # We should find it!
+                        logging.warning("RiseDeamon.handleNewAreas: Jumping plugin " + sPluginId)
+                        continue
 
-                # Ask the plugin to trigger the new operations
-                oRisePlugin.triggerNewAreaMaps()
+                    # Ask the plugin to trigger the new operations
+                    oRisePlugin.triggerNewAreaMaps()
+                except Exception as oEx:
+                    logging.warning("Error handling the new area " + oArea.name + " Plugin " + sPluginId + " - " + str(oEx))
+
+            # Set the area as handled
+            oArea.newCreatedArea = False
+            oAreaRepository.updateEntity(oArea)
 
         logging.info("RiseDeamon.handleNewAreas: All the new area have been processed")
 
     def updateNewMaps(self, aoAreas):
-        pass
+        # For all the new areas
+        for oArea in aoAreas:
+
+            logging.info("RiseDeamon.updateNewMaps: Trigger archives for new area " + str(oArea.name) + " ["+oArea.id + "]")
+
+            # For all the plugins activated
+            for sPluginId in oArea.plugins:
+
+                try:
+                    # Create instance of this plugin
+                    oRisePlugin = self.getRisePluginEngine(sPluginId, oArea)
+
+                    if oRisePlugin is None:
+                        # We should find it!
+                        logging.warning("RiseDeamon.updateNewMaps: Jumping plugin " + sPluginId)
+                        continue
+
+                    # Ask the plugin to trigger the new operations
+                    oRisePlugin.updateNewMaps()
+                except Exception as oEx:
+                    logging.warning("RiseDeamon.updateNewMaps: Error handling the new area " + oArea.name + " Plugin " + sPluginId + " - " + str(oEx))
+
+        logging.info("RiseDeamon.updateNewMaps: new maps processed")
 
     def checkResultsAndPublishLayers(self):
         logging.info("RiseDeamon.checkResultsAndPublishLayers: check the status of on-going processes")

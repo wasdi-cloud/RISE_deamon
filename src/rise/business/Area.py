@@ -17,6 +17,8 @@ class Area(RiseEntity):
         self.supportArchive = False
         self.archiveStartDate = float()
         self.archiveEndDate = float()
+        self.newCreatedArea = False
+
         self.id = str()
 
         for key, value in kwargs.items():
