@@ -64,22 +64,25 @@ class SarFloodMapEngine(RiseMapEngine):
             aoSarArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
             aoSarArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
-            sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoSarArchiveParameters)
-            oWasdiTask = WasdiTask()
-            oWasdiTask.areaId = self.m_oArea.id
-            oWasdiTask.mapId = self.m_oMapEntity.id
-            oWasdiTask.id = sProcessorId
-            oWasdiTask.pluginId = self.m_oPluginEntity.id
-            oWasdiTask.workspaceId = sWorkspaceId
-            oWasdiTask.startDate = datetime.now().timestamp()
-            oWasdiTask.inputParams = aoSarArchiveParameters
-            oWasdiTask.status = "CREATED"
-            oWasdiTask.pluginPayload["shortArchive"] = True
+            if not self.m_oConfig.daemon.simulate:
+                sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoSarArchiveParameters)
+                oWasdiTask = WasdiTask()
+                oWasdiTask.areaId = self.m_oArea.id
+                oWasdiTask.mapId = self.m_oMapEntity.id
+                oWasdiTask.id = sProcessorId
+                oWasdiTask.pluginId = self.m_oPluginEntity.id
+                oWasdiTask.workspaceId = sWorkspaceId
+                oWasdiTask.startDate = datetime.now().timestamp()
+                oWasdiTask.inputParams = aoSarArchiveParameters
+                oWasdiTask.status = "CREATED"
+                oWasdiTask.pluginPayload["shortArchive"] = True
 
-            oWasdiTaskRepository.addEntity(oWasdiTask)
-            logging.info(
-                "SarFloodMapEngine.runHasardArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                    self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                oWasdiTaskRepository.addEntity(oWasdiTask)
+                logging.info(
+                    "SarFloodMapEngine.runHasardArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+            else:
+                logging.warning("SarFloodMapEngine.runViirsArchive: simulation mode on - we do not run nothing")
 
             return True
         except Exception as oEx:
@@ -145,22 +148,25 @@ class SarFloodMapEngine(RiseMapEngine):
             aoIntegratedArchiveParameters["URBAN_MAPS_WS_NAME"] = sUrbanMapsWorkspaceName
             aoIntegratedArchiveParameters["areaName"] = self.m_oArea.id.replace("-", "") + sUrbanMapsMapId.replace("_", "")
 
-            sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoIntegratedArchiveParameters)
-            oWasdiTask = WasdiTask()
-            oWasdiTask.areaId = self.m_oArea.id
-            oWasdiTask.mapId = self.m_oMapEntity.id
-            oWasdiTask.id = sProcessorId
-            oWasdiTask.pluginId = self.m_oPluginEntity.id
-            oWasdiTask.workspaceId = sWorkspaceId
-            oWasdiTask.startDate = datetime.now().timestamp()
-            oWasdiTask.inputParams = aoIntegratedArchiveParameters
-            oWasdiTask.status = "CREATED"
-            oWasdiTask.pluginPayload["integratedArchive"] = True
+            if not self.m_oConfig.daemon.simulate:
+                sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoIntegratedArchiveParameters)
+                oWasdiTask = WasdiTask()
+                oWasdiTask.areaId = self.m_oArea.id
+                oWasdiTask.mapId = self.m_oMapEntity.id
+                oWasdiTask.id = sProcessorId
+                oWasdiTask.pluginId = self.m_oPluginEntity.id
+                oWasdiTask.workspaceId = sWorkspaceId
+                oWasdiTask.startDate = datetime.now().timestamp()
+                oWasdiTask.inputParams = aoIntegratedArchiveParameters
+                oWasdiTask.status = "CREATED"
+                oWasdiTask.pluginPayload["integratedArchive"] = True
 
-            oWasdiTaskRepository.addEntity(oWasdiTask)
-            logging.info(
-                "SarFloodMapEngine.runIntegratedArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                    self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                oWasdiTaskRepository.addEntity(oWasdiTask)
+                logging.info(
+                    "SarFloodMapEngine.runIntegratedArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+            else:
+                logging.warning("SarFloodMapEngine.runIntegratedArchive: simulation mode on - we do not run nothing")
 
             return True
         except Exception as oEx:

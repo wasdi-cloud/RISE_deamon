@@ -60,22 +60,25 @@ class BuildingMapEngine(RiseMapEngine):
             aoAppParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
             aoAppParameters["OUTPUT_BASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
-            sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
-            oWasdiTask = WasdiTask()
-            oWasdiTask.areaId = self.m_oArea.id
-            oWasdiTask.mapId = self.m_oMapEntity.id
-            oWasdiTask.id = sProcessorId
-            oWasdiTask.pluginId = self.m_oPluginEntity.id
-            oWasdiTask.workspaceId = sWorkspaceId
-            oWasdiTask.startDate = datetime.now().timestamp()
-            oWasdiTask.inputParams = aoAppParameters
-            oWasdiTask.status = "CREATED"
-            oWasdiTask.pluginPayload["shortArchive"] = bOnlyLastWeek
+            if not self.m_oConfig.daemon.simulate:
+                sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
+                oWasdiTask = WasdiTask()
+                oWasdiTask.areaId = self.m_oArea.id
+                oWasdiTask.mapId = self.m_oMapEntity.id
+                oWasdiTask.id = sProcessorId
+                oWasdiTask.pluginId = self.m_oPluginEntity.id
+                oWasdiTask.workspaceId = sWorkspaceId
+                oWasdiTask.startDate = datetime.now().timestamp()
+                oWasdiTask.inputParams = aoAppParameters
+                oWasdiTask.status = "CREATED"
+                oWasdiTask.pluginPayload["shortArchive"] = bOnlyLastWeek
 
-            oWasdiTaskRepository.addEntity(oWasdiTask)
-            logging.info(
-                "BuildingMapEngine.runBuildingsArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                    self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                oWasdiTaskRepository.addEntity(oWasdiTask)
+                logging.info(
+                    "BuildingMapEngine.runBuildingsArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+            else:
+                logging.warning("SarFloodMapEngine.runBuildingsArchive: simulation mode on - we do not run nothing")
 
             return True
         except Exception as oEx:
