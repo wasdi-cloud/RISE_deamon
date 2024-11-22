@@ -135,7 +135,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             while oActualDate <= oEndDay:
                 sDate = oActualDate.strftime("%Y-%m-%d")
-                sFileName = sBaseName + "_" +sDate + "_bbox.tif"
+                sFileName = sBaseName + "_" +sDate + "_flooded.tif"
 
                 if sFileName not in asWorkspaceFiles:
                     oActualDate = oActualDate + oTimeDelta
