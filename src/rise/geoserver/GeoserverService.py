@@ -2,6 +2,7 @@ import logging
 import os
 
 from src.rise.geoserver.GeoserverClient import GeoserverClient
+from src.rise.utils import RiseUtils
 
 
 class GeoserverService:
@@ -101,7 +102,7 @@ class GeoserverService:
         if sWorkspace is None or sWorkspace == '' \
                 or sLayerName is None or sLayerName == '':
             logging.warning("GeoserverService.deleteRasterLayer. One or more input parameters are empty")
-            return None
+            return False
 
         try:
             oGeoClient = GeoserverClient().client
@@ -177,7 +178,7 @@ class GeoserverService:
         if sWorkspace is None or sWorkspace == '' \
                 or sDataStoreName is None or sDataStoreName == '':
             logging.warning("GeoserverService.deleteShapeLayer. One or more input parameters are empty")
-            return None
+            return False
 
         try:
             oGeoClient = GeoserverClient().client
@@ -191,6 +192,47 @@ class GeoserverService:
             logging.error(f"GeoserverService.deleteShapeLayer. Exception {oEx}")
 
         return False
+
+
+    def deleteLayer(self, sLayerId):
+        """
+        :param sLayerId:
+        :return: True if the layer has been deleted successfully, False otherwise
+        """
+        if RiseUtils.isNoneOrEmpty(sLayerId):
+            logging.error(f"GeoserverService.deleteLayer. Layer id not specified")
+            return False
+
+        try:
+            oGeoClient = GeoserverClient().client
+            oLayer = oGeoClient.get_layer(layer_name=sLayerId)
+
+            asLayerSplit = sLayerId.split(",")
+
+            sWorkspaceName = ''
+            sDatastoreName = ''
+            if len(asLayerSplit) == 2:
+                sWorkspaceName = asLayerSplit[0]
+                sDatastoreName = asLayerSplit[1]
+
+            if 'layer' in oLayer:
+                oLayerInfo = oLayer.get('layer')
+                if 'type' in oLayer:
+                    sType = oLayer.get('type')
+
+                    if sType == 'VECTOR':
+                        self.deleteRasterLayer(sDatastoreName, sWorkspaceName)
+                    elif sType == 'RASTER':
+                        # TODO
+                        self.deleteShapeLayer(sDatastoreName, sWorkspaceName)
+
+
+        except Exception as oEx:
+            logging.error(f"GeoserverService.deleteLayer. Exception {oEx}")
+
+        return False
+
+
 
     def listAllLayers(self, sWorkspace):
         """
