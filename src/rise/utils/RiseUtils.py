@@ -2,6 +2,10 @@ import logging
 
 from mailjet_rest import Client
 
+from src.rise.data.LayerRepository import LayerRepository
+from src.rise.geoserver.GeoserverService import GeoserverService
+
+
 def getClass(sClassName):
     asParts = sClassName.split('.')
     oModule = ".".join(asParts[:-1])
@@ -47,7 +51,7 @@ def sendEmailMailJet(oRiseConfig, sSender, sRecipient, sTitle, sMessage, bAddAdm
         ]
     }
 
-    try :
+    try:
         sApiKey = oRiseConfig.notifications.mailJetUser
         sApiSecret = oRiseConfig.notifications.mailJetPassword
         oMailjetService = Client(auth=(sApiKey, sApiSecret), version='v3.1')
@@ -71,4 +75,35 @@ def _getJetmailUserObject(sEmail):
     }
 
 
+def cleanLayers():
+    try:
+        fTimeStamp = 1448755200     #TODO: management of the timestamp still missing
+
+        oLayerRepo = LayerRepository()
+        aoLayerEntities = oLayerRepo.getLayersIdsOlderThanDate(fTimeStamp)
+
+        oGeoService = GeoserverService()
+        aoDeletedEntitiesIds = []
+
+        for oEntity in aoLayerEntities:
+            sLayerId = oEntity.layerId
+            print("Layer id: " + sLayerId)
+
+            if isNoneOrEmpty(sLayerId):
+                logging.info("RiseUtils.cleanLayers: found an empty layer id")
+                continue
+
+            if oGeoService.deleteLayer(sLayerId):
+                aoDeletedEntitiesIds.append(oEntity.id)
+                logging.info(f"RiseUtils.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
+
+        # to be sure that the Layer entities have not been updated while we were deleting the layers from Geoserver,
+        # we reload the entities, before updating them
+        aoDeletedLayers = oLayerRepo.getAllEntitiesById(aoDeletedEntitiesIds)
+        list(map(lambda oLayer: setattr(oLayer, "published", False), aoDeletedLayers))
+        iDeletedLayers = oLayerRepo.updateAllEntities(aoDeletedLayers)
+        logging.info(f"RiseUtils.cleanLayers: number of cleaned layers is equal to {iDeletedLayers}")
+
+    except Exception as oEx:
+        logging.error(f"RiseUtils.cleanLayers: exception {oEx}")
 

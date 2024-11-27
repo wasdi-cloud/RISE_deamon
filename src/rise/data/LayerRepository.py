@@ -1,8 +1,6 @@
 import logging
 
-from src.rise.RiseDeamon import RiseDeamon
 from src.rise.business.Layer import Layer
-from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.RiseMongoRepository import RiseMongoRepository
 
 
@@ -51,17 +49,4 @@ class LayerRepository(RiseMongoRepository):
             logging.error(f"LayerRepository.getLayersIdsOlderThanDate. Exception {oEx}")
 
         return None
-
-
-if __name__ == '__main__':
-    sPathToConfig = "path/to/config"
-    oRiseConfig = RiseDeamon.readConfigFile(sPathToConfig)
-    MongoDBClient._s_oConfig = oRiseConfig
-    oRepo = LayerRepository()
-
-    # from here we get the list of layers older than a certain date
-    print(len(oRepo.getLayersIdsOlderThanDate(1448755200)))
-
-    # then we extract the ids
-
 
