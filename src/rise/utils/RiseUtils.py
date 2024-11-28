@@ -2,8 +2,7 @@ import logging
 
 from mailjet_rest import Client
 
-from src.rise.data.LayerRepository import LayerRepository
-from src.rise.geoserver.GeoserverService import GeoserverService
+from datetime import datetime, timedelta, timezone
 
 
 def getClass(sClassName):
@@ -17,6 +16,7 @@ def getClass(sClassName):
 
 def isNoneOrEmpty(sString):
     return sString is None or sString == ''
+
 
 def sendEmailMailJet(oRiseConfig, sSender, sRecipient, sTitle, sMessage, bAddAdminToRecipient):
 
@@ -75,35 +75,18 @@ def _getJetmailUserObject(sEmail):
     }
 
 
-def cleanLayers():
-    try:
-        fTimeStamp = 1448755200     #TODO: management of the timestamp still missing
+def getTimestampBackInDays(iDaysCount):
+    """
+    Calculates the timestamp (in seconds) for the date that is a given number of days before the current date and time.
+    :iDaysCount: number of days back in time
+    :return: Calculates the timestamp (in seconds) representing the date that is iDaysCount days in the past from the
+    current date and time.
+    """
 
-        oLayerRepo = LayerRepository()
-        aoLayerEntities = oLayerRepo.getLayersIdsOlderThanDate(fTimeStamp)
+    if iDaysCount < 0:
+        logging.error("RiseUtils.getTimestampBackInDays. Number of days should be a positive number")
+        return -1
 
-        oGeoService = GeoserverService()
-        aoDeletedEntitiesIds = []
-
-        for oEntity in aoLayerEntities:
-            sLayerId = oEntity.layerId
-            print("Layer id: " + sLayerId)
-
-            if isNoneOrEmpty(sLayerId):
-                logging.info("RiseUtils.cleanLayers: found an empty layer id")
-                continue
-
-            if oGeoService.deleteLayer(sLayerId):
-                aoDeletedEntitiesIds.append(oEntity.id)
-                logging.info(f"RiseUtils.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
-
-        # to be sure that the Layer entities have not been updated while we were deleting the layers from Geoserver,
-        # we reload the entities, before updating them
-        aoDeletedLayers = oLayerRepo.getAllEntitiesById(aoDeletedEntitiesIds)
-        list(map(lambda oLayer: setattr(oLayer, "published", False), aoDeletedLayers))
-        iDeletedLayers = oLayerRepo.updateAllEntities(aoDeletedLayers)
-        logging.info(f"RiseUtils.cleanLayers: number of cleaned layers is equal to {iDeletedLayers}")
-
-    except Exception as oEx:
-        logging.error(f"RiseUtils.cleanLayers: exception {oEx}")
-
+    oUTCNow = datetime.now(timezone.utc)  # Current UTC datetime
+    oUTCPast = oUTCNow - timedelta(days=iDaysCount)  # go back in time of the specified amount of days
+    return int(oUTCPast.timestamp())
