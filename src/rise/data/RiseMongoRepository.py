@@ -220,6 +220,47 @@ class RiseMongoRepository:
 
         return False
 
+
+    def updateAllEntities(self, aoEntities):
+        """
+        Given a list of entities, updates them in the collection, based on their 'id' field
+        :param aoEntities: the list of entities to update
+        :return: the number of updated entities
+        """
+        iUpdatedEntities = 0
+
+        if aoEntities is None or len(aoEntities) < 1:
+            logging.warning("RiseMongoRepository.updateAllEntities. The provided list of entities is None or empty")
+            return iUpdatedEntities
+
+        try:
+            oCollection = self.getCollection()
+
+            if oCollection is None:
+                logging.warning(
+                    f"RiseMongoRepository.updateAllEntities. Collection {self.m_sCollectionName} not "
+                    f"found in {RiseMongoRepository.s_sDB_NAME} database")
+                return iUpdatedEntities
+
+            for oEntity in aoEntities:
+                if not hasattr(oEntity, 'id'):
+                    logging.warning(f"RiseMongoRepository.updateAllEntities. Entity missing 'id' {oEntity}")
+                    continue
+                oQuery = {"id": oEntity.id}
+                oUpdatedDocument = {"$set": vars(oEntity)}
+                oResult = oCollection.update_one(oQuery, oUpdatedDocument)
+
+                if oResult.modified_count > 0:
+                    iUpdatedEntities += 1
+                else:
+                    logging.warning(f"RiseMongoRepository.updateAllEntities. Entity {oEntity.id} not updated")
+
+        except Exception as oEx:
+            logging.error(f"RiseMongoRepository.updateAllEntities. Exception {oEx}")
+
+        return iUpdatedEntities
+
+
     def deleteEntity(self, sEntityId):
         """
         Given an entity id, delete the corresponding entry in the database

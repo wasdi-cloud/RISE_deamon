@@ -2,6 +2,9 @@ import logging
 
 from mailjet_rest import Client
 
+from datetime import datetime, timedelta, timezone
+
+
 def getClass(sClassName):
     asParts = sClassName.split('.')
     oModule = ".".join(asParts[:-1])
@@ -13,6 +16,7 @@ def getClass(sClassName):
 
 def isNoneOrEmpty(sString):
     return sString is None or sString == ''
+
 
 def sendEmailMailJet(oRiseConfig, sSender, sRecipient, sTitle, sMessage, bAddAdminToRecipient):
 
@@ -47,7 +51,7 @@ def sendEmailMailJet(oRiseConfig, sSender, sRecipient, sTitle, sMessage, bAddAdm
         ]
     }
 
-    try :
+    try:
         sApiKey = oRiseConfig.notifications.mailJetUser
         sApiSecret = oRiseConfig.notifications.mailJetPassword
         oMailjetService = Client(auth=(sApiKey, sApiSecret), version='v3.1')
@@ -71,4 +75,18 @@ def _getJetmailUserObject(sEmail):
     }
 
 
+def getTimestampBackInDays(iDaysCount):
+    """
+    Calculates the timestamp (in seconds) for the date that is a given number of days before the current date and time.
+    :iDaysCount: number of days back in time
+    :return: Calculates the timestamp (in seconds) representing the date that is iDaysCount days in the past from the
+    current date and time.
+    """
 
+    if iDaysCount < 0:
+        logging.error("RiseUtils.getTimestampBackInDays. Number of days should be a positive number")
+        return -1
+
+    oUTCNow = datetime.now(timezone.utc)  # Current UTC datetime
+    oUTCPast = oUTCNow - timedelta(days=iDaysCount)  # go back in time of the specified amount of days
+    return int(oUTCPast.timestamp())

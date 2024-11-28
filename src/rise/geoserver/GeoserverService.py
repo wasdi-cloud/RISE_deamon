@@ -2,6 +2,7 @@ import logging
 import os
 
 from src.rise.geoserver.GeoserverClient import GeoserverClient
+from src.rise.utils import RiseUtils
 
 
 class GeoserverService:
@@ -79,11 +80,10 @@ class GeoserverService:
 
             logging.info("GeoserverService.publishRasterLayer. Layer published on Geoserver")
 
-            if sLayerName is not None:
-                bStyleResult = self.publishStyle(sStyleName, sLayerName, sWorkspaceName)
+            bStyleResult = self.publishStyle(sStyleName, sLayerName, sWorkspaceName)
 
-                if not bStyleResult:
-                    logging.warning("GeoserverService.publishRasterLayer. There was an error adding the style to the layer")
+            if not bStyleResult:
+                logging.warning("GeoserverService.publishRasterLayer. No style added to the layer")
 
             return oCoverageStore
 
@@ -101,7 +101,7 @@ class GeoserverService:
         if sWorkspace is None or sWorkspace == '' \
                 or sLayerName is None or sLayerName == '':
             logging.warning("GeoserverService.deleteRasterLayer. One or more input parameters are empty")
-            return None
+            return False
 
         try:
             oGeoClient = GeoserverClient().client
@@ -177,7 +177,7 @@ class GeoserverService:
         if sWorkspace is None or sWorkspace == '' \
                 or sDataStoreName is None or sDataStoreName == '':
             logging.warning("GeoserverService.deleteShapeLayer. One or more input parameters are empty")
-            return None
+            return False
 
         try:
             oGeoClient = GeoserverClient().client
@@ -191,6 +191,56 @@ class GeoserverService:
             logging.error(f"GeoserverService.deleteShapeLayer. Exception {oEx}")
 
         return False
+
+
+    def deleteLayer(self, sLayerId):
+        """
+        :param sLayerId: layer id, following the pattern "workspace_id:storage_id"
+        :return: True if the layer has been deleted successfully, False otherwise
+        """
+        if RiseUtils.isNoneOrEmpty(sLayerId):
+            logging.warning(f"GeoserverService.deleteLayer. Layer id not specified")
+            return False
+
+        try:
+            asLayerSplit = sLayerId.split(":")
+
+            if len(asLayerSplit) == 2:
+                sWorkspaceName = asLayerSplit[0]
+                sDatastoreName = asLayerSplit[1]
+            else:
+                logging.warning(f"GeoserverService.deleteLayer: unrecognised pattern for layer id {sLayerId}")
+                return False
+
+            oGeoClient = GeoserverClient().client
+            oLayer = oGeoClient.get_layer(layer_name=sLayerId)
+
+            if 'layer' not in oLayer:
+                logging.warning(f"GeoserverService.deleteLayer: object does not look like a layer {oLayer}")
+                return False
+
+            oLayerInfo = oLayer.get('layer')
+            if 'type' not in oLayerInfo:
+                logging.warning(
+                    f"GeoserverService.deleteLayer. Impossible to identify the type of layer in {oLayerInfo}")
+                return False
+
+            sType = oLayerInfo.get('type')
+            logging.info(f"GeoserverService.deleteLayer. Type of later: {sType}")
+
+            if sType == 'VECTOR':
+                return self.deleteShapeLayer(sDatastoreName, sWorkspaceName)
+            elif sType == 'RASTER':
+                return self.deleteRasterLayer(sDatastoreName, sWorkspaceName)
+
+            else:
+                logging.info(f"GeoserverService.deleteLayer. Unknown layer type")
+
+        except Exception as oEx:
+            logging.error(f"GeoserverService.deleteLayer. Exception {oEx}")
+
+        return False
+
 
     def listAllLayers(self, sWorkspace):
         """
@@ -266,21 +316,26 @@ class GeoserverService:
         return False
 
 
-
 if __name__ == '__main__':
     oService = GeoserverService()
-    sFilePath = "/path/to/tif/file"
-    sWorkspaceName = "test_rise"
-    sLayerName = "test_layer_rise"
-    # oService.publishRasterLayer(sFilePath, sWorkspaceName, sLayerName)
+    sFilePath = "path/to/TIFF/file"
+    sWorkspaceName = "rise_test_workspace"
+    sLayerName = "test_layer_to_be_deleted"
+    # print(oService.publishRasterLayer(sFilePath, sWorkspaceName, sLayerName))
 
 
     sLayerName = "test_shape_rise"
     sFilePath = "/path/to/zip/folder"
     # oService.publishShapeLayer(sFilePath, sWorkspaceName, sLayerName)
 
-    oService.deleteShapeLayer(sLayerName, sWorkspaceName)
+    """
+    print(oService.getWorkspace(sWorkspaceName))
 
+    for oLayer in oService.listAllLayers(None):
+        print(oLayer)
+    """
+
+    # oService.deleteLayer("rise_test_workspace:test_layer_to_be_deleted")
 
 
 

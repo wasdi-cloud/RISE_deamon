@@ -6,12 +6,13 @@ from types import SimpleNamespace
 
 import wasdi
 
-from src.rise.business.Area import Area
 from src.rise.data.AreaRepository import AreaRepository
+from src.rise.data.LayerRepository import LayerRepository
 from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.PluginRepository import PluginRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverClient import GeoserverClient
+from src.rise.geoserver.GeoserverService import GeoserverService
 from src.rise.utils import RiseUtils
 
 
@@ -192,6 +193,59 @@ class RiseDeamon:
 
     def cleanLayers(self):
         pass
+
+
+    def cleanLayers2(self):
+
+        if self.m_oConfig is None:
+            logging.error("RiseUtils.cleanLayers. Config is none. No layer will be deleted")
+            return
+
+        if self.m_oConfig.deamon is None:
+            logging.error("RiseUtils.cleanLayers. No settings were found for the deamon. No layer will be deleted")
+            return
+
+        oDeamonConfig = self.m_oConfig.deamon
+
+        if oDeamonConfig.layersRetentionDays is None:
+            logging.error("RiseUtils.cleanLayers. No layers retention days specified. No layer will be deleted")
+            return
+
+        iRetentionDays = oDeamonConfig.layersRetentionDays
+
+        try:
+            iRetentionTimestampLimit = RiseUtils.getTimestampBackInDays(iRetentionDays)
+
+            oLayerRepo = LayerRepository()
+            aoLayerEntities = oLayerRepo.getLayersIdsOlderThanDate(iRetentionTimestampLimit)
+            print(len(aoLayerEntities))
+            """
+            oGeoService = GeoserverService()
+            aoDeletedEntitiesIds = []
+
+            for oEntity in aoLayerEntities:
+                sLayerId = oEntity.layerId
+                print("Layer id: " + sLayerId)
+
+                if RiseUtils.isNoneOrEmpty(sLayerId):
+                    logging.info("RiseUtils.cleanLayers: found an empty layer id")
+                    continue
+
+                if oGeoService.deleteLayer(sLayerId):
+                    aoDeletedEntitiesIds.append(oEntity.id)
+                    logging.info(f"RiseUtils.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
+
+            # to be sure that the Layer entities have not been updated while we were deleting the layers from Geoserver,
+            # we reload the entities, before updating them
+            aoDeletedLayers = oLayerRepo.getAllEntitiesById(aoDeletedEntitiesIds)
+            list(map(lambda oLayer: setattr(oLayer, "published", False), aoDeletedLayers))
+            iDeletedLayers = oLayerRepo.updateAllEntities(aoDeletedLayers)
+            logging.info(f"RiseUtils.cleanLayers: number of cleaned layers is equal to {iDeletedLayers}")
+            """
+        except Exception as oEx:
+            logging.error(f"RiseUtils.cleanLayers: exception {oEx}")
+
+
     @staticmethod
     def readConfigFile(sConfigFilePath):
         with open(sConfigFilePath, "r") as oConfigFile:
