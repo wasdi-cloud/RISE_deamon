@@ -55,7 +55,7 @@ class RiseDeamon:
 
         # Get the list of areas
         oAreaRepository = AreaRepository()
-        aoAreas = oAreaRepository.listAllEntities()
+        aoAreas = oAreaRepository.listActive(True)
 
         # Safe programming: in the worst case an empty array
         if aoAreas is None:

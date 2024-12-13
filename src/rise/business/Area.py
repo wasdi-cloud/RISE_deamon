@@ -18,6 +18,7 @@ class Area(RiseEntity):
         self.archiveStartDate = float()
         self.archiveEndDate = float()
         self.newCreatedArea = False
+        self.active = False
 
         self.id = str()
 
