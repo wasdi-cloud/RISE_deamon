@@ -72,6 +72,8 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oWasdiTask.inputParams = aoViirsArchiveParameters
                 oWasdiTask.status = "CREATED"
                 oWasdiTask.pluginPayload["shortArchive"] = bOnlyLastWeek
+                oWasdiTask.referenceDate = ""
+                oWasdiTask.application = oMapConfig.processor
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
                 logging.info(

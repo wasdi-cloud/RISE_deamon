@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from pathlib import Path
@@ -6,6 +7,7 @@ import wasdi
 
 from src.rise.RiseDeamon import RiseDeamon
 from src.rise.business.Layer import Layer
+from src.rise.data.LayerRepository import LayerRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverService import GeoserverService
 
@@ -39,8 +41,12 @@ class RiseMapEngine:
 
         return None
 
-    def getStyleForMap(self):
-        oMapConfig = self.getMapConfig()
+    def getStyleForMap(self, sMapId=None):
+
+        if sMapId is None:
+            oMapConfig = self.getMapConfig()
+        else:
+            oMapConfig = self.getMapConfig(sMapId)
 
         if oMapConfig is None:
             return None
@@ -65,10 +71,18 @@ class RiseMapEngine:
         return ""
 
     def handleTask(self, oTask):
+        '''
+        Handle a Task created by this map engine
+        :param oTask:
+        :return:
+        '''
         try:
+            # We open the wasdi workspace
             logging.info("RiseMapEngine.handleTask: handle task " + oTask.id)
             oTaskRepo = WasdiTaskRepository()
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+            # Get the status from WASDI
             sNewStatus = wasdi.getProcessStatus(oTask.id)
 
             if sNewStatus == "ERROR" or sNewStatus == "STOPPED":
@@ -108,6 +122,31 @@ class RiseMapEngine:
 
         return oLayer
 
+    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None):
+        try:
+            oLayerRepository = LayerRepository()
+            sLayerName = Path(sFileName).stem
+            oLayer = self.getLayerEntity(sLayerName, oReferenceDate.timestamp())
+            oTestLayer = oLayerRepository.getEntityById(oLayer.id)
+            if oTestLayer is None:
+                logging.info("RiseMapEngine.addAndPublishLayer: publish Urban Flood Map: " + sLayerName)
+                if sMapIdForStyle is not None:
+                    sStyle = self.getStyleForMap(sMapIdForStyle)
+                else:
+                    sStyle = self.getStyleForMap()
+
+                if bPublish:
+                    if not self.publishRasterLayer(sFileName, sStyle):
+                        logging.error("RiseMapEngine.addAndPublishLayer: impossible to publish " + sLayerName)
+                    else:
+                        oLayer.published = True
+
+                oLayerRepository.addEntity(oLayer)
+            return oLayer
+        except Exception as oEx:
+            logging.error("RiseMapEngine.addAndPublishLayer exception " + str(oEx))
+            return None
+
     def publishRasterLayer(self, sFileName, sStyleName=None):
         try:
             sLocalFilePath = wasdi.getPath(sFileName)
@@ -127,9 +166,54 @@ class RiseMapEngine:
             else:
                 return False
         except Exception as oEx:
-            logging.error("RiseMap Engine exception " + str(oEx))
+            logging.error("RiseMapEngine.publishRasterLayer exception " + str(oEx))
 
         return False
 
     def updateNewMaps(self):
         pass
+
+    def getWorkspaceUpdatedJsonFile(self, sJsonFile, bDeleteFromWasdi):
+        # Take a local copy
+        sJsonFilePath = wasdi.getPath(sJsonFile)
+
+        # Previous version, if available
+        aoOldChainParams = None
+
+        # If we have a local file
+        if os.path.isfile(sJsonFilePath):
+            # Clean it and re-take it updated from wasdi
+            os.remove(sJsonFilePath)
+            sJsonFilePath = wasdi.getPath(sJsonFile)
+
+            # also delete from WASDI now, it will be re-written
+            if bDeleteFromWasdi:
+                wasdi.deleteProduct(sJsonFile)
+
+            if os.path.isfile(sJsonFilePath):
+                with open(sJsonFilePath, "r") as oFile:
+                    try:
+                        aoOldChainParams = json.load(oFile)
+                    except:
+                        pass
+
+        return aoOldChainParams
+
+    def isRunningStatus(self, sStatus):
+        if sStatus is None:
+            return False
+        if sStatus in ["RUNNING", "CREATED", "WAITING", "READY"]:
+            return True
+        return False
+
+    def isFinishedStatus(self, sStatus):
+        if sStatus is None:
+            return False
+        if sStatus in ["ERROR", "STOPPED", "DONE"]:
+            return True
+        return False
+
+    def isDoneStatus(self, sStatus):
+        if sStatus is None:
+            return False
+        return sStatus == "DONE"

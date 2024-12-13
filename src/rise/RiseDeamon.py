@@ -1,6 +1,7 @@
 import getopt
 import json
 import logging
+import os
 import sys
 from types import SimpleNamespace
 
@@ -26,14 +27,15 @@ class RiseDeamon:
         Main Method of the Deamon.
         it initializes the wasdi lib, load areas, creates plugin engines
         and start the cycle:
-            .Trigger New Area
+            .Trigger New Area Archives
             .Trigger Updated Maps
             .Check the result of tasks/publish layers
             .Clean old layers
 
         :return:
         """
-        logging.info("RiseDeamon.run: Rise deamon start.")
+
+        logging.info("RiseDeamon.run: Rise deamon start v.1.0.0")
 
         # Init the WASDI lib
         wasdi.setUser(self.m_oConfig.wasdiConfig.wasdiUser)
@@ -44,6 +46,12 @@ class RiseDeamon:
             logging.error("RiseDeamon.run: There was an error initializing WASDI")
         else:
             logging.info("RiseDeamon.run: WASDI Initialized")
+
+        if self.m_oConfig.daemon.checkResults:
+            logging.info("RiseDeamon.run: chech the status of the processes scheduled")
+            self.checkResultsAndPublishLayers()
+        else:
+            logging.info("RiseDeamon.run: checkResultsAndPublishLayers Disabled by config")
 
         # Get the list of areas
         oAreaRepository = AreaRepository()
@@ -63,21 +71,27 @@ class RiseDeamon:
 
         if len(aoNewAreas) > 0:
             logging.info("RiseDeamon.run: handle new areas found " + str(len(aoNewAreas)))
-            self.handleNewAreas(aoNewAreas)
+            if self.m_oConfig.daemon.newAreas:
+                self.handleNewAreas(aoNewAreas)
+            else:
+                logging.info("RiseDeamon.run: New Areas Disabled by config")
         else:
             logging.info("RiseDeamon.run: no new area found")
 
         if len(aoAreas) > 0:
-            logging.info("RiseDeamon.run: handle daily maps")
-            self.updateNewMaps(aoAreas)
+            if self.m_oConfig.daemon.updateNewMaps:
+                logging.info("RiseDeamon.run: handle daily maps")
+                self.updateNewMaps(aoAreas)
+            else:
+                logging.info("RiseDeamon.run: updateNewMaps Disabled by config")
         else:
             logging.info("RiseDeamon.run: no areas found")
 
-        logging.info("RiseDeamon.run: chech the status of the processes scheduled")
-        self.checkResultsAndPublishLayers()
-
-        logging.info("RiseDeamon.run: Clean the old layers in geoserver")
-        self.cleanLayers()
+        if self.m_oConfig.daemon.cleanLayers:
+            logging.info("RiseDeamon.run: Clean the old layers in geoserver")
+            self.cleanLayers()
+        else:
+            logging.info("RiseDeamon.run: cleanLayers Disabled by config")
 
     def getConfig(self):
         """
@@ -151,7 +165,7 @@ class RiseDeamon:
         # For all the new areas
         for oArea in aoAreas:
 
-            logging.info("RiseDeamon.updateNewMaps: Trigger archives for new area " + str(oArea.name) + " ["+oArea.id + "]")
+            logging.info("RiseDeamon.updateNewMaps: Start new maps for area " + str(oArea.name) + " ["+oArea.id + "]")
 
             # For all the plugins activated
             for sPluginId in oArea.plugins:
@@ -175,43 +189,41 @@ class RiseDeamon:
     def checkResultsAndPublishLayers(self):
         logging.info("RiseDeamon.checkResultsAndPublishLayers: check the status of on-going processes")
 
+        # Take the list of our CREATED task
         oTaskRepository = WasdiTaskRepository()
         aoTaskToProcess = oTaskRepository.getCreatedList()
 
+        # We need a list of task to proceed
         if aoTaskToProcess is None:
             logging.info("RiseDeamon.checkResultsAndPublishLayers: List of task is None, nothing to do")
             return
 
         oAreaRepository = AreaRepository()
-
+        # For each task created
         for oTask in aoTaskToProcess:
-
+            # Get the area
             oArea = oAreaRepository.getEntityById(oTask.areaId)
+            # Create the Plugin Engine
             oPluginEngine = self.getRisePluginEngine(oTask.pluginId, oArea)
+            # Handle this task!
             oPluginEngine.handleTask(oTask)
 
 
     def cleanLayers(self):
-        pass
-
-
-    def cleanLayers2(self):
 
         if self.m_oConfig is None:
             logging.error("RiseUtils.cleanLayers. Config is none. No layer will be deleted")
             return
 
-        if self.m_oConfig.deamon is None:
+        if self.m_oConfig.daemon is None:
             logging.error("RiseUtils.cleanLayers. No settings were found for the deamon. No layer will be deleted")
             return
 
-        oDeamonConfig = self.m_oConfig.deamon
-
-        if oDeamonConfig.layersRetentionDays is None:
+        if self.m_oConfig.daemon.layersRetentionDays is None:
             logging.error("RiseUtils.cleanLayers. No layers retention days specified. No layer will be deleted")
             return
 
-        iRetentionDays = oDeamonConfig.layersRetentionDays
+        iRetentionDays = self.m_oConfig.daemon.layersRetentionDays
 
         try:
             iRetentionTimestampLimit = RiseUtils.getTimestampBackInDays(iRetentionDays)
@@ -281,11 +293,11 @@ if __name__ == '__main__':
     MongoDBClient._s_oConfig = oRiseConfig
     GeoserverClient._s_oConfig = oRiseConfig
 
-    # Set a defaulto log level
+    # Set a defaul log level
     if oRiseConfig.logLevel is None:
         oRiseConfig.logLevel = "INFO"
 
-    # Basic configuration
+    # Logger Basic configuration
     logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))
     logging.getLogger("pymongo").setLevel(logging.ERROR)
 
@@ -298,6 +310,6 @@ if __name__ == '__main__':
 
         logging.info("RiseDeamon finished! bye bye")
     except Exception as oEx:
-        logging.error("RiseDeamon exception: bye bye " + str(oEx))
+        logging.error("RiseDeamon exception: Error ->  " + str(oEx))
 
 

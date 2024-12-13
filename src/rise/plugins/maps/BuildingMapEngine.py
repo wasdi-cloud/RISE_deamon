@@ -72,6 +72,8 @@ class BuildingMapEngine(RiseMapEngine):
                 oWasdiTask.inputParams = aoAppParameters
                 oWasdiTask.status = "CREATED"
                 oWasdiTask.pluginPayload["shortArchive"] = bOnlyLastWeek
+                oWasdiTask.application = oMapConfig.processor
+                oWasdiTask.referenceDate = ""
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
                 logging.info(

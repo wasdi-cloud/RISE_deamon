@@ -36,7 +36,7 @@ class WasdiTaskRepository(RiseMongoRepository):
 
         return []
 
-    def findByParams(self, sAreaId, sMapId, sPluginId, sWorkspaceId):
+    def findByParams(self, sAreaId="", sMapId="", sPluginId="", sWorkspaceId="", sApplication="", sReferenceDate=""):
         try:
             oCollection = self.getCollection()
 
@@ -44,7 +44,35 @@ class WasdiTaskRepository(RiseMongoRepository):
                 print(f"WasdiTaskRepository.findByParams. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
                 return None
 
-            oRetrievedResult = oCollection.find({"areaId": sAreaId, "mapId": sMapId, "pluginId": sPluginId, "workspaceId": sWorkspaceId})
+            aoFilters = {}
+
+            if sAreaId is None:
+                sAreaId = ""
+            if sMapId is None:
+                sMapId = ""
+            if sPluginId is None:
+                sPluginId = ""
+            if sWorkspaceId is None:
+                sWorkspaceId = ""
+            if sApplication is None:
+                sApplication = ""
+            if sReferenceDate is None:
+                sReferenceDate = ""
+
+            if sAreaId != "":
+                aoFilters["areaId"] = sAreaId
+            if sMapId != "":
+                aoFilters["mapId"] = sMapId
+            if sPluginId != "":
+                aoFilters["pluginId"] = sPluginId
+            if sWorkspaceId != "":
+                aoFilters["workspaceId"] = sWorkspaceId
+            if sApplication != "":
+                aoFilters["application"] = sApplication
+            if sReferenceDate != "":
+                aoFilters["referenceDate"] = sReferenceDate
+
+            oRetrievedResult = oCollection.find(aoFilters)
 
             if oRetrievedResult is None:
                 print(f"WasdiTaskRepository.findByParams. no results retrieved from db")
@@ -58,4 +86,4 @@ class WasdiTaskRepository(RiseMongoRepository):
         except:
             print("WasdiTaskRepository.findByParams. Exception")
 
-        return None
+        return []

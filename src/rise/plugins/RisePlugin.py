@@ -127,10 +127,17 @@ class RisePlugin:
         return sWorkspaceId
 
     def handleTask(self, oTask):
+        '''
+        Handle a task of the puglin
+        :param oTask: Task entity
+        :return:
+        '''
+        # Task must exists
         if oTask is None:
             logging.error("RiseMapEngine.handleTask: task is null")
             return
 
+        # Get the Map engine associated
         oMapEngine = self.getMapEngineFromMapId(oTask.mapId)
 
         if oMapEngine is None:
@@ -139,6 +146,7 @@ class RisePlugin:
 
         logging.info("RiseMapEngine.handleTask: calling handle Task on map " + oTask.mapId + " for plugin " + oTask.pluginId)
 
+        # Ask the map to handle the task
         return oMapEngine.handleTask(oTask)
 
     def getPluginConfig(self):
