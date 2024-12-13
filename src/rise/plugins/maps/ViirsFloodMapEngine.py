@@ -98,14 +98,36 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.warning("ViirsFloodMapEngine.handleTask: we do not have files in the workspace... ")
                 return False
 
-            bShortArchive = False
-            if "shortArchive" in oTask.pluginPayload:
-                bShortArchive = oTask.pluginPayload["shortArchive"]
 
-            return self.handleArchiveTask(oTask, asWorkspaceFiles, bShortArchive)
+            if oTask.application == "viirs_flood":
+                bShortArchive = False
+                if "shortArchive" in oTask.pluginPayload:
+                    bShortArchive = oTask.pluginPayload["shortArchive"]
+
+                return self.handleArchiveTask(oTask, asWorkspaceFiles, bShortArchive)
+            else:
+                return self.handleDailyMap(oTask, asWorkspaceFiles)
         except Exception as oEx:
             logging.error("ViirsFloodMapEngine.handleTask: exception " + str(oEx))
             return False
+
+    def handleDailyMap(self, oTask, asWorkspaceFiles):
+        try:
+            sDate = oTask.referenceDate
+            sBaseName = oTask.inputParams["BASENAME"]
+            sFileName = sBaseName + "_" + sDate + "_flooded.tif"
+            oDate = datetime.strptime(sDate, "%Y-%m-%d")
+
+            if sFileName in asWorkspaceFiles:
+                self.addAndPublishLayer(sFileName, oDate, True, "viirs_daily_flood")
+
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
+        finally:
+            # In any case, this task is done
+            oTask.status = "DONE"
+            oTaskRepository = WasdiTaskRepository()
+            oTaskRepository.updateEntity(oTask)
 
     def handleArchiveTask(self, oTask, asWorkspaceFiles, bOnlyLastWeek):
 
@@ -198,4 +220,77 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oAreaRepository.updateEntity(self.m_oArea)
 
     def updateNewMaps(self):
-        pass
+        # Open our workspace
+        sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+        # Get the config to run a single day auto flood chain
+        oMapConfig = self.getMapConfig("viirs_daily_flood")
+
+        # without this config we have a problem
+        if oMapConfig is None:
+            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
+            return
+
+        aoViirsParameters = oMapConfig.params
+
+        # Well, we need the params in the config
+        if aoViirsParameters is None:
+            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
+            return
+
+        oToday = datetime.today()
+        sToday = oToday.strftime("%Y-%m-%d")
+
+        # Did we already start any map today?
+        oWasdiTaskRepository = WasdiTaskRepository()
+
+        # Take all our task for today
+        aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id,
+                                                            self.m_oPluginEntity.id, sWorkspaceId, oMapConfig.processor, sToday)
+
+        # if we have existing tasks
+        for oTask in aoExistingTasks:
+            if self.isRunningStatus(oTask.status):
+                logging.info("ViirsFloodMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
+                return
+
+        bForceReRun = False
+        bStillToRun = False
+        sBaseName = self.m_oArea.id.replace("-","") + self.m_oMapEntity.id.replace("_", "")
+
+        sOutputFileName = sBaseName + "_" + sToday + "_flooded.tif"
+
+        asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
+
+        if sOutputFileName not in asWorkspaceFiles:
+            if not self.m_oConfig.daemon.simulate:
+                aoViirsParameters = vars(aoViirsParameters)
+                aoViirsParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
+                aoViirsParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-","") + self.m_oMapEntity.id.replace("_", "")
+                aoViirsParameters["EVENTDATE"] = sToday
+
+                sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsParameters)
+
+                oWasdiTask = WasdiTask()
+                oWasdiTask.areaId = self.m_oArea.id
+                oWasdiTask.mapId = self.m_oMapEntity.id
+                oWasdiTask.id = sProcessorId
+                oWasdiTask.pluginId = self.m_oPluginEntity.id
+                oWasdiTask.workspaceId = sWorkspaceId
+                oWasdiTask.startDate = datetime.now().timestamp()
+                oWasdiTask.inputParams = aoViirsParameters
+                oWasdiTask.status = "CREATED"
+                oWasdiTask.application = oMapConfig.processor
+                oWasdiTask.referenceDate = sToday
+
+                oWasdiTaskRepository.addEntity(oWasdiTask)
+
+                logging.info(
+                    "ViirsFloodMapEngine.updateNewMaps: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+            else:
+                logging.warning("ViirsFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+        else:
+            logging.info("ViirsFloodMapEngine.updateNewMaps: the map is already available")
+
+        return
