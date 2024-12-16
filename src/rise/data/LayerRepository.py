@@ -34,7 +34,7 @@ class LayerRepository(RiseMongoRepository):
                                 f"Collection {self.m_sCollectionName} not in {RiseMongoRepository.s_sDB_NAME} database")
                 return None
 
-            oRetrievedResults = oCollection.find({"referenceDate": {"$lt": fTimeStamp}})
+            oRetrievedResults = oCollection.find({"referenceDate": {"$lt": fTimeStamp}, "keepLayer": False})
 
             if oRetrievedResults is None:
                 logging.info(f"LayerRepository.getLayersIdsOlderThanDate. No results retrieved from db")

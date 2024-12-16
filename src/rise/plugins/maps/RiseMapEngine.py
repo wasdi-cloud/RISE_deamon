@@ -122,11 +122,12 @@ class RiseMapEngine:
 
         return oLayer
 
-    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None):
+    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False):
         try:
             oLayerRepository = LayerRepository()
             sLayerName = Path(sFileName).stem
             oLayer = self.getLayerEntity(sLayerName, oReferenceDate.timestamp())
+            oLayer.keepLayer = bKeepLayer
             oTestLayer = oLayerRepository.getEntityById(oLayer.id)
             if oTestLayer is None:
                 logging.info("RiseMapEngine.addAndPublishLayer: publish Urban Flood Map: " + sLayerName)
@@ -217,3 +218,6 @@ class RiseMapEngine:
         if sStatus is None:
             return False
         return sStatus == "DONE"
+
+    def getBaseName(self):
+        return self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")

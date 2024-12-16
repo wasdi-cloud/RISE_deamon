@@ -14,6 +14,7 @@ class Layer(RiseEntity):
         self.areaId = str()
         self.id = str()
         self.published = False
+        self.keepLayer = False
 
         for key, value in kwargs.items():
             setattr(self, key, value)

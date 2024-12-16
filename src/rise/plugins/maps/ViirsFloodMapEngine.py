@@ -58,7 +58,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
 
             aoViirsArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
-            aoViirsArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+            aoViirsArchiveParameters["MOSAICBASENAME"] = self.getBaseName()
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsArchiveParameters)
@@ -95,6 +95,10 @@ class ViirsFloodMapEngine(RiseMapEngine):
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
             if len(asWorkspaceFiles) == 0:
+                # In any case, this task is done
+                oTask.status = "DONE"
+                oTaskRepository = WasdiTaskRepository()
+                oTaskRepository.updateEntity(oTask)
                 logging.warning("ViirsFloodMapEngine.handleTask: we do not have files in the workspace... ")
                 return False
 
@@ -266,7 +270,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
             if not self.m_oConfig.daemon.simulate:
                 aoViirsParameters = vars(aoViirsParameters)
                 aoViirsParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
-                aoViirsParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-","") + self.m_oMapEntity.id.replace("_", "")
+                aoViirsParameters["MOSAICBASENAME"] = self.getBaseName()
                 aoViirsParameters["EVENTDATE"] = sToday
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsParameters)

@@ -16,9 +16,9 @@ class BuildingMapEngine(RiseMapEngine):
         self.runBuildingsArchive(True)
 
     def triggerNewAreaArchives(self):
-        logging.info("Building long archive is handled by the integrated chain")
+        self.runBuildingsArchive(False)
 
-    def runBuildingsArchive(self, bOnlyLastWeek):
+    def runBuildingsArchive(self, bShortArchive):
         try:
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
@@ -41,7 +41,7 @@ class BuildingMapEngine(RiseMapEngine):
                 if len(aoExistingTasks) > 0:
                     for oTask in aoExistingTasks:
                         if "shortArchive" in oTask.pluginPayload:
-                            if oTask.pluginPayload["shortArchive"] == bOnlyLastWeek:
+                            if oTask.pluginPayload["shortArchive"] == bShortArchive:
                                 logging.info("BuildingMapEngine.runBuildingsArchive: task already on-going")
                                 return True
 
@@ -50,7 +50,7 @@ class BuildingMapEngine(RiseMapEngine):
 
             iEnd = datetime.today()
 
-            if bOnlyLastWeek:
+            if bShortArchive:
                 iStart = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
                 aoAppParameters["ARCHIVE_START_DATE"] = iStart.strftime("%Y-%m-%d")
             else:
@@ -58,7 +58,7 @@ class BuildingMapEngine(RiseMapEngine):
                 iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
 
             aoAppParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
-            aoAppParameters["OUTPUT_BASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+            aoAppParameters["OUTPUT_BASENAME"] = self.getBaseName()
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
@@ -71,7 +71,7 @@ class BuildingMapEngine(RiseMapEngine):
                 oWasdiTask.startDate = datetime.now().timestamp()
                 oWasdiTask.inputParams = aoAppParameters
                 oWasdiTask.status = "CREATED"
-                oWasdiTask.pluginPayload["shortArchive"] = bOnlyLastWeek
+                oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
                 oWasdiTask.application = oMapConfig.processor
                 oWasdiTask.referenceDate = ""
 
@@ -89,8 +89,40 @@ class BuildingMapEngine(RiseMapEngine):
     def handleTask(self, oTask):
         try:
             logging.info("BuildingMapEngine.handleTask: handle task " + oTask.id)
+
+            # First of all we check if it is safe and done
+            if not super().handleTask(oTask):
+                return False
+
+            if oTask.application == "building_archive_generator":
+                asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
+
+                for sFile in asWorkspaceFiles:
+                    asNameParts = sFile.split("_")
+                    bAddFile = True
+                    if asNameParts != 3:
+                        bAddFile = False
+                    if asNameParts < 3:
+                        bAddFile = False
+                    if asNameParts[0] != self.getBaseName():
+                        bAddFile = False
+                    if asNameParts[2] != "Urban.tif":
+                        bAddFile = False
+
+                    if bAddFile:
+                        logging.info("BuildingMapEngine.handleTask: found building map " + sFile)
+                        oActualDate = datetime.strptime(asNameParts[1], "%Y-%m-%d")
+                        oLayer = self.addAndPublishLayer(sFile, oActualDate, True, self.getStyleForMap(), True)
+                    else:
+                        logging.info("BuildingMapEngine.handleTask: delete not building map file " + sFile)
+                        wasdi.deleteProduct(sFile)
         except Exception as oEx:
             logging.error("BuildingMapEngine.handleTask: exception " + str(oEx))
+        finally:
+            # In any case, this task is done
+            oTask.status = "DONE"
+            oTaskRepository = WasdiTaskRepository()
+            oTaskRepository.updateEntity(oTask)
 
     def updateNewMaps(self):
         pass

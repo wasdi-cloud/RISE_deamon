@@ -88,7 +88,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoIntegratedArchiveParameters["ARCHIVE_START_DATE"] = iStart.strftime("%Y-%m-%d")
                 aoIntegratedArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
 
-            aoIntegratedArchiveParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+            aoIntegratedArchiveParameters["MOSAICBASENAME"] = self.getBaseName()
 
             # We need also the builings plugin config
             oPluginConfig = self.m_oPluginEngine.getPluginConfig()
@@ -151,6 +151,10 @@ class SarFloodMapEngine(RiseMapEngine):
 
             if len(asWorkspaceFiles) == 0:
                 logging.warning("SarFloodMapEngine.handleTask: we do not have files in the workspace... ")
+                # In any case, this task is done
+                oTask.status = "DONE"
+                oTaskRepository = WasdiTaskRepository()
+                oTaskRepository.updateEntity(oTask)
                 return False
 
             # This was the short or long archive?
@@ -166,6 +170,12 @@ class SarFloodMapEngine(RiseMapEngine):
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleTask: exception " + str(oEx))
             return False
+        finally:
+            # In any case, this task is done
+            oTask.status = "DONE"
+            oTaskRepository = WasdiTaskRepository()
+            oTaskRepository.updateEntity(oTask)
+
 
     def handleDailyTask(self, oTask, asWorkspaceFiles):
         try:
@@ -179,11 +189,6 @@ class SarFloodMapEngine(RiseMapEngine):
 
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
-        finally:
-            # In any case, this task is done
-            oTask.status = "DONE"
-            oTaskRepository = WasdiTaskRepository()
-            oTaskRepository.updateEntity(oTask)
 
     def handleEvents(self, sEventFinderId):
         """
@@ -329,11 +334,6 @@ class SarFloodMapEngine(RiseMapEngine):
             logging.error("SarFloodMapEngine.handleArchiveTask: exception " + str(oEx))
             return False
         finally:
-            # In any case, this task is done
-            oTask.status = "DONE"
-            oTaskRepository = WasdiTaskRepository()
-            oTaskRepository.updateEntity(oTask)
-
             bChanged = False
 
             # And if we do not have yet archive start and end date, set it
@@ -461,7 +461,7 @@ class SarFloodMapEngine(RiseMapEngine):
             if not self.m_oConfig.daemon.simulate:
                 aoFloodChainParameters = vars(aoFloodChainParameters)
                 aoFloodChainParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
-                aoFloodChainParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-","") + self.m_oMapEntity.id.replace("_", "")
+                aoFloodChainParameters["MOSAICBASENAME"] = self.getBaseName()
                 aoFloodChainParameters["ENDDATE"] = sToday
                 aoFloodChainParameters["FORCE_RE_RUN"] = True
                 aoFloodChainParameters["orbits"] = sChainOrbits
@@ -493,7 +493,3 @@ class SarFloodMapEngine(RiseMapEngine):
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
                 logging.warning("SarFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
-
-
-
-
