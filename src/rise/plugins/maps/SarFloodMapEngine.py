@@ -145,7 +145,7 @@ class SarFloodMapEngine(RiseMapEngine):
             if not super().handleTask(oTask):
                 return False
 
-            logging.info("SarFloodMapEngine.handleTask: task done, lets proceed!")
+            logging.info("SarFloodMapEngine.handleTask: handle task " + oTask.id)
 
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
@@ -464,6 +464,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoFloodChainParameters["MOSAICBASENAME"] = self.m_oArea.id.replace("-","") + self.m_oMapEntity.id.replace("_", "")
                 aoFloodChainParameters["ENDDATE"] = sToday
                 aoFloodChainParameters["FORCE_RE_RUN"] = True
+                aoFloodChainParameters["orbits"] = sChainOrbits
 
                 if sWaterMap != "":
                     aoFloodChainParameters["PERMANENT_WATER_MAP_NAME"] = sWaterMap

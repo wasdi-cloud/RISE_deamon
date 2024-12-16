@@ -256,7 +256,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
         bForceReRun = False
         bStillToRun = False
-        sBaseName = self.m_oArea.id.replace("-","") + self.m_oMapEntity.id.replace("_", "")
+        sBaseName = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
         sOutputFileName = sBaseName + "_" + sToday + "_flooded.tif"
 

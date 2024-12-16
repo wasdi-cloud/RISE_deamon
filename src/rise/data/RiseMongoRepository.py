@@ -116,7 +116,7 @@ class RiseMongoRepository:
             oRetrievedResult = oCollection.find({"id": {"$in": asEntityIds}})
 
             if oRetrievedResult is None:
-                logging.info(f"RiseMongoRepository.findAllEntitiesById. No results retrieved from db")
+                logging.debug(f"RiseMongoRepository.findAllEntitiesById. No results retrieved from db")
                 return None
 
             aoRetrievedEntities = []
@@ -124,7 +124,7 @@ class RiseMongoRepository:
                 oEntityClass = RiseUtils.getClass(self.m_sEntityClassName)
                 aoRetrievedEntities.append(oEntityClass(**oResMap))
 
-            logging.info(f"RiseMongoRepository.findAllEntitiesById. Retrieved {len(aoRetrievedEntities)} entities")
+            logging.debug(f"RiseMongoRepository.findAllEntitiesById. Retrieved {len(aoRetrievedEntities)} entities")
             return aoRetrievedEntities
 
         except Exception as oEx:

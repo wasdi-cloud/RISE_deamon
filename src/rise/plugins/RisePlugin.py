@@ -29,7 +29,7 @@ class RisePlugin:
             aoMaps = oMapRepository.getAllEntitiesById(self.m_oPluginEntity.maps)
 
             for oMap in aoMaps:
-                logging.info("RisePlugin.__init__: adding MapEngine " + oMap.name + " id= " + oMap.id)
+                logging.debug("RisePlugin.__init__: adding MapEngine " + oMap.name + " id= " + oMap.id)
 
                 try:
                     oMapEngineClass = RiseUtils.getClass(oMap.className)
@@ -144,7 +144,7 @@ class RisePlugin:
             logging.error("RiseMapEngine.handleTask: Map Engine not found " + oTask.mapId + " for task " + oTask.id)
             return
 
-        logging.info("RiseMapEngine.handleTask: calling handle Task on map " + oTask.mapId + " for plugin " + oTask.pluginId)
+        logging.info("RiseMapEngine.handleTask: calling handle Task on map " + oTask.mapId + " for plugin " + oTask.pluginId + " AreaId: " + oTask.areaId)
 
         # Ask the map to handle the task
         return oMapEngine.handleTask(oTask)

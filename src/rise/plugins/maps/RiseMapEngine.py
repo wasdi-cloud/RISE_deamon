@@ -92,7 +92,7 @@ class RiseMapEngine:
                 return False
 
             if sNewStatus == "DONE":
-                logging.info("RiseMapEngine.handleTask: task done, lets proceed!")
+                logging.debug("RiseMapEngine.handleTask: task done, lets proceed!")
                 return True
             else:
                 logging.info("RiseMapEngine.handleTask: task is still ongoing, for now we do nothing (state = " + sNewStatus + ")")
