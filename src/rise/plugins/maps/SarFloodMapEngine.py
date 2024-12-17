@@ -1,11 +1,13 @@
 import json
 import logging
+import uuid
 from datetime import datetime, timedelta
 
 import wasdi
 
 from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
+from src.rise.data.EventRepository import EventRepository
 from src.rise.data.LayerRepository import LayerRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
@@ -176,7 +178,6 @@ class SarFloodMapEngine(RiseMapEngine):
             oTaskRepository = WasdiTaskRepository()
             oTaskRepository.updateEntity(oTask)
 
-
     def handleDailyTask(self, oTask, asWorkspaceFiles):
         try:
             sDate = oTask.referenceDate
@@ -206,6 +207,8 @@ class SarFloodMapEngine(RiseMapEngine):
         # List of composites
         asCompositeMaps = aoEventFinderPayload["CompositeMaps"]
 
+        oEventRepository = EventRepository()
+
         # For each event
         for iEvent in range(len(aoEvents)):
             try:
@@ -217,6 +220,15 @@ class SarFloodMapEngine(RiseMapEngine):
 
                 self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood")
                 self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite")
+
+                oEvent.name= "Flood_" + oEvent["peakDate"]
+                oEvent.type = "flood"
+                oEvent.bbox = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
+                oEvent.startDate = oEvent["startDate"]
+                oEvent.peakDate = oEvent["peakDate"]
+                oEvent.endDate = oEvent["endDate"]
+                oEvent.id = uuid.uuid4()
+                oEventRepository.addEntity(oEvent)
 
             except Exception as oEx:
                 logging.error("SarFloodMapEngine.handleEvents: error " + str(oEx))
