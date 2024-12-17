@@ -11,6 +11,7 @@ class Event(RiseEntity):
         self.endDate = float()
         self.peakDate = float()
         self.id = str()
+        self.areaId = str()
 
         for key, value in kwargs.items():
             setattr(self, key, value)

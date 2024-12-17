@@ -227,6 +227,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 oEvent.startDate = oEvent["startDate"]
                 oEvent.peakDate = oEvent["peakDate"]
                 oEvent.endDate = oEvent["endDate"]
+                oEvent.areaId = self.m_oArea.id
                 oEvent.id = uuid.uuid4()
                 oEventRepository.addEntity(oEvent)
 
