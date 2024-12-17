@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import wasdi
 
+from src.rise.business.Event import Event
 from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.EventRepository import EventRepository
@@ -221,15 +222,16 @@ class SarFloodMapEngine(RiseMapEngine):
                 self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood")
                 self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite")
 
-                oEvent.name= "Flood_" + oEvent["peakDate"]
-                oEvent.type = "flood"
-                oEvent.bbox = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
-                oEvent.startDate = oEvent["startDate"]
-                oEvent.peakDate = oEvent["peakDate"]
-                oEvent.endDate = oEvent["endDate"]
-                oEvent.areaId = self.m_oArea.id
-                oEvent.id = uuid.uuid4()
-                oEventRepository.addEntity(oEvent)
+                oEventEntity = Event()
+                oEventEntity.name= "Flood_" + oEvent["peakDate"]
+                oEventEntity.type = "flood"
+                oEventEntity.bbox = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
+                oEventEntity.startDate = oEvent["startDate"]
+                oEventEntity.peakDate = oEvent["peakDate"]
+                oEventEntity.endDate = oEvent["endDate"]
+                oEventEntity.areaId = self.m_oArea.id
+                oEventEntity.id = str(uuid.uuid4())
+                oEventRepository.addEntity(oEventEntity)
 
             except Exception as oEx:
                 logging.error("SarFloodMapEngine.handleEvents: error " + str(oEx))

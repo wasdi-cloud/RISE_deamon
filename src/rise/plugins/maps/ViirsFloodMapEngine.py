@@ -254,7 +254,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
             if not self.m_oConfig.daemon.simulate:
                 aoViirsParameters = vars(aoViirsParameters)
                 aoViirsParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
-                aoViirsParameters["MOSAICBASENAME"] = self.getBaseName()
+                aoViirsParameters["VIIRS_BASENAME"] = sBaseName
                 aoViirsParameters["EVENTDATE"] = sToday
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsParameters)
