@@ -223,34 +223,20 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)
 
-    def updateNewMaps(self):
-        # Open our workspace
+
+    def viirsMapFromDate(self, sToday):
+
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
-
-        # Get the config to run a single day auto flood chain
         oMapConfig = self.getMapConfig("viirs_daily_flood")
-
-        # without this config we have a problem
-        if oMapConfig is None:
-            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
-            return
-
         aoViirsParameters = oMapConfig.params
-
-        # Well, we need the params in the config
-        if aoViirsParameters is None:
-            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
-            return
-
-        oToday = datetime.today()
-        sToday = oToday.strftime("%Y-%m-%d")
 
         # Did we already start any map today?
         oWasdiTaskRepository = WasdiTaskRepository()
 
         # Take all our task for today
         aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id,
-                                                            self.m_oPluginEntity.id, sWorkspaceId, oMapConfig.processor, sToday)
+                                                            self.m_oPluginEntity.id, sWorkspaceId, oMapConfig.processor,
+                                                            sToday)
 
         # if we have existing tasks
         for oTask in aoExistingTasks:
@@ -258,8 +244,6 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.info("ViirsFloodMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
                 return
 
-        bForceReRun = False
-        bStillToRun = False
         sBaseName = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
         sOutputFileName = sBaseName + "_" + sToday + "_flooded.tif"
@@ -296,5 +280,33 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.warning("ViirsFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
         else:
             logging.info("ViirsFloodMapEngine.updateNewMaps: the map is already available")
+
+    def updateNewMaps(self):
+        # Open our workspace
+        sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+        # Get the config to run a single day auto flood chain
+        oMapConfig = self.getMapConfig("viirs_daily_flood")
+
+        # without this config we have a problem
+        if oMapConfig is None:
+            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
+            return
+
+        aoViirsParameters = oMapConfig.params
+
+        # Well, we need the params in the config
+        if aoViirsParameters is None:
+            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
+            return
+
+        oToday = datetime.today()
+        sToday = oToday.strftime("%Y-%m-%d")
+        self.viirsMapFromDate(sToday)
+
+        oTimeDelta = timedelta(days=1)
+        oYesterday = oToday - oTimeDelta
+        sYesterday = oYesterday.strftime("%Y-%m-%d")
+        self.viirsMapFromDate(sYesterday)
 
         return
