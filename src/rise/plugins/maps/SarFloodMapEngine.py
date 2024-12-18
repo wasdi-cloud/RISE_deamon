@@ -185,9 +185,10 @@ class SarFloodMapEngine(RiseMapEngine):
             sBaseName = oTask.inputParams["MOSAICBASENAME"]
             sFileName = sBaseName + "_" + sDate + "_flood.tif"
             oDate = datetime.strptime(sDate,"%Y-%m-%d")
+            oMapConfig = self.getMapConfig("autofloodchain2")
 
             if sFileName in asWorkspaceFiles:
-                self.addAndPublishLayer(sFileName, oDate, True, "autofloodchain2")
+                self.addAndPublishLayer(sFileName, oDate, True, "autofloodchain2", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
@@ -219,8 +220,10 @@ class SarFloodMapEngine(RiseMapEngine):
 
                 oActualDate = datetime.strptime(oEvent["peakDate"], '%d-%m-%Y')
 
-                self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood")
-                self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite")
+                oMapConfig = self.getMapConfig("urban_flood")
+                self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                oMapConfig = self.getMapConfig("flood_composite")
+                self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
                 oEventEntity = Event()
                 oEventEntity.name= "Flood_" + oEvent["peakDate"]
@@ -278,7 +281,8 @@ class SarFloodMapEngine(RiseMapEngine):
 
                 logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
 
-                oLayer = self.addAndPublishLayer(sFileName,oActualDate,not bFullArchive,self.getStyleForMap())
+                oMapConfig = self.getMapConfig("sar_flood")
+                oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, self.getStyleForMap(), sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
                 if oLayer is None:
                     logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")

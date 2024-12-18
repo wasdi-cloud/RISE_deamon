@@ -15,6 +15,10 @@ class Layer(RiseEntity):
         self.id = str()
         self.published = False
         self.keepLayer = False
+        self.dataSource = ""
+        self.createdDate = 0.0
+        self.resolution = ""
+        self.inputData = ""
 
         for key, value in kwargs.items():
             setattr(self, key, value)

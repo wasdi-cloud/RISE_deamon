@@ -121,8 +121,17 @@ class ViirsFloodMapEngine(RiseMapEngine):
             sFileName = sBaseName + "_" + sDate + "_flooded.tif"
             oDate = datetime.strptime(sDate, "%Y-%m-%d")
 
+            oMapConfig = self.getMapConfig("viirs_flood")
+
             if sFileName in asWorkspaceFiles:
-                self.addAndPublishLayer(sFileName, oDate, True, "viirs_daily_flood")
+                self.addAndPublishLayer(sFileName, oDate, True, "viirs_daily_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+
+            oTimeDelta = timedelta(days=1)
+            oYesterday = oDate-oTimeDelta
+            sDate = oYesterday.strftime("%Y-%m-%d")
+            sFileName = sBaseName + "_" + sDate + "_flooded.tif"
+            if sFileName in asWorkspaceFiles:
+                self.addAndPublishLayer(sFileName, oYesterday, True, "viirs_daily_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
@@ -170,30 +179,19 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
                 logging.info("ViirsFloodMapEngine.handleShortArchiveTask: Found " + sFileName + ", publish it")
 
-                sLayerName = Path(sFileName).stem
+                oMapConfig = self.getMapConfig("viirs_flood")
+                oLayer = self.addAndPublishLayer(sFileName, oActualDate, bOnlyLastWeek, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
-                oLayer = self.getLayerEntity(sLayerName, oActualDate.timestamp())
+                if oLayer is not None:
+                    if fFirstMapTimestamp == -1.0:
+                        fFirstMapTimestamp = oLayer.referenceDate
+                    elif oLayer.referenceDate < fFirstMapTimestamp:
+                        fFirstMapTimestamp = oLayer.referenceDate
 
-                if bOnlyLastWeek:
-                    logging.info("ViirsFloodMapEngine.handleArchiveTask: publish " + sFileName)
-                    sStyle = self.getStyleForMap()
-                    if not self.publishRasterLayer(sFileName, sStyle):
-                        logging.error("ViirsFloodMapEngine.handleArchiveTask: impossible to publish " + sFileName)
-                    else:
-                        oLayer.published = True
-
-                oLayerRepository = LayerRepository()
-                oLayerRepository.addEntity(oLayer)
-
-                if fFirstMapTimestamp == -1.0:
-                    fFirstMapTimestamp = oLayer.referenceDate
-                elif oLayer.referenceDate < fFirstMapTimestamp:
-                    fFirstMapTimestamp = oLayer.referenceDate
-
-                if fLastMapTimestamp == -1.0:
-                    fLastMapTimestamp = oLayer.referenceDate
-                elif oLayer.referenceDate > fLastMapTimestamp:
-                    fLastMapTimestamp = oLayer.referenceDate
+                    if fLastMapTimestamp == -1.0:
+                        fLastMapTimestamp = oLayer.referenceDate
+                    elif oLayer.referenceDate > fLastMapTimestamp:
+                        fLastMapTimestamp = oLayer.referenceDate
 
                 oActualDate = oActualDate + oTimeDelta
             return True

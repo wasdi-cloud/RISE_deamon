@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import datetime
 from pathlib import Path
 
 import wasdi
@@ -102,7 +103,7 @@ class RiseMapEngine:
             logging.error("RiseMapEngine.handleTask: exception " + str(oEx))
             return False
 
-    def getLayerEntity(self, sLayerName, fTimestamp, aoProperties=None):
+    def getLayerEntity(self, sLayerName, fTimestamp, sDataSource="", oCreationDate=None, sResolution="", sInputData="", aoProperties=None):
 
         if aoProperties is None:
             aoProperties = {}
@@ -119,14 +120,22 @@ class RiseMapEngine:
         oLayer.properties = aoProperties
         oLayer.source = self.m_oPluginEntity.name
         oLayer.id = sLayerName
+        oLayer.dataSource = sDataSource
+        if oCreationDate is not None:
+            if isinstance(oCreationDate, int):
+                oLayer.createdDate = oCreationDate
+            elif isinstance(oCreationDate, datetime):
+                oLayer.createdDate = oCreationDate.timestamp()
+        oLayer.resolution = sResolution
+        oLayer.inputData = sInputData
 
         return oLayer
 
-    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False):
+    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None):
         try:
             oLayerRepository = LayerRepository()
             sLayerName = Path(sFileName).stem
-            oLayer = self.getLayerEntity(sLayerName, oReferenceDate.timestamp())
+            oLayer = self.getLayerEntity(sLayerName, oReferenceDate.timestamp(), sDataSource, oCreationDate, sResolution, sInputData, asProperties)
             oLayer.keepLayer = bKeepLayer
             oTestLayer = oLayerRepository.getEntityById(oLayer.id)
             if oTestLayer is None:
