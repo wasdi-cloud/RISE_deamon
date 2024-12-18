@@ -100,9 +100,9 @@ class BuildingMapEngine(RiseMapEngine):
                 for sFile in asWorkspaceFiles:
                     asNameParts = sFile.split("_")
                     bAddFile = True
-                    if asNameParts != 3:
+                    if len(asNameParts) != 3:
                         bAddFile = False
-                    if asNameParts < 3:
+                    if len(asNameParts) < 3:
                         bAddFile = False
                     if asNameParts[0] != self.getBaseName():
                         bAddFile = False

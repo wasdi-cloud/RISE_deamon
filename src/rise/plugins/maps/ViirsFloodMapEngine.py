@@ -102,7 +102,6 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.warning("ViirsFloodMapEngine.handleTask: we do not have files in the workspace... ")
                 return False
 
-
             if oTask.application == "viirs_flood":
                 bShortArchive = False
                 if "shortArchive" in oTask.pluginPayload:
@@ -223,7 +222,6 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)
 
-
     def viirsMapFromDate(self, sToday):
 
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
@@ -254,7 +252,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
             if not self.m_oConfig.daemon.simulate:
                 aoViirsParameters = vars(aoViirsParameters)
                 aoViirsParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
-                aoViirsParameters["VIIRS_BASENAME"] = sBaseName
+                aoViirsParameters["BASENAME"] = sBaseName
                 aoViirsParameters["EVENTDATE"] = sToday
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsParameters)
