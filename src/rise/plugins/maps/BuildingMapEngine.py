@@ -129,11 +129,11 @@ class BuildingMapEngine(RiseMapEngine):
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
         # Get the config to run a single day auto flood chain
-        oMapConfig = self.getMapConfig("citywatch_preproc")
+        oMapConfig = self.getMapConfig("citywatch")
 
         # without this config we have a problem
         if oMapConfig is None:
-            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
+            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find configuration for map  citywatch")
             return
 
         asFilesInWorkspace = wasdi.getProductsByActiveWorkspace()
