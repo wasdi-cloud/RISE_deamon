@@ -219,5 +219,7 @@ class BuildingMapEngine(RiseMapEngine):
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
                 logging.warning("BuildingMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+        else:
+            logging.info("BuildingMapEngine.updateNewMaps: the last map is of " + sLastUrbanMap + " no need to restart yet")
 
         return
