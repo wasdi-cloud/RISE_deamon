@@ -103,13 +103,14 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 return False
 
             if oTask.application == "viirs_flood":
+                return self.handleDailyMap(oTask, asWorkspaceFiles)
+            else:
                 bShortArchive = False
                 if "shortArchive" in oTask.pluginPayload:
                     bShortArchive = oTask.pluginPayload["shortArchive"]
 
                 return self.handleArchiveTask(oTask, asWorkspaceFiles, bShortArchive)
-            else:
-                return self.handleDailyMap(oTask, asWorkspaceFiles)
+
         except Exception as oEx:
             logging.error("ViirsFloodMapEngine.handleTask: exception " + str(oEx))
             return False
@@ -252,6 +253,9 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 aoViirsParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
                 aoViirsParameters["BASENAME"] = sBaseName
                 aoViirsParameters["EVENTDATE"] = sToday
+
+                if "HighResWaterMap.tif" in asWorkspaceFiles:
+                    aoViirsParameters["HIGH_RES_WATER_MAP"] = "HighResWaterMap.tif"
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsParameters)
 
