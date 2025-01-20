@@ -35,7 +35,10 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.0.0")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.0.1")
+
+        logging.getLogger("requests").propagate = False
+        logging.getLogger("urllib3").propagate = False
 
         # Init the WASDI lib
         wasdi.setUser(self.m_oConfig.wasdiConfig.wasdiUser)
@@ -64,7 +67,7 @@ class RiseDeamon:
         # We start searching the new area
         aoNewAreas = []
 
-        # That we recognize from the archive start and end date
+        # That we recognize from the flag
         for oArea in aoAreas:
             if oArea.newCreatedArea:
                 aoNewAreas.append(oArea)
