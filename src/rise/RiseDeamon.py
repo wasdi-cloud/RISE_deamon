@@ -83,7 +83,7 @@ class RiseDeamon:
 
         if len(aoAreas) > 0:
             if self.m_oConfig.daemon.updateNewMaps:
-                logging.info("RiseDeamon.run: handle daily maps")
+                logging.info("RiseDeamon.run: Update new maps")
                 self.updateNewMaps(aoAreas)
             else:
                 logging.info("RiseDeamon.run: updateNewMaps Disabled by config")

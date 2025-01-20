@@ -432,6 +432,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
         # If we have a task
         if sTodayTaskId is not None:
+            logging.info("SarFloodMapEngine.updateNewMaps: We already ran once today: read the payload of the application " + sTodayTaskId)
             # And if it is done
 
             # We need to check if there are new images: take the payload
@@ -443,6 +444,10 @@ class SarFloodMapEngine(RiseMapEngine):
             if "ResultsPerOrbit" in aoFloodChainPayload:
                 # For each orbit
                 for sOrbit in asOrbits:
+
+                    if len(aoFloodChainPayload["ResultsPerOrbit"])<0:
+                        logging.info("SarFloodMapEngine.updateNewMaps: ResultsPerOrbit is empty, force re-run")
+                        bForceReRun = True
 
                     # For each result
                     oSelectedResult = None
@@ -471,8 +476,10 @@ class SarFloodMapEngine(RiseMapEngine):
                         # Are more than before?
                         if len(aoImages)>iResults:
                             # We definitly need to re-run
+                            logging.info("SarFloodMapEngine.updateNewMaps: Found new images available for Orbit " + sOrbit + " set Force Re-Run = True")
                             bForceReRun = True
         else:
+            logging.info("This is the first run of the day")
             bStillToRun = True
 
         if bForceReRun or bStillToRun:
@@ -483,7 +490,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoFloodChainParameters["MOSAICBASENAME"] = self.getBaseName()
                 aoFloodChainParameters["ENDDATE"] = sToday
                 aoFloodChainParameters["FORCE_RE_RUN"] = True
-                aoFloodChainParameters["orbits"] = sChainOrbits
+                aoFloodChainParameters["ORBITS"] = sChainOrbits
 
                 if sWaterMap != "":
                     aoFloodChainParameters["PERMANENT_WATER_MAP_NAME"] = sWaterMap
