@@ -95,8 +95,11 @@ class RisePlugin:
                 oMapEngine.triggerNewAreaMaps()
 
             for oMapEngine in self.m_aoMapEngines:
-                logging.info("RisePlugin.triggerNewAreaMaps: Starting Archive for map " + oMapEngine.getName())
-                oMapEngine.triggerNewAreaArchives()
+                if self.m_oArea.supportArchive:
+                    logging.info("RisePlugin.triggerNewAreaMaps: Starting Archive for map " + oMapEngine.getName())
+                    oMapEngine.triggerNewAreaArchives()
+                else:
+                    logging.info("RisePlugin.triggerNewAreaMaps: this area does not support full archive")
 
         except Exception as oEx:
             logging.error("RisePlugin.triggerNewAreaMaps: exception " + str(oEx))
