@@ -9,6 +9,7 @@ from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.LayerRepository import LayerRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
+from src.rise.utils.RiseUtils import sendEmailMailJet
 
 
 class ViirsFloodMapEngine(RiseMapEngine):
@@ -195,6 +196,9 @@ class ViirsFloodMapEngine(RiseMapEngine):
                         fLastMapTimestamp = oLayer.referenceDate
 
                 oActualDate = oActualDate + oTimeDelta
+
+            #sendEmailMailJet(self.m_oConfig, self.m_oConfig.notifications.riseAdminMail, "p.campanella@fadeout.it", "Test Mail", "From Rise Deamon", True)
+
             return True
         except Exception as oEx:
             logging.error("ViirsFloodMapEngine.handleShortArchiveTask: exception " + str(oEx))

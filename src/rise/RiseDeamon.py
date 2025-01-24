@@ -15,6 +15,7 @@ from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverClient import GeoserverClient
 from src.rise.geoserver.GeoserverService import GeoserverService
 from src.rise.utils import RiseUtils
+from src.rise.utils.RiseUtils import sendEmailMailJet
 
 
 class RiseDeamon:
