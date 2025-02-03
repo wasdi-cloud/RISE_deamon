@@ -23,7 +23,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
     def triggerNewAreaArchives(self):
         self.runViirsArchive(False)
 
-    def runViirsArchive(self, bOnlyLastWeek):
+    def runViirsArchive(self, bShortArchive):
         try:
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
@@ -36,13 +36,13 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 return
 
             oWasdiTaskRepository = WasdiTaskRepository()
-            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id,                                                                sWorkspaceId)
+            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id, sWorkspaceId)
 
             if aoExistingTasks is not None:
                 if len(aoExistingTasks) > 0:
                     for oTask in aoExistingTasks:
                         if "shortArchive" in oTask.pluginPayload:
-                            if oTask.pluginPayload["shortArchive"] == bOnlyLastWeek:
+                            if oTask.pluginPayload["shortArchive"] == bShortArchive:
                                 logging.info("ViirsFloodMapEngine.runViirsArchive: task already on-going")
                                 return True
 
@@ -51,7 +51,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             iEnd = datetime.today()
 
-            if bOnlyLastWeek:
+            if bShortArchive:
                 iStart = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
                 aoViirsArchiveParameters["ARCHIVE_START_DATE"] = iStart.strftime("%Y-%m-%d")
             else:
@@ -72,7 +72,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oWasdiTask.startDate = datetime.now().timestamp()
                 oWasdiTask.inputParams = aoViirsArchiveParameters
                 oWasdiTask.status = "CREATED"
-                oWasdiTask.pluginPayload["shortArchive"] = bOnlyLastWeek
+                oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
                 oWasdiTask.referenceDate = ""
                 oWasdiTask.application = oMapConfig.processor
 
