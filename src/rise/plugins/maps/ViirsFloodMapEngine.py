@@ -59,7 +59,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
 
             aoViirsArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
-            aoViirsArchiveParameters["MOSAICBASENAME"] = self.getBaseName()
+            aoViirsArchiveParameters["VIIRS_BASENAME"] = self.getBaseName()
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsArchiveParameters)
@@ -245,7 +245,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.info("ViirsFloodMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
                 return
 
-        sBaseName = self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+        sBaseName = self.getBaseName()
 
         sOutputFileName = sBaseName + "_" + sToday + "_flooded.tif"
 
