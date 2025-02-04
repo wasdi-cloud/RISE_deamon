@@ -198,24 +198,8 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
                 oActualDate = oActualDate + oTimeDelta
 
-            # get the area associated with the task
-            oAreaRepository = AreaRepository()
-            oArea = oAreaRepository.getEntityById(oTask.areaId)
-
-            # get the ADMIN and HR users working in the organization associated with the area
-            oUserRepository = UserRepository()
-            oAttributesMap = {
-                'organizationId': oArea.organizationId,
-                'role': {'$in': ['ADMIN', 'HQ']}
-            }
-            aoAdminHQUsers = oUserRepository.getEntitiesByField(oAttributesMap)
-
-            # send the email
-            sMailTitle = "RISE: map ready"
-            sMailMessage = f"A new map is now available in RISE for the following area: {oArea.name}.\nKind regards,\nthe RISE team"
-            for oUser in aoAdminHQUsers:
-                # sendEmailMailJet(self.m_oConfig, self.m_oConfig.notifications.riseAdminMail, oUser.email, sMailTitle, sMailMessage, True)
-                pass 
+            # notify users
+            self.notifyEndOfTask(oTask.areaId, True)
 
             return True
         except Exception as oEx:

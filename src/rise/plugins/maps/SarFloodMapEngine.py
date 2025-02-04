@@ -348,6 +348,9 @@ class SarFloodMapEngine(RiseMapEngine):
             # And we add it, updated, to WASDI
             wasdi.addFileToWASDI(self.m_sChainParamsFile)
 
+            # notify users
+            self.notifyEndOfTask(oTask.areaId, True)
+
             return True
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleArchiveTask: exception " + str(oEx))
