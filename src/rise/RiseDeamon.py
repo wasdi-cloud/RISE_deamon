@@ -1,7 +1,6 @@
 import getopt
 import json
 import logging
-import os
 import sys
 from types import SimpleNamespace
 
@@ -13,9 +12,7 @@ from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.PluginRepository import PluginRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverClient import GeoserverClient
-from src.rise.geoserver.GeoserverService import GeoserverService
 from src.rise.utils import RiseUtils
-from src.rise.utils.RiseUtils import sendEmailMailJet
 
 
 class RiseDeamon:
@@ -36,7 +33,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.0.1")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.0.2")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False
@@ -52,7 +49,7 @@ class RiseDeamon:
             logging.info("RiseDeamon.run: WASDI Initialized")
 
         if self.m_oConfig.daemon.checkResults:
-            logging.info("RiseDeamon.run: chech the status of the processes scheduled")
+            logging.info("RiseDeamon.run: check the status of the processes scheduled")
             self.checkResultsAndPublishLayers()
         else:
             logging.info("RiseDeamon.run: checkResultsAndPublishLayers Disabled by config")

@@ -199,46 +199,58 @@ class SarFloodMapEngine(RiseMapEngine):
         :param sEventFinderId:
         :return:
         """
-        # Get the event finder payload
-        aoEventFinderPayload = wasdi.getProcessorPayloadAsJson(sEventFinderId)
 
-        # List of events
-        aoEvents = aoEventFinderPayload["EventFinderOutputs"]["OUTPUT"]
-        # List of Urban Maps
-        asUrbanMaps = aoEventFinderPayload["UrbanMaps"]
-        # List of composites
-        asCompositeMaps = aoEventFinderPayload["CompositeMaps"]
+        try:
+            # Get the event finder payload
+            aoEventFinderPayload = wasdi.getProcessorPayloadAsJson(sEventFinderId)
 
-        oEventRepository = EventRepository()
+            # List of events
+            aoEvents = []
+            if "OUTPUT" in aoEventFinderPayload["EventFinderOutputs"]:
+                aoEvents = aoEventFinderPayload["EventFinderOutputs"]["OUTPUT"]
 
-        # For each event
-        for iEvent in range(len(aoEvents)):
-            try:
-                oEvent = aoEvents[iEvent]
-                sUrbanMap = asUrbanMaps[iEvent]
-                sCompositeMap = asCompositeMaps[iEvent]
+            # List of Urban Maps
+            asUrbanMaps =  []
+            if "UrbanMaps" in aoEventFinderPayload:
+                asUrbanMaps = aoEventFinderPayload["UrbanMaps"]
 
-                oActualDate = datetime.strptime(oEvent["peakDate"], '%d-%m-%Y')
+            # List of composites
+            asCompositeMaps = []
+            if "CompositeMaps" in aoEventFinderPayload:
+                asCompositeMaps = aoEventFinderPayload["CompositeMaps"]
 
-                oMapConfig = self.getMapConfig("urban_flood")
-                self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
-                oMapConfig = self.getMapConfig("flood_composite")
-                self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+            oEventRepository = EventRepository()
 
-                oEventEntity = Event()
-                oEventEntity.name= "Flood_" + oEvent["peakDate"]
-                oEventEntity.type = "flood"
-                oEventEntity.bbox = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
-                oEventEntity.startDate = oEvent["startDate"]
-                oEventEntity.peakDate = oEvent["peakDate"]
-                oEventEntity.endDate = oEvent["endDate"]
-                oEventEntity.areaId = self.m_oArea.id
-                oEventEntity.id = str(uuid.uuid4())
-                oEventRepository.addEntity(oEventEntity)
+            # For each event
+            for iEvent in range(len(aoEvents)):
+                try:
+                    oEvent = aoEvents[iEvent]
+                    sUrbanMap = asUrbanMaps[iEvent]
+                    sCompositeMap = asCompositeMaps[iEvent]
 
-            except Exception as oEx:
-                logging.error("SarFloodMapEngine.handleEvents: error " + str(oEx))
+                    oActualDate = datetime.strptime(oEvent["peakDate"], '%d-%m-%Y')
 
+                    oMapConfig = self.getMapConfig("urban_flood")
+                    self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                    oMapConfig = self.getMapConfig("flood_composite")
+                    self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+
+                    oEventEntity = Event()
+                    oEventEntity.name= "Flood_" + oEvent["peakDate"]
+                    oEventEntity.type = "flood"
+                    oEventEntity.bbox = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
+                    oEventEntity.startDate = oEvent["startDate"]
+                    oEventEntity.peakDate = oEvent["peakDate"]
+                    oEventEntity.endDate = oEvent["endDate"]
+                    oEventEntity.areaId = self.m_oArea.id
+                    oEventEntity.id = str(uuid.uuid4())
+                    oEventRepository.addEntity(oEventEntity)
+
+                except Exception as oEx:
+                    logging.error("SarFloodMapEngine.handleEvents: error creating events " + str(oEx))
+
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.handleEvents: error " + str(oEx))
         return
 
     def handleArchiveTask(self, oTask, asWorkspaceFiles, bFullArchive):
@@ -322,8 +334,10 @@ class SarFloodMapEngine(RiseMapEngine):
             # We read the apply permanent water map to get the name of the high res water map
             aoChainParams["water_map"] = "HighResWaterMap.tif"
             aoPermWaterPayload = wasdi.getProcessorPayloadAsJson(sPermWaterId)
-            if "water_map" in aoPermWaterPayload:
-                aoChainParams["water_map"] = aoPermWaterPayload[""]
+
+            if aoPermWaterPayload is not None:
+                if "water_map" in aoPermWaterPayload:
+                    aoChainParams["water_map"] = aoPermWaterPayload["water_map"]
 
             self.handleEvents(sEventFinderId)
 
@@ -445,9 +459,8 @@ class SarFloodMapEngine(RiseMapEngine):
                 # For each orbit
                 for sOrbit in asOrbits:
 
-                    if len(aoFloodChainPayload["ResultsPerOrbit"])<0:
-                        logging.info("SarFloodMapEngine.updateNewMaps: ResultsPerOrbit is empty, force re-run")
-                        bForceReRun = True
+                    if sOrbit == "":
+                        continue
 
                     # For each result
                     oSelectedResult = None
