@@ -386,35 +386,17 @@ class SarFloodMapEngine(RiseMapEngine):
                 oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)
 
-    def updateNewMaps(self):
+
+    def startDailySARFloodDetection(self, sDay, oMapConfig, aoFloodChainParameters):
         # Open our workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
-
-        # Get the config to run a single day auto flood chain
-        oMapConfig = self.getMapConfig("autofloodchain2")
-
-        # without this config we have a problem
-        if oMapConfig is None:
-            logging.warning("SarFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
-            return
-
-        aoFloodChainParameters = oMapConfig.params
-
-        # Well, we need the params in the config
-        if aoFloodChainParameters is None:
-            logging.warning(
-                "SarFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
-            return
-
-        oToday = datetime.today()
-        sToday = oToday.strftime("%Y-%m-%d")
 
         # Did we already start any map today?
         oWasdiTaskRepository = WasdiTaskRepository()
 
         # Take all our task for today
         aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id,
-                                                            self.m_oPluginEntity.id, sWorkspaceId, oMapConfig.processor, sToday)
+                                                            self.m_oPluginEntity.id, sWorkspaceId, oMapConfig.processor, sDay)
 
         sTodayTaskId = None
         iTimestamp=0
@@ -485,7 +467,7 @@ class SarFloodMapEngine(RiseMapEngine):
                             pass
 
                     # Search the images
-                    aoImages = wasdi.searchEOImages("S1", sToday,  sToday, iOrbitNumber=int(sOrbit), sProductType="GRD", oBoundingBox=self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True))
+                    aoImages = wasdi.searchEOImages("S1", sDay, sDay, iOrbitNumber=int(sOrbit), sProductType="GRD", oBoundingBox=self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True))
 
                     # Do we have results?
                     if aoImages is not None:
@@ -504,7 +486,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoFloodChainParameters = vars(aoFloodChainParameters)
                 aoFloodChainParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
                 aoFloodChainParameters["MOSAICBASENAME"] = self.getBaseName()
-                aoFloodChainParameters["ENDDATE"] = sToday
+                aoFloodChainParameters["ENDDATE"] = sDay
                 aoFloodChainParameters["FORCE_RE_RUN"] = True
                 aoFloodChainParameters["ORBITS"] = sChainOrbits
 
@@ -526,7 +508,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTask.inputParams = aoFloodChainParameters
                 oWasdiTask.status = "CREATED"
                 oWasdiTask.application = oMapConfig.processor
-                oWasdiTask.referenceDate = sToday
+                oWasdiTask.referenceDate = sDay
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
@@ -535,3 +517,33 @@ class SarFloodMapEngine(RiseMapEngine):
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
                 logging.warning("SarFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+
+
+    def updateNewMaps(self):
+        # Open our workspace
+        sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+        # Get the config to run a single day auto flood chain
+        oMapConfig = self.getMapConfig("autofloodchain2")
+
+        # without this config we have a problem
+        if oMapConfig is None:
+            logging.warning("SarFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
+            return
+
+        aoFloodChainParameters = oMapConfig.params
+
+        # Well, we need the params in the config
+        if aoFloodChainParameters is None:
+            logging.warning(
+                "SarFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
+            return
+
+        oToday = datetime.today()
+        sToday = oToday.strftime("%Y-%m-%d")
+        self.startDailySARFloodDetection(sToday,oMapConfig,aoFloodChainParameters)
+
+        oTimeDelta = timedelta(days=1)
+        oYesterday = oToday - oTimeDelta
+        sYesterday = oYesterday.strftime("%Y-%m-%d")
+        self.startDailySARFloodDetection(sYesterday,oMapConfig,aoFloodChainParameters)
