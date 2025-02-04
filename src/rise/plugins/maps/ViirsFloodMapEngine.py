@@ -7,6 +7,7 @@ import wasdi
 from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.LayerRepository import LayerRepository
+from src.rise.data.UserRepository import UserRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
 from src.rise.utils.RiseUtils import sendEmailMailJet
@@ -197,7 +198,8 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
                 oActualDate = oActualDate + oTimeDelta
 
-            #sendEmailMailJet(self.m_oConfig, self.m_oConfig.notifications.riseAdminMail, "p.campanella@fadeout.it", "Test Mail", "From Rise Deamon", True)
+            # notify users
+            self.notifyEndOfTask(oTask.areaId, True)
 
             return True
         except Exception as oEx:

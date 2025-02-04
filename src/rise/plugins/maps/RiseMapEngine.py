@@ -8,9 +8,12 @@ import wasdi
 
 from src.rise.RiseDeamon import RiseDeamon
 from src.rise.business.Layer import Layer
+from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.LayerRepository import LayerRepository
+from src.rise.data.UserRepository import UserRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverService import GeoserverService
+from src.rise.utils import RiseUtils
 
 
 class RiseMapEngine:
@@ -230,3 +233,58 @@ class RiseMapEngine:
 
     def getBaseName(self):
         return self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+
+    def notifyEndOfTask(self, sAreaId, bIncludeFieldsOperators):
+        """
+        Notify by email the ADMIN and HQ users associated with an AoI about the end of a task that ran on that area.
+        Optionally, the same email can be sent to FIELD operators.
+        :param sAreaId: the id of the area
+        :param bIncludeFieldsOperators: sends the email to FIELDS operators if true
+        :return:
+        """
+
+        try:
+            if RiseUtils.isNoneOrEmpty(sAreaId):
+                logging.error("RiseMapEngine.notifyEndOfTask. No id of the area")
+
+            # get the area associated with the task
+            oAreaRepository = AreaRepository()
+            oArea = oAreaRepository.getEntityById(sAreaId)
+
+            if oArea is None:
+                logging.error("RiseMapEngine.notifyEndOfTask. Area not found in the db")
+
+            aoUsersToNotify = []
+
+            # get the ADMIN and HR users working in the organization associated with the area
+            oUserRepository = UserRepository()
+            oQuery = {
+                'organizationId': oArea.organizationId,
+                'role': {'$in': ['ADMIN', 'HQ']}
+            }
+            aoAdminHQUsers = oUserRepository.getEntitiesByField(oQuery)
+
+            if aoAdminHQUsers is not None and len(aoAdminHQUsers) > 0:
+                aoUsersToNotify.extend(aoAdminHQUsers)
+
+            # get the fields operators in the area
+            if bIncludeFieldsOperators:
+                oQuery = {
+                    'userId': {'$in': oArea.fieldOperators}
+                }
+
+                aoFieldOperators = oUserRepository.getEntitiesByField(oQuery)
+                if aoFieldOperators is not None and len(aoFieldOperators) > 0:
+                    aoUsersToNotify.extend(aoFieldOperators)
+
+            # send the email
+            sMailTitle = "RISE: map ready for area"
+            sMailMessage = f"A new map is now available in RISE for the following area: {oArea.name}.\n" \
+                           f"Kind regards,\nthe RISE team"
+
+            for oUser in aoUsersToNotify:
+                RiseUtils.sendEmailMailJet(self.m_oConfig, self.m_oConfig.notifications.riseAdminMail,
+                                           oUser.email, sMailTitle, sMailMessage, True)
+
+        except Exception as oEx:
+            logging.error(f"RiseMApEngine.notifyEndOfTask. Error {oEx}")
