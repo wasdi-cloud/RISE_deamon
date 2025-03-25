@@ -183,7 +183,7 @@ class SarFloodMapEngine(RiseMapEngine):
         try:
             sDate = oTask.referenceDate
             sBaseName = oTask.inputParams["MOSAICBASENAME"]
-            sFileName = sBaseName + "_" + sDate + "_flood.tif"
+            sFileName = sBaseName + "_" + sDate + "_baresoil-flood.tif"
             oDate = datetime.strptime(sDate,"%Y-%m-%d")
             oMapConfig = self.getMapConfig("autofloodchain2")
 
@@ -477,6 +477,7 @@ class SarFloodMapEngine(RiseMapEngine):
                             logging.info("SarFloodMapEngine.updateNewMaps: Found new images available for Orbit " + sOrbit + " set Force Re-Run = True")
                             bForceReRun = True
         else:
+
             logging.info("This is the first run of the day")
             bStillToRun = True
 

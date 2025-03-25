@@ -29,7 +29,7 @@ class RisePlugin:
             aoMaps = oMapRepository.getAllEntitiesById(self.m_oPluginEntity.maps)
 
             for oMap in aoMaps:
-                logging.debug("RisePlugin.__init__: adding MapEngine " + oMap.name + " id= " + oMap.id)
+                #logging.debug("RisePlugin.__init__: adding MapEngine " + oMap.name + " id= " + oMap.id)
 
                 try:
                     oMapEngineClass = RiseUtils.getClass(oMap.className)

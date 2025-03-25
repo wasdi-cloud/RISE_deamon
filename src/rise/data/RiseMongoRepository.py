@@ -124,7 +124,6 @@ class RiseMongoRepository:
                 oEntityClass = RiseUtils.getClass(self.m_sEntityClassName)
                 aoRetrievedEntities.append(oEntityClass(**oResMap))
 
-            logging.debug(f"RiseMongoRepository.findAllEntitiesById. Retrieved {len(aoRetrievedEntities)} entities")
             return aoRetrievedEntities
 
         except Exception as oEx:
