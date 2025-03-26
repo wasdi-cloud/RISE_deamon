@@ -129,6 +129,9 @@ class RiseMapEngine:
                 oLayer.createdDate = oCreationDate
             elif isinstance(oCreationDate, datetime):
                 oLayer.createdDate = oCreationDate.timestamp()
+        else:
+            oLayer.createdDate = datetime.now().timestamp()
+
         oLayer.resolution = sResolution
         oLayer.inputData = sInputData
 
