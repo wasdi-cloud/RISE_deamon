@@ -183,7 +183,7 @@ class SarFloodMapEngine(RiseMapEngine):
         try:
             sDate = oTask.referenceDate
             sBaseName = oTask.inputParams["MOSAICBASENAME"]
-            sFileName = sBaseName + "_" + sDate + "_baresoil-flood.tif"
+            sFileName = sBaseName + "_" + sDate + "_" + oTask.inputParams["SUFFIX"]
             oDate = datetime.strptime(sDate,"%Y-%m-%d")
             oMapConfig = self.getMapConfig("autofloodchain2")
 
@@ -284,7 +284,7 @@ class SarFloodMapEngine(RiseMapEngine):
             # For each date of the archive
             while oActualDate <= oEndDay:
                 sDate = oActualDate.strftime("%Y-%m-%d")
-                sFileName = sBaseName + "_" +sDate + "_flood.tif"
+                sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
 
                 # If the file is in the workspace
                 if sFileName not in asWorkspaceFiles:
