@@ -34,15 +34,14 @@ class LayerRepository(RiseMongoRepository):
                                 f"Collection {self.m_sCollectionName} not in {RiseMongoRepository.s_sDB_NAME} database")
                 return None
 
-            oRetrievedResults = oCollection.find({"referenceDate": {"$lt": fTimeStamp}, "keepLayer": False})
+            oRetrievedResults = oCollection.find({"referenceDate": {"$lt": fTimeStamp}, "keepLayer": False, "published": True})
 
             if oRetrievedResults is None:
-                logging.info(f"LayerRepository.getLayersIdsOlderThanDate. No results retrieved from db")
                 return None
 
             aoRetrievedLayers = list(map(lambda oLayerRes: Layer(**oLayerRes), oRetrievedResults))
 
-            logging.info(f"LayerRepository.getLayersIdsOlderThanDate. Found {len(aoRetrievedLayers)} layers")
+            logging.debug(f"LayerRepository.getLayersIdsOlderThanDate. Found {len(aoRetrievedLayers)} layers")
             return aoRetrievedLayers
 
         except Exception as oEx:

@@ -12,6 +12,7 @@ from src.rise.data.MongoDBClient import MongoDBClient
 from src.rise.data.PluginRepository import PluginRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverClient import GeoserverClient
+from src.rise.geoserver.GeoserverService import GeoserverService
 from src.rise.utils import RiseUtils
 
 
@@ -33,7 +34,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.0.2")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.0.3")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False
@@ -204,10 +205,15 @@ class RiseDeamon:
         for oTask in aoTaskToProcess:
             # Get the area
             oArea = oAreaRepository.getEntityById(oTask.areaId)
-            # Create the Plugin Engine
-            oPluginEngine = self.getRisePluginEngine(oTask.pluginId, oArea)
-            # Handle this task!
-            oPluginEngine.handleTask(oTask)
+
+            if oArea is not None:
+                # Create the Plugin Engine
+                oPluginEngine = self.getRisePluginEngine(oTask.pluginId, oArea)
+                # Handle this task!
+                oPluginEngine.handleTask(oTask)
+            else:
+                logging.warning("RiseDeamon.checkResultsAndPublishLayers: Task " + oTask.id + " belong to a not anymore existing area. We delete it")
+                oTaskRepository.deleteEntity(oTask.id)
 
 
     def cleanLayers(self):
@@ -231,22 +237,20 @@ class RiseDeamon:
 
             oLayerRepo = LayerRepository()
             aoLayerEntities = oLayerRepo.getLayersIdsOlderThanDate(iRetentionTimestampLimit)
-            print(len(aoLayerEntities))
-            """
+
             oGeoService = GeoserverService()
             aoDeletedEntitiesIds = []
 
             for oEntity in aoLayerEntities:
                 sLayerId = oEntity.layerId
-                print("Layer id: " + sLayerId)
 
                 if RiseUtils.isNoneOrEmpty(sLayerId):
-                    logging.info("RiseUtils.cleanLayers: found an empty layer id")
+                    logging.debug("RiseUtils.cleanLayers: found an empty layer id")
                     continue
 
                 if oGeoService.deleteLayer(sLayerId):
                     aoDeletedEntitiesIds.append(oEntity.id)
-                    logging.info(f"RiseUtils.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
+                    logging.debug(f"RiseUtils.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
 
             # to be sure that the Layer entities have not been updated while we were deleting the layers from Geoserver,
             # we reload the entities, before updating them
@@ -254,7 +258,7 @@ class RiseDeamon:
             list(map(lambda oLayer: setattr(oLayer, "published", False), aoDeletedLayers))
             iDeletedLayers = oLayerRepo.updateAllEntities(aoDeletedLayers)
             logging.info(f"RiseUtils.cleanLayers: number of cleaned layers is equal to {iDeletedLayers}")
-            """
+
         except Exception as oEx:
             logging.error(f"RiseUtils.cleanLayers: exception {oEx}")
 
