@@ -138,11 +138,6 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
-        finally:
-            # In any case, this task is done
-            oTask.status = "DONE"
-            oTaskRepository = WasdiTaskRepository()
-            oTaskRepository.updateEntity(oTask)
 
     def handleArchiveTask(self, oTask, asWorkspaceFiles, bOnlyLastWeek):
 
@@ -206,11 +201,6 @@ class ViirsFloodMapEngine(RiseMapEngine):
             logging.error("ViirsFloodMapEngine.handleShortArchiveTask: exception " + str(oEx))
             return False
         finally:
-            # In any case, this task is done
-            oTask.status = "DONE"
-            oTaskRepository = WasdiTaskRepository()
-            oTaskRepository.updateEntity(oTask)
-
             bChanged = False
 
             # And if we do not have yet archive start and end date, set it

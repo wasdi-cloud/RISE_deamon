@@ -13,6 +13,7 @@ class BuildingMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
+        self.runFastBuildingsMap()
         self.runBuildingsArchive(True)
 
     def triggerNewAreaArchives(self):
@@ -80,11 +81,68 @@ class BuildingMapEngine(RiseMapEngine):
                     "BuildingMapEngine.runBuildingsArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
-                logging.warning("SarFloodMapEngine.runBuildingsArchive: simulation mode on - we do not run nothing")
+                logging.warning("BuildingMapEngine.runBuildingsArchive: simulation mode on - we do not run nothing")
 
             return True
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.runHasardArchive: exception " + str(oEx))
+            logging.error("BuildingMapEngine.runBuildingsArchive: exception " + str(oEx))
+
+    def runFastBuildingsMap(self):
+        try:
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+            oMapConfig = self.getMapConfig("world_cover_buildings")
+
+            if oMapConfig is None:
+                logging.warning("BuildingMapEngine.runFastBuildingsMap: impossible to find configuration for map world_cover_buildings")
+                return
+
+            aoAppParameters = oMapConfig.params
+
+            if aoAppParameters is None:
+                logging.warning("BuildingMapEngine.runFastBuildingsMap: impossible to find parameters for map world_cover_buildings")
+                return
+
+            oWasdiTaskRepository = WasdiTaskRepository()
+            aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id, sWorkspaceId)
+
+            if aoExistingTasks is not None:
+                if len(aoExistingTasks) > 0:
+                    for oTask in aoExistingTasks:
+                        if "fastBuildingMap" in oTask.pluginPayload:
+                            logging.info("BuildingMapEngine.runFastBuildingsMap: task already on-going")
+                            return True
+
+            aoAppParameters = vars(aoAppParameters)
+            aoAppParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
+            aoAppParameters["EXTRACTED_MAP_NAME"] = self.getBaseName()+"_2020-06-01_Urban.tif"
+            aoAppParameters["OUTPUT"] = self.getBaseName()+"_WorldCover.tif"
+
+            if not self.m_oConfig.daemon.simulate:
+                sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
+                oWasdiTask = WasdiTask()
+                oWasdiTask.areaId = self.m_oArea.id
+                oWasdiTask.mapId = self.m_oMapEntity.id
+                oWasdiTask.id = sProcessorId
+                oWasdiTask.pluginId = self.m_oPluginEntity.id
+                oWasdiTask.workspaceId = sWorkspaceId
+                oWasdiTask.startDate = datetime.now().timestamp()
+                oWasdiTask.inputParams = aoAppParameters
+                oWasdiTask.status = "CREATED"
+                oWasdiTask.pluginPayload["fastBuildingMap"] = True
+                oWasdiTask.application = oMapConfig.processor
+                oWasdiTask.referenceDate = "2020-06-01"
+
+                oWasdiTaskRepository.addEntity(oWasdiTask)
+                logging.info(
+                    "BuildingMapEngine.runFastBuildingsMap: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+            else:
+                logging.warning("BuildingMapEngine.runFastBuildingsMap: simulation mode on - we do not run nothing")
+
+            return True
+        except Exception as oEx:
+            logging.error("BuildingMapEngine.runFastBuildingsMap: exception " + str(oEx))
 
     def handleTask(self, oTask):
         try:
@@ -111,18 +169,18 @@ class BuildingMapEngine(RiseMapEngine):
                 if bAddFile:
                     logging.info("BuildingMapEngine.handleTask: found building map " + sFile)
                     oActualDate = datetime.strptime(asNameParts[1], "%Y-%m-%d")
-                    oMapConfig = self.getMapConfig("building_cw")
+
+                    if "fastBuildingMap" in oTask.pluginPayload:
+                        oMapConfig = self.getMapConfig("world_cover_buildings")
+                    else:
+                        oMapConfig = self.getMapConfig("building_cw")
+
                     self.addAndPublishLayer(sFile, oActualDate, True, "building_cw", True, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
                 else:
                     logging.info("BuildingMapEngine.handleTask: delete not building map file " + sFile)
                     wasdi.deleteProduct(sFile)
         except Exception as oEx:
             logging.error("BuildingMapEngine.handleTask: exception " + str(oEx))
-        finally:
-            # In any case, this task is done
-            oTask.status = "DONE"
-            oTaskRepository = WasdiTaskRepository()
-            oTaskRepository.updateEntity(oTask)
 
     def updateNewMaps(self):
         # Open our workspace
@@ -133,7 +191,7 @@ class BuildingMapEngine(RiseMapEngine):
 
         # without this config we have a problem
         if oMapConfig is None:
-            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find configuration for map  citywatch")
+            logging.warning("BuildingMapEngine.updateNewMaps: impossible to find configuration for map  citywatch")
             return
 
         asFilesInWorkspace = wasdi.getProductsByActiveWorkspace()
@@ -184,7 +242,7 @@ class BuildingMapEngine(RiseMapEngine):
             # if we have existing tasks
             for oTask in aoExistingTasks:
                 if self.isRunningStatus(oTask.status):
-                    logging.info("ViirsFloodMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
+                    logging.info("BuildingMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
                     return
 
             aoCityWatchParameters = oMapConfig.params
