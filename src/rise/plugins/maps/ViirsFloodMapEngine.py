@@ -183,7 +183,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.info("ViirsFloodMapEngine.handleShortArchiveTask: Found " + sFileName + ", publish it")
 
                 oMapConfig = self.getMapConfig("viirs_flood")
-                oLayer = self.addAndPublishLayer(sFileName, oActualDate, bOnlyLastWeek, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                oLayer = self.addAndPublishLayer(sFileName, oActualDate, bOnlyLastWeek, sMapIdForStyle="viirs_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
                 if oLayer is not None:
                     if fFirstMapTimestamp == -1.0:

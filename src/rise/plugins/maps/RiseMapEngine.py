@@ -97,6 +97,9 @@ class RiseMapEngine:
 
             if sNewStatus == "DONE":
                 logging.debug("RiseMapEngine.handleTask: task done, lets proceed!")
+                # In any case, this task is done
+                oTask.status = sNewStatus
+                oTaskRepo.updateEntity(oTask)
                 return True
             else:
                 logging.info("RiseMapEngine.handleTask: task is still ongoing, for now we do nothing (state = " + sNewStatus + ")")
@@ -137,15 +140,19 @@ class RiseMapEngine:
 
         return oLayer
 
-    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None):
+    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None, sOverrideMapId=None):
         try:
             oLayerRepository = LayerRepository()
             sLayerName = Path(sFileName).stem
             oLayer = self.getLayerEntity(sLayerName, oReferenceDate.timestamp(), sDataSource, oCreationDate, sResolution, sInputData, asProperties)
+
+            if sOverrideMapId:
+                oLayer.mapId = sOverrideMapId
+
             oLayer.keepLayer = bKeepLayer
             oTestLayer = oLayerRepository.getEntityById(oLayer.id)
             if oTestLayer is None:
-                logging.info("RiseMapEngine.addAndPublishLayer: publish Urban Flood Map: " + sLayerName)
+                logging.info("RiseMapEngine.addAndPublishLayer: publish Map: " + sLayerName)
                 if sMapIdForStyle is not None:
                     sStyle = self.getStyleForMap(sMapIdForStyle)
                 else:
@@ -272,13 +279,14 @@ class RiseMapEngine:
 
             # get the fields operators in the area
             if bIncludeFieldsOperators:
-                oQuery = {
-                    'userId': {'$in': oArea.fieldOperators}
-                }
+                if oArea.fieldOperators:
+                    oQuery = {
+                        'userId': {'$in': oArea.fieldOperators}
+                    }
 
-                aoFieldOperators = oUserRepository.getEntitiesByField(oQuery)
-                if aoFieldOperators is not None and len(aoFieldOperators) > 0:
-                    aoUsersToNotify.extend(aoFieldOperators)
+                    aoFieldOperators = oUserRepository.getEntitiesByField(oQuery)
+                    if aoFieldOperators is not None and len(aoFieldOperators) > 0:
+                        aoUsersToNotify.extend(aoFieldOperators)
 
             # send the email
             sMailTitle = "RISE: map ready for " + str(oArea.name)
@@ -286,7 +294,7 @@ class RiseMapEngine:
             sMailMessage = f"A new map is "
 
             if sMapType != "":
-                sMailMessage = "The " + sMapType + " Maps are"
+                sMailMessage = "The " + sMapType + " Maps are "
 
             sMailMessage += f"now available in RISE for the following area: {oArea.name}.\n" \
                            f"Kind regards,\nThe RISE team"

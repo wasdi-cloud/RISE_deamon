@@ -154,10 +154,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
             if len(asWorkspaceFiles) == 0:
                 logging.warning("SarFloodMapEngine.handleTask: we do not have files in the workspace... ")
-                # In any case, this task is done
-                oTask.status = "DONE"
-                oTaskRepository = WasdiTaskRepository()
-                oTaskRepository.updateEntity(oTask)
+
                 return False
 
             # This was the short or long archive?
@@ -173,11 +170,6 @@ class SarFloodMapEngine(RiseMapEngine):
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleTask: exception " + str(oEx))
             return False
-        finally:
-            # In any case, this task is done
-            oTask.status = "DONE"
-            oTaskRepository = WasdiTaskRepository()
-            oTaskRepository.updateEntity(oTask)
 
     def handleDailyTask(self, oTask, asWorkspaceFiles):
         try:
@@ -294,7 +286,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
 
                 oMapConfig = self.getMapConfig("sar_flood")
-                oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, self.getStyleForMap(), sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
                 if oLayer is None:
                     logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
@@ -343,14 +335,13 @@ class SarFloodMapEngine(RiseMapEngine):
             self.handleEvents(sEventFinderId)
 
             # Publish the FFM
-            sFFmMap = "floodFrequencyMapflood.tif"
+            sFFmMap = sBaseName + "_ffm_flood.tif"
             if  sFFmMap in asWorkspaceFiles:
                 oMapConfig = self.getMapConfig("flood_frequency_map")
-                oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, self.getStyleForMap(), sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id)
 
                 if oLayer is None:
                     logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
-
 
             # Previous version, if available
             aoOldChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, True)

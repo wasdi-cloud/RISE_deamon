@@ -112,7 +112,7 @@ class BuildingMapEngine(RiseMapEngine):
                     logging.info("BuildingMapEngine.handleTask: found building map " + sFile)
                     oActualDate = datetime.strptime(asNameParts[1], "%Y-%m-%d")
                     oMapConfig = self.getMapConfig("building_cw")
-                    self.addAndPublishLayer(sFile, oActualDate, True, self.getStyleForMap(), True, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                    self.addAndPublishLayer(sFile, oActualDate, True, "building_cw", True, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
                 else:
                     logging.info("BuildingMapEngine.handleTask: delete not building map file " + sFile)
                     wasdi.deleteProduct(sFile)
