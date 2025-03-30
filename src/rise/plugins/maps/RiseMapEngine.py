@@ -237,7 +237,7 @@ class RiseMapEngine:
     def getBaseName(self):
         return self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
 
-    def notifyEndOfTask(self, sAreaId, bIncludeFieldsOperators):
+    def notifyEndOfTask(self, sAreaId, bIncludeFieldsOperators, sMapType=""):
         """
         Notify by email the ADMIN and HQ users associated with an AoI about the end of a task that ran on that area.
         Optionally, the same email can be sent to FIELD operators.
@@ -281,9 +281,15 @@ class RiseMapEngine:
                     aoUsersToNotify.extend(aoFieldOperators)
 
             # send the email
-            sMailTitle = "RISE: map ready for area"
-            sMailMessage = f"A new map is now available in RISE for the following area: {oArea.name}.\n" \
-                           f"Kind regards,\nthe RISE team"
+            sMailTitle = "RISE: map ready for " + str(oArea.name)
+
+            sMailMessage = f"A new map is "
+
+            if sMapType != "":
+                sMailMessage = "The " + sMapType + " Maps are"
+
+            sMailMessage += f"now available in RISE for the following area: {oArea.name}.\n" \
+                           f"Kind regards,\nThe RISE team"
 
             for oUser in aoUsersToNotify:
                 RiseUtils.sendEmailMailJet(self.m_oConfig, self.m_oConfig.notifications.riseAdminMail,

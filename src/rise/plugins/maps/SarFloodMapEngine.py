@@ -339,7 +339,18 @@ class SarFloodMapEngine(RiseMapEngine):
                 if "water_map" in aoPermWaterPayload:
                     aoChainParams["water_map"] = aoPermWaterPayload["water_map"]
 
+            # Handle the events array
             self.handleEvents(sEventFinderId)
+
+            # Publish the FFM
+            sFFmMap = "floodFrequencyMapflood.tif"
+            if  sFFmMap in asWorkspaceFiles:
+                oMapConfig = self.getMapConfig("flood_frequency_map")
+                oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, self.getStyleForMap(), sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+
+                if oLayer is None:
+                    logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+
 
             # Previous version, if available
             aoOldChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, True)
@@ -363,7 +374,7 @@ class SarFloodMapEngine(RiseMapEngine):
             wasdi.addFileToWASDI(self.m_sChainParamsFile)
 
             # notify users
-            self.notifyEndOfTask(oTask.areaId, True)
+            self.notifyEndOfTask(oTask.areaId, True, "High Res Flooded Area Detection")
 
             return True
         except Exception as oEx:

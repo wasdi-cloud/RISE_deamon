@@ -65,11 +65,14 @@ class RiseDeamon:
 
         # We start searching the new area
         aoNewAreas = []
+        aoOldAreas = []
 
         # That we recognize from the flag
         for oArea in aoAreas:
             if oArea.newCreatedArea:
                 aoNewAreas.append(oArea)
+            else:
+                aoOldAreas.append(oArea)
 
         if len(aoNewAreas) > 0:
             logging.info("RiseDeamon.run: handle new areas found " + str(len(aoNewAreas)))
@@ -80,10 +83,10 @@ class RiseDeamon:
         else:
             logging.info("RiseDeamon.run: no new area found")
 
-        if len(aoAreas) > 0:
+        if len(aoOldAreas) > 0:
             if self.m_oConfig.daemon.updateNewMaps:
                 logging.info("RiseDeamon.run: Update new maps")
-                self.updateNewMaps(aoAreas)
+                self.updateNewMaps(aoOldAreas)
             else:
                 logging.info("RiseDeamon.run: updateNewMaps Disabled by config")
         else:
@@ -252,11 +255,13 @@ class RiseDeamon:
                     aoDeletedEntitiesIds.append(oEntity.id)
                     logging.debug(f"RiseUtils.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
 
+            iDeletedLayers = 0
             # to be sure that the Layer entities have not been updated while we were deleting the layers from Geoserver,
             # we reload the entities, before updating them
-            aoDeletedLayers = oLayerRepo.getAllEntitiesById(aoDeletedEntitiesIds)
-            list(map(lambda oLayer: setattr(oLayer, "published", False), aoDeletedLayers))
-            iDeletedLayers = oLayerRepo.updateAllEntities(aoDeletedLayers)
+            if len(aoDeletedEntitiesIds)>0:
+                aoDeletedLayers = oLayerRepo.getAllEntitiesById(aoDeletedEntitiesIds)
+                list(map(lambda oLayer: setattr(oLayer, "published", False), aoDeletedLayers))
+                iDeletedLayers = oLayerRepo.updateAllEntities(aoDeletedLayers)
             logging.info(f"RiseUtils.cleanLayers: number of cleaned layers is equal to {iDeletedLayers}")
 
         except Exception as oEx:

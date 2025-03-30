@@ -199,7 +199,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oActualDate = oActualDate + oTimeDelta
 
             # notify users
-            self.notifyEndOfTask(oTask.areaId, True)
+            self.notifyEndOfTask(oTask.areaId, True, "Low Res Flooded Area Detection")
 
             return True
         except Exception as oEx:
