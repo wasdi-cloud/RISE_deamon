@@ -94,15 +94,25 @@ class RisePlugin:
                 logging.info("RisePlugin.triggerNewAreaMaps: Starting Last Period for map " + oMapEngine.getName())
                 oMapEngine.triggerNewAreaMaps()
 
-            for oMapEngine in self.m_aoMapEngines:
-                if self.m_oArea.supportArchive:
-                    logging.info("RisePlugin.triggerNewAreaMaps: Starting Archive for map " + oMapEngine.getName())
-                    oMapEngine.triggerNewAreaArchives()
-                else:
-                    logging.info("RisePlugin.triggerNewAreaMaps: this area does not support full archive")
-
         except Exception as oEx:
             logging.error("RisePlugin.triggerNewAreaMaps: exception " + str(oEx))
+
+    def triggerNewAreaArchives(self):
+        """
+        Trigger new area processors for this plugin
+        :return:
+        """
+        logging.debug("RisePlugin.triggerNewAreaArchives")
+        try:
+            for oMapEngine in self.m_aoMapEngines:
+                if self.m_oArea.supportArchive:
+                    logging.info("RisePlugin.triggerNewAreaArchives: Starting Archive for map " + oMapEngine.getName())
+                    oMapEngine.triggerNewAreaArchives()
+                else:
+                    logging.info("RisePlugin.triggerNewAreaArchives: this area does not support full archive")
+
+        except Exception as oEx:
+            logging.error("RisePlugin.triggerNewAreaArchives: exception " + str(oEx))
 
     def getWorkspaceName(self, oMap):
         """

@@ -140,7 +140,7 @@ class RiseMapEngine:
 
         return oLayer
 
-    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None, sOverrideMapId=None):
+    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None, sOverrideMapId=None, sOverridePluginId=None):
         try:
             oLayerRepository = LayerRepository()
             sLayerName = Path(sFileName).stem
