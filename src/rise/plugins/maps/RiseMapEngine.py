@@ -241,8 +241,11 @@ class RiseMapEngine:
             return False
         return sStatus == "DONE"
 
-    def getBaseName(self):
-        return self.m_oArea.id.replace("-", "") + self.m_oMapEntity.id.replace("_", "")
+    def getBaseName(self, sMapId=None):
+        if sMapId is None:
+            sMapId = self.m_oMapEntity.id
+
+        return self.m_oArea.id.replace("-", "") + sMapId.replace("_", "")
 
     def notifyEndOfTask(self, sAreaId, bIncludeFieldsOperators, sMapType=""):
         """

@@ -9,7 +9,6 @@ from src.rise.business.Event import Event
 from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.EventRepository import EventRepository
-from src.rise.data.LayerRepository import LayerRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
 
@@ -34,6 +33,34 @@ class SarFloodMapEngine(RiseMapEngine):
         '''
         if self.m_oArea.supportArchive:
             self.runIntegratedArchive(True)
+
+    def updateNewMaps(self):
+        # Open our workspace
+        self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+        # Get the config to run a single day auto flood chain
+        oMapConfig = self.getMapConfig("autofloodchain2")
+
+        # without this config we have a problem
+        if oMapConfig is None:
+            logging.warning("SarFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
+            return
+
+        aoFloodChainParameters = oMapConfig.params
+
+        # Well, we need the params in the config
+        if aoFloodChainParameters is None:
+            logging.warning("SarFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
+            return
+
+        oToday = datetime.today()
+        sToday = oToday.strftime("%Y-%m-%d")
+        self.startDailySARFloodDetection(sToday,oMapConfig,aoFloodChainParameters)
+
+        oTimeDelta = timedelta(days=1)
+        oYesterday = oToday - oTimeDelta
+        sYesterday = oYesterday.strftime("%Y-%m-%d")
+        self.startDailySARFloodDetection(sYesterday,oMapConfig,aoFloodChainParameters)
 
     def runIntegratedArchive(self, bFullArchive):
         '''
@@ -180,6 +207,7 @@ class SarFloodMapEngine(RiseMapEngine):
             oMapConfig = self.getMapConfig("autofloodchain2")
 
             if sFileName in asWorkspaceFiles:
+                self.updateChainParamsDate(sDate, None)
                 self.addAndPublishLayer(sFileName, oDate, True, "autofloodchain2", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
         except Exception as oEx:
@@ -343,26 +371,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 if oLayer is None:
                     logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
 
-            # Previous version, if available
-            aoOldChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, True)
-
-            if aoOldChainParams is not None:
-                if "lastMapDate" in aoOldChainParams:
-                    sOldLastMapDate = aoOldChainParams["lastMapDate"]
-                    if sEndDate>sOldLastMapDate:
-                        sEndDate = sOldLastMapDate
-
-            aoChainParams["lastMapDate"] = sEndDate
-
-            # Take a local copy
-            sJsonFilePath = wasdi.getPath(self.m_sChainParamsFile)
-
-            # Now we write the new json
-            with open(sJsonFilePath, "w") as oFile:
-                json.dump(aoChainParams, oFile)
-
-            # And we add it, updated, to WASDI
-            wasdi.addFileToWASDI(self.m_sChainParamsFile)
+            self.updateChainParamsDate(sEndDate, aoChainParams)
 
             # notify users
             self.notifyEndOfTask(oTask.areaId, True, "High Res Flooded Area Detection")
@@ -521,32 +530,32 @@ class SarFloodMapEngine(RiseMapEngine):
             else:
                 logging.warning("SarFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
 
+    def updateChainParamsDate(self, sEndDate, aoChainParams, sDateKey = "lastMapDate"):
+        # Previous version, if available
+        aoOldChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, True)
 
-    def updateNewMaps(self):
-        # Open our workspace
-        sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+        # Do we have a reference one?
+        if aoChainParams is None:
+            # No, try to get it from the workspace
+            aoChainParams = aoOldChainParams
 
-        # Get the config to run a single day auto flood chain
-        oMapConfig = self.getMapConfig("autofloodchain2")
+        if aoOldChainParams is not None:
+            if sDateKey in aoOldChainParams:
+                sOldLastMapDate = aoOldChainParams[sDateKey]
+                if sEndDate < sOldLastMapDate:
+                    sEndDate = sOldLastMapDate
 
-        # without this config we have a problem
-        if oMapConfig is None:
-            logging.warning("SarFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
-            return
+        if aoChainParams is None:
+            aoChainParams = {}
 
-        aoFloodChainParameters = oMapConfig.params
+        aoChainParams[sDateKey] = sEndDate
 
-        # Well, we need the params in the config
-        if aoFloodChainParameters is None:
-            logging.warning(
-                "SarFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
-            return
+        # Take a local copy
+        sJsonFilePath = wasdi.getPath(self.m_sChainParamsFile)
 
-        oToday = datetime.today()
-        sToday = oToday.strftime("%Y-%m-%d")
-        self.startDailySARFloodDetection(sToday,oMapConfig,aoFloodChainParameters)
+        # Now we write the new json
+        with open(sJsonFilePath, "w") as oFile:
+            json.dump(aoChainParams, oFile)
 
-        oTimeDelta = timedelta(days=1)
-        oYesterday = oToday - oTimeDelta
-        sYesterday = oYesterday.strftime("%Y-%m-%d")
-        self.startDailySARFloodDetection(sYesterday,oMapConfig,aoFloodChainParameters)
+        # And we add it, updated, to WASDI
+        wasdi.addFileToWASDI(self.m_sChainParamsFile)
