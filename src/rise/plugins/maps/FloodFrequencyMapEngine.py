@@ -42,7 +42,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
 
             if sFileName in asWorkspaceFiles:
                 self.updateChainParamsDate(sDate, None, "lastFFMUpdate")
-                self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, bForceRepublish=True)
 
         except Exception as oEx:
             logging.error("FloodFrequencyMapEngine.handleTask: exception " + str(oEx))
@@ -50,14 +50,12 @@ class FloodFrequencyMapEngine(RiseMapEngine):
     def updateNewMaps(self):
         # Take today as reference date
         oToday = datetime.now()
-        #sToday = oToday.strftime("%Y-%m-%d")
+        # Go to yesterday
         oTimeDelta = timedelta(days=1)
         oYesterday = oToday - oTimeDelta
         sYesterday = oYesterday.strftime("%Y-%m-%d")
 
         self.runFFMMapForDate(sYesterday)
-        #self.runFFMMapForDate(sToday)
-
 
     def runFFMMapForDate(self, sDate):
         # Take today as reference date
@@ -76,8 +74,8 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                                                             self.m_oPluginEntity.id, sWorkspaceId, "floodfrequencymap", sDate)
 
         # if we have existing tasks
-        for oTask in aoExistingTasks:
-            logging.info("FloodFrequencyMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
+        if len(aoExistingTasks)>0:
+            logging.info("FloodFrequencyMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
             return
 
         # We read the params of the floodchain to have the suffix
@@ -85,7 +83,8 @@ class FloodFrequencyMapEngine(RiseMapEngine):
         sBaseName = self.getBaseName("sar_flood")
         oAutoFloodChainParams =oAutoFloodChainMapConfig.params
         aoFloodChainParameters = vars(oAutoFloodChainParams)
-        # This should be the new map
+
+        # This should be the new daily SAR map
         sFileName = sBaseName + "_" + sDate + "_" + aoFloodChainParameters["SUFFIX"]
 
         # Take the list of files in the workspace
@@ -111,28 +110,31 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                 aoFFMParams["startDate"] = sDate
                 aoFFMParams["endDate"] = sDate
 
-                # Run the FFM to update
-                sProcessorId = wasdi.executeProcessor("floodfrequencymap", aoFFMParams)
+                if not self.m_oConfig.daemon.simulate:
+                    # Run the FFM to update
+                    sProcessorId = wasdi.executeProcessor("floodfrequencymap", aoFFMParams)
 
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoFFMParams
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.application = "floodfrequencymap"
-                oWasdiTask.referenceDate = sDate
+                    oWasdiTask = WasdiTask()
+                    oWasdiTask.areaId = self.m_oArea.id
+                    oWasdiTask.mapId = self.m_oMapEntity.id
+                    oWasdiTask.id = sProcessorId
+                    oWasdiTask.pluginId = self.m_oPluginEntity.id
+                    oWasdiTask.workspaceId = sWorkspaceId
+                    oWasdiTask.startDate = datetime.now().timestamp()
+                    oWasdiTask.inputParams = aoFFMParams
+                    oWasdiTask.status = "CREATED"
+                    oWasdiTask.application = "floodfrequencymap"
+                    oWasdiTask.referenceDate = sDate
 
-                oWasdiTaskRepository.addEntity(oWasdiTask)
+                    oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                logging.info(
-                    "FloodFrequencyMapEngine.updateNewMaps: Started floodfrequencymap in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                    logging.info(
+                        "FloodFrequencyMapEngine.updateNewMaps: Started floodfrequencymap in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                            self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                else:
+                    logging.info("FloodFrequencyMapEngine.updateNewMaps: simulation mode on, like I started FFM for date " + sDate)
         else:
-            logging.info("FloodFrequencyMapEngine.updateNewMaps: there is no new flood Map")
+            logging.info("FloodFrequencyMapEngine.updateNewMaps: there is no new flood Map for date " + sDate)
 
     def getFFMfloodMapName(self):
         return self.getBaseName("sar_flood")+"_ffm_flood.tif"

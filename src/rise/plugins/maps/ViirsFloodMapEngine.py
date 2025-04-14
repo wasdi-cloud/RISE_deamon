@@ -275,7 +275,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
             else:
                 logging.warning("ViirsFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
         else:
-            logging.info("ViirsFloodMapEngine.updateNewMaps: the map is already available")
+            logging.info("ViirsFloodMapEngine.updateNewMaps: the VIIRS map for " + sToday + " is already available")
 
     def updateNewMaps(self):
         # Open our workspace

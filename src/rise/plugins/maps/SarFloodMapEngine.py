@@ -109,6 +109,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoIntegratedArchiveParameters["ARCHIVE_START_DATE"] = oMapConfig.startArchiveDate
                 # Until the end date of the short archive
                 aoIntegratedArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
+                aoIntegratedArchiveParameters["FFM_IDENTIFIER"] = "fullffm"
             else:
                 # Take today
                 iEnd = datetime.today()
@@ -362,14 +363,69 @@ class SarFloodMapEngine(RiseMapEngine):
             # Handle the events array
             self.handleEvents(sEventFinderId)
 
-            # Publish the FFM
             sFFmMap = sBaseName + "_ffm_flood.tif"
-            if  sFFmMap in asWorkspaceFiles:
-                oMapConfig = self.getMapConfig("flood_frequency_map")
-                oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id)
+            oMapConfig = self.getMapConfig("flood_frequency_map")
 
-                if oLayer is None:
-                    logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+            if not bFullArchive:
+                # Publish the FFM
+                if  sFFmMap in asWorkspaceFiles:
+                    oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id)
+
+                    if oLayer is None:
+                        logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+            else:
+                # This is the long term archive
+                sFullArchiveFFmMap = sBaseName + "_fullffm_flood.tif"
+
+                if sFullArchiveFFmMap in asWorkspaceFiles:
+
+                    logging.info("SarFloodMapEngine.handleArchiveTask: trying to sum full FFM with the short archive one")
+
+                    # We have the ffm done for the full archive: we need to sum it to the short-near real time one
+                    aoTiffAddParams = {}
+
+                    # Sum the long and short archive maps
+                    aoTiffAddParams["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
+                    aoTiffAddParams["DATA_TYPE"] = "uint16"
+                    aoTiffAddParams["OVERRIDE_OUTPUT"] = True
+
+                    aoTiffAddParams["INPUT_FILES"] = [sFFmMap, sFullArchiveFFmMap]
+                    aoTiffAddParams["OUTPUT_FILE"] = sFFmMap
+
+                    if not self.m_oConfig.daemon.simulate:
+                        sSumFloodMapsId = wasdi.executeProcessor("tiff_images_add", aoTiffAddParams)
+
+                        # We should have also the data maps
+                        sDataMap = sBaseName + "_ffm_data.tif"
+                        sFullDataMap = sBaseName + "_fullffm_data.tif"
+
+                        if sDataMap in asWorkspaceFiles and sFullDataMap in asWorkspaceFiles:
+                            aoTiffAddParams["INPUT_FILES"] = [sDataMap, sFullDataMap]
+                            aoTiffAddParams["OUTPUT_FILE"] = sDataMap
+
+                            sSumDataMapsId = wasdi.executeProcessor("tiff_images_add", aoTiffAddParams)
+                            sStatus = wasdi.waitProcess(sSumDataMapsId)
+                            if sStatus == "DONE":
+                                oLayer = self.addAndPublishLayer(sDataMap, oActualDate, not bFullArchive,
+                                                                 "flood_frequency_map", sResolution=oMapConfig.resolution,
+                                                                 sDataSource=oMapConfig.dataSource,
+                                                                 sInputData=oMapConfig.inputData,
+                                                                 sOverrideMapId=oMapConfig.id, bForceRepublish=True)
+
+                                if oLayer is None:
+                                    logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data map!")
+
+                        sStatus = wasdi.waitProcess(sSumFloodMapsId)
+                        if sStatus == "DONE":
+                            oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, "flood_frequency_map",
+                                                             sResolution=oMapConfig.resolution,
+                                                             sDataSource=oMapConfig.dataSource,
+                                                             sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bForceRepublish=True)
+
+                            if oLayer is None:
+                                logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+                    else:
+                        logging.info("SarFloodMapEngine.handleArchiveTask: simulation mode on")
 
             self.updateChainParamsDate(sEndDate, aoChainParams)
 
@@ -442,7 +498,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
         # If we have a task
         if sTodayTaskId is not None:
-            logging.info("SarFloodMapEngine.updateNewMaps: We already ran once today: read the payload of the application " + sTodayTaskId)
+            logging.info("SarFloodMapEngine.updateNewMaps: We already ran once for date " + sDay + ": read the payload of the application " + sTodayTaskId)
             # And if it is done
 
             # We need to check if there are new images: take the payload
@@ -452,7 +508,9 @@ class SarFloodMapEngine(RiseMapEngine):
             asOrbits = sChainOrbits.split(",")
 
             if "ResultsPerOrbit" in aoFloodChainPayload:
-                # For each orbit
+
+                logging.info("SarFloodMapEngine.updateNewMaps: check if we find more images for day " + sDay)
+                             # For each orbit
                 for sOrbit in asOrbits:
 
                     if sOrbit == "":
@@ -488,8 +546,7 @@ class SarFloodMapEngine(RiseMapEngine):
                             logging.info("SarFloodMapEngine.updateNewMaps: Found new images available for Orbit " + sOrbit + " set Force Re-Run = True")
                             bForceReRun = True
         else:
-
-            logging.info("This is the first run of the day")
+            logging.info("This is the first run for day " + sDay)
             bStillToRun = True
 
         if bForceReRun or bStillToRun:

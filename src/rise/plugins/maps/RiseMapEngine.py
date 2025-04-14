@@ -140,7 +140,7 @@ class RiseMapEngine:
 
         return oLayer
 
-    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None, sOverrideMapId=None, sOverridePluginId=None):
+    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None, sOverrideMapId=None, sOverridePluginId=None, bForceRepublish=False):
         try:
             oLayerRepository = LayerRepository()
             sLayerName = Path(sFileName).stem
@@ -149,8 +149,26 @@ class RiseMapEngine:
             if sOverrideMapId:
                 oLayer.mapId = sOverrideMapId
 
+            if sOverridePluginId:
+                oLayer.pluginId = sOverridePluginId
+
             oLayer.keepLayer = bKeepLayer
             oTestLayer = oLayerRepository.getEntityById(oLayer.id)
+
+            if bForceRepublish and oTestLayer is not None:
+                # We need to clean it: delete our layer db entry
+                oLayerRepository.deleteEntity(oLayer.id)
+                # Get the Geoserver Service
+                oGeoserverService = GeoserverService()
+                # If the layer exists
+                if oGeoserverService.existsLayer(sLayerName):
+                    # Delete it
+                    oGeoserverService.deleteLayer(oLayer.layerId)
+
+                # Set the layer as none to re-publish it
+                oTestLayer = None
+
+
             if oTestLayer is None:
                 logging.info("RiseMapEngine.addAndPublishLayer: publish Map: " + sLayerName)
                 if sMapIdForStyle is not None:
@@ -253,6 +271,7 @@ class RiseMapEngine:
         Optionally, the same email can be sent to FIELD operators.
         :param sAreaId: the id of the area
         :param bIncludeFieldsOperators: sends the email to FIELDS operators if true
+        :param sMapType: If set, it will be included in the text of the notification
         :return:
         """
 

@@ -173,7 +173,7 @@ class RisePlugin:
         logging.debug("RisePlugin.updateNewMaps")
         try:
             for oMapEngine in self.m_aoMapEngines:
-                logging.info("RisePlugin.updateNewMaps: Starting today map for " + oMapEngine.getName())
+                logging.info("RisePlugin.updateNewMaps: Starting new Maps for Map Engine Named: " + oMapEngine.getName())
                 oMapEngine.updateNewMaps()
 
         except Exception as oEx:

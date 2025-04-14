@@ -270,7 +270,7 @@ class GeoserverService:
 
         try:
             oGeoClient = GeoserverClient().client
-            oLayer = oGeoClient.get_layer(layer_name='layer_name')
+            oLayer = oGeoClient.get_layer(layer_name=sLayerName)
 
             return oLayer is not None
 
