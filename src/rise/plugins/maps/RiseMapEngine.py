@@ -82,7 +82,7 @@ class RiseMapEngine:
         '''
         try:
             # We open the wasdi workspace
-            logging.info("RiseMapEngine.handleTask: handle task " + oTask.id)
+            logging.debug("RiseMapEngine.handleTask: handle task " + oTask.id)
             oTaskRepo = WasdiTaskRepository()
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
@@ -102,7 +102,7 @@ class RiseMapEngine:
                 oTaskRepo.updateEntity(oTask)
                 return True
             else:
-                logging.info("RiseMapEngine.handleTask: task is still ongoing, for now we do nothing (state = " + sNewStatus + ")")
+                logging.debug("RiseMapEngine.handleTask: task is still ongoing, for now we do nothing (state = " + sNewStatus + ")")
                 return False
 
         except Exception as oEx:

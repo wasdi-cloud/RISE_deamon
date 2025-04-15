@@ -138,6 +138,28 @@ class UrbanFloodMapEngine(RiseMapEngine):
                 self.startUrbanFlood(oTask.referenceDate)
             elif oTask.application == "edrift_auto_urban_flood":
                 logging.info("UrbanFloodMapEngine.handleTask: check the urban flood output for date " + oTask.referenceDate)
+
+                oUrbanFloodPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
+
+                if oUrbanFloodPayload is None:
+                    logging.info("UrbanFloodMapEngine.handleTask: Impossible to get the payload of the urban flood task, nothing to do")
+                    return
+
+                if "outputs" not in oUrbanFloodPayload:
+                    logging.info("UrbanFloodMapEngine.handleTask: Outputs not available in the urban flood task, nothing to do")
+                    return
+
+                asUrbanMapFiles = oUrbanFloodPayload["outputs"]
+                asFilesInWorkspace = wasdi.getProductsByActiveWorkspace()
+                oMapConfig = self.getMapConfig()
+
+                for sUrbanMapFile in asUrbanMapFiles:
+                    if sUrbanMapFile in asFilesInWorkspace:
+                        logging.info("UrbanFloodMapEngine.handleTask: found urban map in workspace " + sUrbanMapFile)
+                        self.addAndPublishLayer(sUrbanMapFile, datetime.strptime(oTask.referenceDate,"%Y-%m-%d"), True, "urban_flood",
+                                                sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
+                                                sInputData=oMapConfig.inputData)
+
             else:
                 logging.warning("UrbanFloodMapEngine.handleTask: NOT recognized application " + oTask.application)
 
@@ -175,23 +197,75 @@ class UrbanFloodMapEngine(RiseMapEngine):
             else:
                 aoParameters["AutomaticUrbanFootprintProcessor"]="world_cover_extractor"
 
+            oWasdiTaskRepository = WasdiTaskRepository()
+
+            # Take all the autofloodchain2 tasks for this day
+            aoBareSoilTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, "sar_flood",
+                                                                self.m_oPluginEntity.id, sTargetWorkspace,
+                                                                "autofloodchain2", sDay)
+
+            # We need to find the reference POST S1 Images:
+
+            asTargetSLCImages = []
+            if len(aoBareSoilTasks)<=0:
+                # Strange, if we are here one at least should have been found, no?
+                logging.warning("UrbanFloodMapEngine.startUrbanFlood: we cannot find any SAR autofloodchain2 run for day " + sDay)
+            else:
+                # Can be more than one
+                logging.info("UrbanFloodMapEngine.startUrbanFlood: Found " + str(len(aoBareSoilTasks)) + " run for day " + sDay)
+
+                for oTask in aoBareSoilTasks:
+                    # If are not DONE are not of our interest
+
+                    if self.isDoneStatus(oTask.status):
+                        # Read the payload
+                        aoBareSoilPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
+
+                        # Check we have it
+                        if aoBareSoilPayload is None:
+                            continue
+
+                        # And Input Images is in it
+                        if "InputImages" in aoBareSoilPayload:
+                            asInputImages = aoBareSoilPayload["InputImages"]
+
+                            # Must be a valid list
+                            if asInputImages is None:
+                                continue
+
+                            # Check all the input images
+                            for sImage in asInputImages:
+                                # If we did not add it yet, we must add it
+                                if sImage not in asTargetSLCImages:
+                                    asTargetSLCImages.append(sImage)
+                                    logging.info("Adding target S1 Image " + sImage)
+
+            # If none is found, we will try the default app even if it will be hard..
+            if len(asTargetSLCImages) == 0:
+                asTargetSLCImages.append("")
+
             if not self.m_oConfig.daemon.simulate:
-                sTaskId = wasdi.executeProcessor("edrift_auto_urban_flood", aoParameters)
+                # For each target SLC Image found
+                for sTargetSLCImage in asTargetSLCImages:
 
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sTaskId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sTargetWorkspace
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoParameters
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.application = "edrift_auto_urban_flood"
-                oWasdiTask.referenceDate = sDay
+                    # Trigger the event
+                    aoParameters["targetPostImage"] = sTargetSLCImage
+                    sTaskId = wasdi.executeProcessor("edrift_auto_urban_flood", aoParameters)
 
-                oWasdiTaskRepository = WasdiTaskRepository()
-                oWasdiTaskRepository.addEntity(oWasdiTask)
+                    oWasdiTask = WasdiTask()
+                    oWasdiTask.areaId = self.m_oArea.id
+                    oWasdiTask.mapId = self.m_oMapEntity.id
+                    oWasdiTask.id = sTaskId
+                    oWasdiTask.pluginId = self.m_oPluginEntity.id
+                    oWasdiTask.workspaceId = sTargetWorkspace
+                    oWasdiTask.startDate = datetime.now().timestamp()
+                    oWasdiTask.inputParams = aoParameters
+                    oWasdiTask.status = "CREATED"
+                    oWasdiTask.application = "edrift_auto_urban_flood"
+                    oWasdiTask.referenceDate = sDay
+
+
+                    oWasdiTaskRepository.addEntity(oWasdiTask)
             else:
                 logging.info("UrbanFloodMapEngine.startUrbanFlood: simulation mode on, I'm not really starting urban detection for " + sDay)
 

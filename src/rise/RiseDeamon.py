@@ -34,7 +34,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.0.4")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.0.5")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False
@@ -43,6 +43,7 @@ class RiseDeamon:
         wasdi.setUser(self.m_oConfig.wasdiConfig.wasdiUser)
         wasdi.setPassword(self.m_oConfig.wasdiConfig.wasdiPassword)
         wasdi.setBaseUrl(self.m_oConfig.wasdiConfig.wasdiBaseUrl)
+        wasdi.setVerbose(self.m_oConfig.wasdiConfig.verbose)
 
         if not wasdi.init():
             logging.error("RiseDeamon.run: There was an error initializing WASDI")

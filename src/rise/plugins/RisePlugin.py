@@ -157,7 +157,7 @@ class RisePlugin:
             logging.error("RiseMapEngine.handleTask: Map Engine not found " + oTask.mapId + " for task " + oTask.id)
             return
 
-        logging.info("RiseMapEngine.handleTask: calling handle Task on map " + oTask.mapId + " for plugin " + oTask.pluginId + " AreaId: " + oTask.areaId)
+        logging.debug("RiseMapEngine.handleTask: calling handle Task on map " + oTask.mapId + " for plugin " + oTask.pluginId + " AreaId: " + oTask.areaId)
 
         # Ask the map to handle the task
         return oMapEngine.handleTask(oTask)

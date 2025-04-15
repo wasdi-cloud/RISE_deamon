@@ -542,7 +542,7 @@ class SarFloodMapEngine(RiseMapEngine):
                     if aoImages is not None:
                         # Are more than before?
                         if len(aoImages)>iResults:
-                            # We definitly need to re-run
+                            # We definitely need to re-run
                             logging.info("SarFloodMapEngine.updateNewMaps: Found new images available for Orbit " + sOrbit + " set Force Re-Run = True")
                             bForceReRun = True
         else:
@@ -586,6 +586,8 @@ class SarFloodMapEngine(RiseMapEngine):
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
                 logging.warning("SarFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+        else:
+            logging.info("SarFloodMapEngine.updateNewMaps: nothing to re-start, done.")
 
     def updateChainParamsDate(self, sEndDate, aoChainParams, sDateKey = "lastMapDate"):
         # Previous version, if available

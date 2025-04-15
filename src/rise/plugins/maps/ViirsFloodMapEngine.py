@@ -269,9 +269,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                logging.info(
-                    "ViirsFloodMapEngine.updateNewMaps: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                logging.info("ViirsFloodMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for date " + sToday)
             else:
                 logging.warning("ViirsFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
         else:
