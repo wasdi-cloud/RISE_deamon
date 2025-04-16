@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 
 import wasdi
 
-from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
+
 
 class BuildingMapEngine(RiseMapEngine):
 
@@ -63,20 +63,11 @@ class BuildingMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoAppParameters
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
-                oWasdiTask.application = oMapConfig.processor
-                oWasdiTask.referenceDate = ""
 
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoAppParameters,oMapConfig.processor, "")
+                oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
                 oWasdiTaskRepository.addEntity(oWasdiTask)
+
                 logging.info(
                     "BuildingMapEngine.runBuildingsArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
@@ -120,18 +111,8 @@ class BuildingMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoAppParameters
-                oWasdiTask.status = "CREATED"
+                oWasdiTask = self.createNewTask(sProcessorId, sWorkspaceId, aoAppParameters, oMapConfig.processor, "2020-06-01")
                 oWasdiTask.pluginPayload["fastBuildingMap"] = True
-                oWasdiTask.application = oMapConfig.processor
-                oWasdiTask.referenceDate = "2020-06-01"
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
                 logging.info(
@@ -246,6 +227,7 @@ class BuildingMapEngine(RiseMapEngine):
                     return
 
             aoCityWatchParameters = oMapConfig.params
+            aoCityWatchParameters = vars(aoCityWatchParameters)
 
             # Well, we need the params in the config
             if aoCityWatchParameters is None:
@@ -258,18 +240,7 @@ class BuildingMapEngine(RiseMapEngine):
                 aoCityWatchParameters["END_DATE"] = sToday
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoCityWatchParameters)
 
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoCityWatchParameters
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.application = oMapConfig.processor
-                oWasdiTask.referenceDate = sToday
-
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoCityWatchParameters,oMapConfig.processor,sToday)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
                 logging.info(

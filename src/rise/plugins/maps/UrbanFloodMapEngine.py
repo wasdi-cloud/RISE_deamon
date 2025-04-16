@@ -1,12 +1,12 @@
 import logging
 import math
+from datetime import datetime, timedelta
 
 import wasdi
 
-from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
-from datetime import datetime, timedelta
+
 
 class UrbanFloodMapEngine(RiseMapEngine):
 
@@ -73,19 +73,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
                 sTaskId = wasdi.executeProcessor("flood_finder_in_archive", aoFloodFinderInArchiveParams)
 
                 logging.info("UrbanFloodMapEngine.updateNewMaps: started flood finder in archive")
-
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sTaskId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoFloodFinderInArchiveParams
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.application = "flood_finder_in_archive"
-                oWasdiTask.referenceDate = sDay
-
+                oWasdiTask = self.createNewTask(sTaskId,sWorkspaceId,aoFloodFinderInArchiveParams,"flood_finder_in_archive",sDay)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
             else:
                 logging.info("UrbanFloodMapEngine.updateNewMaps: simulation mode is on, think I started a flood finder in archive for day " + sDay)
@@ -252,19 +240,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
                     aoParameters["targetPostImage"] = sTargetSLCImage
                     sTaskId = wasdi.executeProcessor("edrift_auto_urban_flood", aoParameters)
 
-                    oWasdiTask = WasdiTask()
-                    oWasdiTask.areaId = self.m_oArea.id
-                    oWasdiTask.mapId = self.m_oMapEntity.id
-                    oWasdiTask.id = sTaskId
-                    oWasdiTask.pluginId = self.m_oPluginEntity.id
-                    oWasdiTask.workspaceId = sTargetWorkspace
-                    oWasdiTask.startDate = datetime.now().timestamp()
-                    oWasdiTask.inputParams = aoParameters
-                    oWasdiTask.status = "CREATED"
-                    oWasdiTask.application = "edrift_auto_urban_flood"
-                    oWasdiTask.referenceDate = sDay
-
-
+                    oWasdiTask = self.createNewTask(sTaskId,sTargetWorkspace,aoParameters,"edrift_auto_urban_flood",sDay)
                     oWasdiTaskRepository.addEntity(oWasdiTask)
             else:
                 logging.info("UrbanFloodMapEngine.startUrbanFlood: simulation mode on, I'm not really starting urban detection for " + sDay)

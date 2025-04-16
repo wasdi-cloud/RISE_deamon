@@ -1,16 +1,11 @@
 import logging
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import wasdi
 
-from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
-from src.rise.data.LayerRepository import LayerRepository
-from src.rise.data.UserRepository import UserRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
-from src.rise.utils.RiseUtils import sendEmailMailJet
 
 
 class ViirsFloodMapEngine(RiseMapEngine):
@@ -64,18 +59,9 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsArchiveParameters)
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoViirsArchiveParameters
-                oWasdiTask.status = "CREATED"
+
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoViirsArchiveParameters,oMapConfig.processor,"")
                 oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
-                oWasdiTask.referenceDate = ""
-                oWasdiTask.application = oMapConfig.processor
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
                 logging.info(
@@ -222,6 +208,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
         oMapConfig = self.getMapConfig("viirs_daily_flood")
         aoViirsParameters = oMapConfig.params
+        aoViirsParameters = vars(aoViirsParameters)
 
         # Did we already start any map today?
         oWasdiTaskRepository = WasdiTaskRepository()
@@ -245,7 +232,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
         if sOutputFileName not in asWorkspaceFiles:
             if not self.m_oConfig.daemon.simulate:
-                aoViirsParameters = vars(aoViirsParameters)
+
                 aoViirsParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
                 aoViirsParameters["BASENAME"] = sBaseName
                 aoViirsParameters["EVENTDATE"] = sToday
@@ -255,18 +242,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsParameters)
 
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoViirsParameters
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.application = oMapConfig.processor
-                oWasdiTask.referenceDate = sToday
-
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoViirsParameters,oMapConfig.processor,sToday)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
                 logging.info("ViirsFloodMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for date " + sToday)

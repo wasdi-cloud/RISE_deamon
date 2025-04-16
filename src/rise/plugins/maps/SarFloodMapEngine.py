@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import wasdi
 
 from src.rise.business.Event import Event
-from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.EventRepository import EventRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
@@ -145,17 +144,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoIntegratedArchiveParameters)
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoIntegratedArchiveParameters
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.application = oMapConfig.processor
-                oWasdiTask.referenceDate = ""
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoIntegratedArchiveParameters,oMapConfig.processor,"")
                 oWasdiTask.pluginPayload["integratedArchive"] = True
                 oWasdiTask.pluginPayload["fullArchive"] = bFullArchive
 
@@ -567,18 +556,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoFloodChainParameters)
 
-                oWasdiTask = WasdiTask()
-                oWasdiTask.areaId = self.m_oArea.id
-                oWasdiTask.mapId = self.m_oMapEntity.id
-                oWasdiTask.id = sProcessorId
-                oWasdiTask.pluginId = self.m_oPluginEntity.id
-                oWasdiTask.workspaceId = sWorkspaceId
-                oWasdiTask.startDate = datetime.now().timestamp()
-                oWasdiTask.inputParams = aoFloodChainParameters
-                oWasdiTask.status = "CREATED"
-                oWasdiTask.application = oMapConfig.processor
-                oWasdiTask.referenceDate = sDay
-
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoFloodChainParameters,oMapConfig.processor,sDay)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
                 logging.info(

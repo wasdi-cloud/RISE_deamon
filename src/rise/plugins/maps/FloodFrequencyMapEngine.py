@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 import wasdi
 
-from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.MapRepository import MapRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
@@ -114,18 +113,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                     # Run the FFM to update
                     sProcessorId = wasdi.executeProcessor("floodfrequencymap", aoFFMParams)
 
-                    oWasdiTask = WasdiTask()
-                    oWasdiTask.areaId = self.m_oArea.id
-                    oWasdiTask.mapId = self.m_oMapEntity.id
-                    oWasdiTask.id = sProcessorId
-                    oWasdiTask.pluginId = self.m_oPluginEntity.id
-                    oWasdiTask.workspaceId = sWorkspaceId
-                    oWasdiTask.startDate = datetime.now().timestamp()
-                    oWasdiTask.inputParams = aoFFMParams
-                    oWasdiTask.status = "CREATED"
-                    oWasdiTask.application = "floodfrequencymap"
-                    oWasdiTask.referenceDate = sDate
-
+                    oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoFFMParams,"floodfrequencymap", sDate)
                     oWasdiTaskRepository.addEntity(oWasdiTask)
 
                     logging.info(

@@ -8,6 +8,7 @@ import wasdi
 
 from src.rise.RiseDeamon import RiseDeamon
 from src.rise.business.Layer import Layer
+from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.LayerRepository import LayerRepository
 from src.rise.data.UserRepository import UserRepository
@@ -177,10 +178,19 @@ class RiseMapEngine:
                     sStyle = self.getStyleForMap()
 
                 if bPublish:
-                    if not self.publishRasterLayer(sFileName, sStyle):
-                        logging.error("RiseMapEngine.addAndPublishLayer: impossible to publish " + sLayerName)
+
+                    if self.isRasterFile(sFileName):
+                        if not self.publishRasterLayer(sFileName, sStyle):
+                            logging.error("RiseMapEngine.addAndPublishLayer: impossible to publish raster " + sLayerName)
+                        else:
+                            oLayer.published = True
+                    elif self.isShapeFile(sFileName):
+                        if not self.publishShapeLayer(sFileName, sStyle):
+                            logging.error("RiseMapEngine.addAndPublishLayer: impossible to publish shape " + sLayerName)
+                        else:
+                            oLayer.published = True
                     else:
-                        oLayer.published = True
+                        logging.error("The file type of " + sLayerName + " is not recognized, we cannot publish!")
 
                 oLayerRepository.addEntity(oLayer)
             return oLayer
@@ -208,6 +218,57 @@ class RiseMapEngine:
                 return False
         except Exception as oEx:
             logging.error("RiseMapEngine.publishRasterLayer exception " + str(oEx))
+
+        return False
+
+    def publishShapeLayer(self, sFileName, sStyleName=None):
+        try:
+            sLocalFilePath = wasdi.getPath(sFileName)
+            oGeoserverService = GeoserverService()
+            sLayerName = Path(str(sLocalFilePath)).stem
+
+            oWorkspace = oGeoserverService.getWorkspace(self.m_oConfig.geoserver.workspace)
+
+            if oWorkspace is None:
+                oGeoserverService.createWorkspace(self.m_oConfig.geoserver.workspace)
+
+            oStore = oGeoserverService.publishShapeLayer (sLocalFilePath, self.m_oConfig.geoserver.workspace, sLayerName, sStyleName)
+            os.remove(sLocalFilePath)
+
+            if oStore is not None:
+                return True
+            else:
+                return False
+        except Exception as oEx:
+            logging.error("RiseMapEngine.publishRasterLayer exception " + str(oEx))
+
+        return False
+
+    def isRasterFile(self, sFileName):
+        if sFileName is None:
+            return False
+
+        try:
+            bIsRaster = False
+            if sFileName.lower().endswith(".tif") or sFileName.lower().endswith(".tiff"):
+                bIsRaster = True
+            return bIsRaster
+        except Exception as oEx:
+            logging.error("RiseMapEngine.isRasterFile:  " + str(oEx))
+
+        return False
+
+    def isShapeFile(self, sFileName):
+        if sFileName is None:
+            return False
+
+        try:
+            bIsShapeFile = False
+            if sFileName.lower().endswith(".shp"):
+                bIsShapeFile = True
+            return bIsShapeFile
+        except Exception as oEx:
+            logging.error("RiseMapEngine.isShapeFile:  " + str(oEx))
 
         return False
 
@@ -327,3 +388,17 @@ class RiseMapEngine:
 
         except Exception as oEx:
             logging.error(f"RiseMApEngine.notifyEndOfTask. Error {oEx}")
+
+    def createNewTask(self, sTaskId=None, sWorkspaceId=None, aoParameters=None, sApplication=None, sReferenceDate=None):
+        oWasdiTask = WasdiTask()
+        oWasdiTask.areaId = self.m_oArea.id
+        oWasdiTask.mapId = self.m_oMapEntity.id
+        oWasdiTask.id = sTaskId
+        oWasdiTask.pluginId = self.m_oPluginEntity.id
+        oWasdiTask.workspaceId = sWorkspaceId
+        oWasdiTask.startDate = datetime.now().timestamp()
+        oWasdiTask.inputParams = aoParameters
+        oWasdiTask.status = "CREATED"
+        oWasdiTask.application = sApplication
+        oWasdiTask.referenceDate = sReferenceDate
+        return oWasdiTask
