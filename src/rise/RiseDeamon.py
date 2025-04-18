@@ -1,6 +1,8 @@
 import getopt
 import json
 import logging
+import os
+from pathlib import Path
 import sys
 from types import SimpleNamespace
 
@@ -251,15 +253,15 @@ class RiseDeamon:
     def cleanLayers(self):
 
         if self.m_oConfig is None:
-            logging.error("RiseUtils.cleanLayers. Config is none. No layer will be deleted")
+            logging.error("RiseDeamon.cleanLayers. Config is none. No layer will be deleted")
             return
 
         if self.m_oConfig.daemon is None:
-            logging.error("RiseUtils.cleanLayers. No settings were found for the deamon. No layer will be deleted")
+            logging.error("RiseDeamon.cleanLayers. No settings were found for the deamon. No layer will be deleted")
             return
 
         if self.m_oConfig.daemon.layersRetentionDays is None:
-            logging.error("RiseUtils.cleanLayers. No layers retention days specified. No layer will be deleted")
+            logging.error("RiseDeamon.cleanLayers. No layers retention days specified. No layer will be deleted")
             return
 
         iRetentionDays = self.m_oConfig.daemon.layersRetentionDays
@@ -277,12 +279,12 @@ class RiseDeamon:
                 sLayerId = oEntity.layerId
 
                 if RiseUtils.isNoneOrEmpty(sLayerId):
-                    logging.debug("RiseUtils.cleanLayers: found an empty layer id")
+                    logging.debug("RiseDeamon.cleanLayers: found an empty layer id")
                     continue
 
                 if oGeoService.deleteLayer(sLayerId):
                     aoDeletedEntitiesIds.append(oEntity.id)
-                    logging.debug(f"RiseUtils.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
+                    logging.debug(f"RiseDeamon.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
 
             iDeletedLayers = 0
             # to be sure that the Layer entities have not been updated while we were deleting the layers from Geoserver,
@@ -291,10 +293,10 @@ class RiseDeamon:
                 aoDeletedLayers = oLayerRepo.getAllEntitiesById(aoDeletedEntitiesIds)
                 list(map(lambda oLayer: setattr(oLayer, "published", False), aoDeletedLayers))
                 iDeletedLayers = oLayerRepo.updateAllEntities(aoDeletedLayers)
-            logging.info(f"RiseUtils.cleanLayers: number of cleaned layers is equal to {iDeletedLayers}")
+            logging.info(f"RiseDeamon.cleanLayers: number of cleaned layers is equal to {iDeletedLayers}")
 
         except Exception as oEx:
-            logging.error(f"RiseUtils.cleanLayers: exception {oEx}")
+            logging.error(f"RiseDeamon.cleanLayers: exception {oEx}")
 
 
     @staticmethod
@@ -306,6 +308,30 @@ class RiseDeamon:
         oConfig = json.loads(sConfigContent, object_hook=lambda d: SimpleNamespace(**d))
         oConfig.myFilePath = sConfigFilePath
         return oConfig
+    
+    @staticmethod
+    def getPluginConfig(sPluginId, oConfig):
+        try:
+            oParentPath = Path(oConfig.myFilePath).parent
+            oPluginConfigPath = oParentPath.joinpath(sPluginId + ".json")
+            if os.path.isfile(oPluginConfigPath):
+                oPluginConfig = RiseDeamon.readConfigFile(oPluginConfigPath)
+                return oPluginConfig
+        except Exception as oEx:
+            logging.error("RiseDeamon.getPluginConfig: exception " + str(oEx))
+        
+        return None
+    
+    def getMapConfigFromPluginConfig(oPluginConfig, sMapId):
+        try:
+            for oMapConfig in oPluginConfig.maps:
+                if oMapConfig.id == sMapId:
+                    return oMapConfig
+        except Exception as oEx:
+            logging.error("RiseDeamon.getMapConfigFromPluginConfig: exception " + str(oEx))
+        
+        return None        
+
 
 if __name__ == '__main__':
     # Default configuration file Path

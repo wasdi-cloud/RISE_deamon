@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+import datetime
 
 import wasdi
 
@@ -21,18 +21,18 @@ class ImergMapEngine(RiseMapEngine):
     def updateNewMaps(self):
         logging.info("ImergMapEngine.triggerNewAreaArchives: Update New Maps")
 
-        oNow = datetime.now()
+        oNow = datetime.datetime.now(datetime.UTC)
         sDay = oNow.strftime("%Y-%m-%d")
         sHour = oNow.strftime("%H")
 
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
-        oMapConfig = self.getMapConfig("imerg_cumulate")
+        oMapConfig = self.getMapConfig("imerg_cumulate_12")
 
         # Did we already start any map today?
         oWasdiTaskRepository = WasdiTaskRepository()
 
         # Take all our task for today
-        aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id,
+        aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, "imerg_cumulate",
                                                             self.m_oPluginEntity.id, sWorkspaceId,
                                                             oMapConfig.processor, sDay)
 
@@ -61,6 +61,8 @@ class ImergMapEngine(RiseMapEngine):
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
             oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sDay)
+            # Override: one for all in the tasks!
+            oWasdiTask.mapId = "imerg_cumulate"
             oWasdiTask.pluginPayload["time"] = sHour
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
@@ -111,14 +113,25 @@ class ImergMapEngine(RiseMapEngine):
                 if sFile in asFiles:
                     logging.info("ImergMapEngine.handleTask: publishing " + sFile)
 
-                    oReferenceDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+                    oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
                     oReferenceDate = oReferenceDate.replace(hour=int(sTime))
 
-                    oMapConfig = self.getMapConfig()
+                    sMapConfig = "imerg_cumulate_12"
+
+                    if "Cumulative_24hr" in sFile:
+                        sMapConfig = "imerg_cumulate_24"
+
+                    if "Cumulative_6hr" in sFile:
+                        sMapConfig = "imerg_cumulate_6"
+
+                    if "Cumulative_3hr" in sFile:
+                        sMapConfig = "imerg_cumulate_3"
+
+                    oMapConfig = self.getMapConfig(sMapConfig)
 
                     self.addAndPublishLayer(sFile, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
                                             bKeepLayer=False, sDataSource=oMapConfig.dataSource,
-                                            sResolution=oMapConfig.resolution, sInputData=sInputData, bForceRepublish=True)
+                                            sResolution=oMapConfig.resolution, sInputData=sInputData, sOverrideMapId=sMapConfig)
 
         except Exception as oEx:
             logging.error("ImergMapEngine.handleTask: exception " + str(oEx))

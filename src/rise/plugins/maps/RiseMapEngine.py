@@ -1,3 +1,4 @@
+import glob
 import json
 import logging
 import os
@@ -141,7 +142,7 @@ class RiseMapEngine:
 
         return oLayer
 
-    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None, sOverrideMapId=None, sOverridePluginId=None, bForceRepublish=False):
+    def addAndPublishLayer(self, sFileName, oReferenceDate, bPublish=True, sMapIdForStyle=None, bKeepLayer=False, sDataSource="", oCreationDate=None, sResolution="", sInputData="", asProperties=None, sOverrideMapId=None, sOverridePluginId=None, bForceRepublish=False, sForceStyle=None):
         try:
             oLayerRepository = LayerRepository()
             sLayerName = Path(sFileName).stem
@@ -166,16 +167,29 @@ class RiseMapEngine:
                     # Delete it
                     oGeoserverService.deleteLayer(oLayer.layerId)
 
+                # If we have already a local WASDI copy, delete it to be sure to take the last one from the workspace
+                sLocalFilePath = wasdi.getSavePath() + sFileName
+
+                try:
+                    if os.path.exists(sLocalFilePath):
+                        os.remove(sLocalFilePath)
+                except Exception as oEx:
+                    logging.warning("Error removing local file " + sLocalFilePath)
+
                 # Set the layer as none to re-publish it
                 oTestLayer = None
 
 
             if oTestLayer is None:
                 logging.info("RiseMapEngine.addAndPublishLayer: publish Map: " + sLayerName)
-                if sMapIdForStyle is not None:
-                    sStyle = self.getStyleForMap(sMapIdForStyle)
+
+                if sForceStyle is not None:
+                    sStyle = sForceStyle
                 else:
-                    sStyle = self.getStyleForMap()
+                    if sMapIdForStyle is not None:
+                        sStyle = self.getStyleForMap(sMapIdForStyle)
+                    else:
+                        sStyle = self.getStyleForMap()
 
                 if bPublish:
 
@@ -225,6 +239,7 @@ class RiseMapEngine:
         try:
             sLocalFilePath = wasdi.getPath(sFileName)
             oGeoserverService = GeoserverService()
+            sLocalFilePath = sLocalFilePath.replace(".shp", ".zip")
             sLayerName = Path(str(sLocalFilePath)).stem
 
             oWorkspace = oGeoserverService.getWorkspace(self.m_oConfig.geoserver.workspace)
@@ -232,8 +247,11 @@ class RiseMapEngine:
             if oWorkspace is None:
                 oGeoserverService.createWorkspace(self.m_oConfig.geoserver.workspace)
 
+            asFiles = glob.glob(wasdi.getSavePath() + sFileName.replace(".shp","*"))
             oStore = oGeoserverService.publishShapeLayer (sLocalFilePath, self.m_oConfig.geoserver.workspace, sLayerName, sStyleName)
-            os.remove(sLocalFilePath)
+            
+            for sFile in asFiles:
+                os.remove(sFile)
 
             if oStore is not None:
                 return True

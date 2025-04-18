@@ -154,7 +154,7 @@ class GeoserverService:
 
             if sStyleName is not None:
                 sFileNameWithoutExtension = os.path.basename(sShapeFilePath)[:-4]
-                bStyleResult = oService.publishStyle(sStyleName, sLayerName=sFileNameWithoutExtension, sWorkspaceName=sWorkspaceName)
+                bStyleResult = self.publishStyle(sStyleName, sLayerName=sFileNameWithoutExtension, sWorkspaceName=sWorkspace)
 
                 if not bStyleResult:
                     logging.warning("GeoserverService.publishShapeLayer. There was an error adding the style to the layer")

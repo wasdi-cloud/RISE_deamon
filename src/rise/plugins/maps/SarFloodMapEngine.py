@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import wasdi
 
+from src.rise.RiseDeamon import RiseDeamon
 from src.rise.business.Event import Event
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.EventRepository import EventRepository
@@ -108,7 +109,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoIntegratedArchiveParameters["ARCHIVE_START_DATE"] = oMapConfig.startArchiveDate
                 # Until the end date of the short archive
                 aoIntegratedArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
-                aoIntegratedArchiveParameters["FFM_IDENTIFIER"] = "fullffm"
+                aoIntegratedArchiveParameters["FFM_IDENTIFIER"] = "archiveffm"
             else:
                 # Take today
                 iEnd = datetime.today()
@@ -162,8 +163,9 @@ class SarFloodMapEngine(RiseMapEngine):
     def handleTask(self, oTask):
         try:
             # First of all we check if it is safe and done
-            if not super().handleTask(oTask):
-                return False
+            #if not super().handleTask(oTask):
+            #    return False
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
             logging.info("SarFloodMapEngine.handleTask: handle task " + oTask.id)
 
@@ -203,7 +205,7 @@ class SarFloodMapEngine(RiseMapEngine):
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
 
-    def handleEvents(self, sEventFinderId):
+    def handleEvents(self, sEventFinderId, asWorkspaceFiles):
         """
         Handle the events found by Integrated SAR Archive
         :param sEventFinderId:
@@ -224,12 +226,26 @@ class SarFloodMapEngine(RiseMapEngine):
             if "UrbanMaps" in aoEventFinderPayload:
                 asUrbanMaps = aoEventFinderPayload["UrbanMaps"]
 
+            # List of Urban Detections
+            aoUrbanDetections =  []
+            if "UrbanDetections" in aoEventFinderPayload:
+                aoUrbanDetections = aoEventFinderPayload["UrbanDetections"]
+
             # List of composites
             asCompositeMaps = []
             if "CompositeMaps" in aoEventFinderPayload:
                 asCompositeMaps = aoEventFinderPayload["CompositeMaps"]
 
+            # List of Urban Detections
+            aoCompositeDetections =  []
+            if "Composites" in aoEventFinderPayload:
+                aoCompositeDetections = aoEventFinderPayload["Composites"]
+
+
             oEventRepository = EventRepository()
+            sBaseName = self.getBaseName("sar_flood")
+
+            oImpactsPluginConfig = RiseDeamon.getPluginConfig("rise_impact_plugin", self.m_oConfig)
 
             # For each event
             for iEvent in range(len(aoEvents)):
@@ -238,23 +254,108 @@ class SarFloodMapEngine(RiseMapEngine):
                     sUrbanMap = asUrbanMaps[iEvent]
                     sCompositeMap = asCompositeMaps[iEvent]
 
-                    oActualDate = datetime.strptime(oEvent["peakDate"], '%d-%m-%Y')
+                    oActualDate = datetime.strptime(oEvent["peakDate"], '%Y-%m-%d')
 
-                    oMapConfig = self.getMapConfig("urban_flood")
-                    self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
-                    oMapConfig = self.getMapConfig("flood_composite")
-                    self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                    if sUrbanMap in asWorkspaceFiles:
+                        oMapConfig = self.getMapConfig("urban_flood")
+                        sInputData = oMapConfig.inputData
 
-                    oEventEntity = Event()
-                    oEventEntity.name= "Flood_" + oEvent["peakDate"]
-                    oEventEntity.type = "flood"
-                    oEventEntity.bbox = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
-                    oEventEntity.startDate = oEvent["startDate"]
-                    oEventEntity.peakDate = oEvent["peakDate"]
-                    oEventEntity.endDate = oEvent["endDate"]
-                    oEventEntity.areaId = self.m_oArea.id
-                    oEventEntity.id = str(uuid.uuid4())
-                    oEventRepository.addEntity(oEventEntity)
+                        try:
+                            if iEvent<len(aoUrbanDetections):
+                                oUrbanDetection = aoUrbanDetections[iEvent]
+                                sProcId = oUrbanDetection["PROCID"]
+                                aoPayload = wasdi.getProcessorPayloadAsJson(sProcId)
+                                if "UrbanBuildingMaps" in aoPayload:
+                                    sInputData = sInputData + " Buildings Map: " + aoPayload["UrbanBuildingMaps"]
+                                if "PRE_VV" in aoPayload:
+                                    sInputData = sInputData + " PRE VV Coherence: " + aoPayload["PRE_VV"]
+                                if "PRE_VH" in aoPayload:
+                                    sInputData = sInputData + " PRE VH Coherence: " + aoPayload["PRE_VH"]
+                                if "POST_VV" in aoPayload:
+                                    sInputData = sInputData + " POST VV Coherence: " + aoPayload["POST_VV"]
+                                if "POST_VH" in aoPayload:
+                                    sInputData = sInputData + " POST VH Coherence: " + aoPayload["POST_VH"]
+                        except:
+                            logging.warning("Error trying to read the inputs of Urban Detection for map " + sUrbanMap)
+                        
+                        self.addAndPublishLayer(sUrbanMap, oActualDate, True, "urban_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True)
+
+                    if sCompositeMap in asWorkspaceFiles:
+                        oMapConfig = self.getMapConfig("flood_composite")
+                        sInputData = oMapConfig.inputData
+
+                        try:
+                            if iEvent<len(aoCompositeDetections):
+                                oCompositeDetection = aoCompositeDetections[iEvent]
+                                sProcId = oCompositeDetection["PROCID"]
+                                aoPayload = wasdi.getProcessorPayloadAsJson(sProcId)
+                                if "sar_added_files" in aoPayload:
+                                    sInputData = sInputData + " Buildings Map: " + str(aoPayload["sar_added_files"])
+                        except:
+                            logging.warning("Error trying to read the inputs of Urban Detection for map " + sUrbanMap)
+                        self.addAndPublishLayer(sCompositeMap, oActualDate, True, "flood_composite", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True)
+
+                    sExtensionRoadImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_roads.shp"
+                    if sExtensionRoadImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"roads")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sExtensionRoadImpacts, oActualDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sExtensionExposureImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_exposure.shp"
+                    if sExtensionExposureImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"exposures")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sExtensionExposureImpacts, oActualDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sExtensionPopImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_pop_affected.tif"
+                    if sExtensionPopImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"population")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sExtensionPopImpacts, oActualDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    aoTestEvents = oEventRepository.findByParams(sAreaId=self.m_oArea.id, sPeakDate=oEvent["peakDate"], sType="flood")
+
+                    if len(aoTestEvents)<=0:
+                        oEventEntity = Event()
+                        oEventEntity.name= "Flood_" + oEvent["peakDate"]
+                        oEventEntity.type = "FLOOD"
+                        oEventEntity.bbox = self.m_oArea.bbox
+
+                        iStartDate = datetime.now().timestamp()
+                        iPeakDate = datetime.now().timestamp()
+                        iEndDate = datetime.now().timestamp()
+
+                        try:
+                            iStartDate = datetime.strptime(oEvent["startDate"], "%Y-%m-%d").timestamp()
+                        except:
+                            logging.warning("Error converting event start date " + str(oEvent["startDate"]))
+                        
+                        try:
+                            iPeakDate = datetime.strptime(oEvent["peakDate"], "%Y-%m-%d").timestamp()
+                        except:
+                            logging.warning("Error converting event peak date " + str(oEvent["peakDate"]))
+ 
+                        try:
+                            iEndDate = datetime.strptime(oEvent["endDate"], "%Y-%m-%d").timestamp()
+                        except:
+                            logging.warning("Error converting event end date " + str(oEvent["endDate"]))
+ 
+                        oEventEntity.startDate = iStartDate
+                        oEventEntity.peakDate = iPeakDate
+                        oEventEntity.endDate = iEndDate
+                        oEventEntity.areaId = self.m_oArea.id
+                        oEventEntity.id = str(uuid.uuid4())
+                        oEventEntity.publicEvent = False
+                        oEventEntity.inGoing = False
+                        oEventEntity.description = "Automatic Flood Event peak = " + oEvent["peakDate"]
+                        oEventEntity.markerCoordinates = self.m_oArea.markerCoordinates
+                        oEventRepository.addEntity(oEventEntity)
+
+                    else:
+                        logging.debug("Event " + "Flood_" + oEvent["peakDate"] + " already in the db")
 
                 except Exception as oEx:
                     logging.error("SarFloodMapEngine.handleEvents: error creating events " + str(oEx))
@@ -291,36 +392,36 @@ class SarFloodMapEngine(RiseMapEngine):
             oTimeDelta = timedelta(days=1)
             oActualDate = oStartDay
 
-            # For each date of the archive
-            while oActualDate <= oEndDay:
-                sDate = oActualDate.strftime("%Y-%m-%d")
-                sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
+            # # For each date of the archive
+            # while oActualDate <= oEndDay:
+            #     sDate = oActualDate.strftime("%Y-%m-%d")
+            #     sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
 
-                # If the file is in the workspace
-                if sFileName not in asWorkspaceFiles:
-                    oActualDate = oActualDate + oTimeDelta
-                    continue
+            #     # If the file is in the workspace
+            #     if sFileName not in asWorkspaceFiles:
+            #         oActualDate = oActualDate + oTimeDelta
+            #         continue
 
-                logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
+            #     logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
 
-                oMapConfig = self.getMapConfig("sar_flood")
-                oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+            #     oMapConfig = self.getMapConfig("sar_flood")
+            #     oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
-                if oLayer is None:
-                    logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
-                    continue
+            #     if oLayer is None:
+            #         logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
+            #         continue
 
-                if fFirstMapTimestamp == -1.0:
-                    fFirstMapTimestamp = oLayer.referenceDate
-                elif oLayer.referenceDate < fFirstMapTimestamp:
-                    fFirstMapTimestamp = oLayer.referenceDate
+            #     if fFirstMapTimestamp == -1.0:
+            #         fFirstMapTimestamp = oLayer.referenceDate
+            #     elif oLayer.referenceDate < fFirstMapTimestamp:
+            #         fFirstMapTimestamp = oLayer.referenceDate
 
-                if fLastMapTimestamp == -1.0:
-                    fLastMapTimestamp = oLayer.referenceDate
-                elif oLayer.referenceDate > fLastMapTimestamp:
-                    fLastMapTimestamp = oLayer.referenceDate
+            #     if fLastMapTimestamp == -1.0:
+            #         fLastMapTimestamp = oLayer.referenceDate
+            #     elif oLayer.referenceDate > fLastMapTimestamp:
+            #         fLastMapTimestamp = oLayer.referenceDate
 
-                oActualDate = oActualDate + oTimeDelta
+            #     oActualDate = oActualDate + oTimeDelta
 
             # Read the payload of the integrated sar archive
             aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
@@ -350,7 +451,7 @@ class SarFloodMapEngine(RiseMapEngine):
                     aoChainParams["water_map"] = aoPermWaterPayload["water_map"]
 
             # Handle the events array
-            self.handleEvents(sEventFinderId)
+            self.handleEvents(sEventFinderId, asWorkspaceFiles)
 
             sFFmMap = sBaseName + "_ffm_flood.tif"
             oMapConfig = self.getMapConfig("flood_frequency_map")
@@ -364,7 +465,7 @@ class SarFloodMapEngine(RiseMapEngine):
                         logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
             else:
                 # This is the long term archive
-                sFullArchiveFFmMap = sBaseName + "_fullffm_flood.tif"
+                sFullArchiveFFmMap = sBaseName + "_archiveffm_flood.tif"
 
                 if sFullArchiveFFmMap in asWorkspaceFiles:
 
@@ -386,7 +487,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
                         # We should have also the data maps
                         sDataMap = sBaseName + "_ffm_data.tif"
-                        sFullDataMap = sBaseName + "_fullffm_data.tif"
+                        sFullDataMap = sBaseName + "_archiveffm_data.tif"
 
                         if sDataMap in asWorkspaceFiles and sFullDataMap in asWorkspaceFiles:
                             aoTiffAddParams["INPUT_FILES"] = [sDataMap, sFullDataMap]
