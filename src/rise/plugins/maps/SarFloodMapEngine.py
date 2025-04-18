@@ -163,8 +163,8 @@ class SarFloodMapEngine(RiseMapEngine):
     def handleTask(self, oTask):
         try:
             # First of all we check if it is safe and done
-            #if not super().handleTask(oTask):
-            #    return False
+            if not super().handleTask(oTask):
+               return False
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
             logging.info("SarFloodMapEngine.handleTask: handle task " + oTask.id)
@@ -392,36 +392,36 @@ class SarFloodMapEngine(RiseMapEngine):
             oTimeDelta = timedelta(days=1)
             oActualDate = oStartDay
 
-            # # For each date of the archive
-            # while oActualDate <= oEndDay:
-            #     sDate = oActualDate.strftime("%Y-%m-%d")
-            #     sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
+            # For each date of the archive
+            while oActualDate <= oEndDay:
+                sDate = oActualDate.strftime("%Y-%m-%d")
+                sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
 
-            #     # If the file is in the workspace
-            #     if sFileName not in asWorkspaceFiles:
-            #         oActualDate = oActualDate + oTimeDelta
-            #         continue
+                # If the file is in the workspace
+                if sFileName not in asWorkspaceFiles:
+                    oActualDate = oActualDate + oTimeDelta
+                    continue
 
-            #     logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
+                logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
 
-            #     oMapConfig = self.getMapConfig("sar_flood")
-            #     oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                oMapConfig = self.getMapConfig("sar_flood")
+                oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
-            #     if oLayer is None:
-            #         logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
-            #         continue
+                if oLayer is None:
+                    logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
+                    continue
 
-            #     if fFirstMapTimestamp == -1.0:
-            #         fFirstMapTimestamp = oLayer.referenceDate
-            #     elif oLayer.referenceDate < fFirstMapTimestamp:
-            #         fFirstMapTimestamp = oLayer.referenceDate
+                if fFirstMapTimestamp == -1.0:
+                    fFirstMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate < fFirstMapTimestamp:
+                    fFirstMapTimestamp = oLayer.referenceDate
 
-            #     if fLastMapTimestamp == -1.0:
-            #         fLastMapTimestamp = oLayer.referenceDate
-            #     elif oLayer.referenceDate > fLastMapTimestamp:
-            #         fLastMapTimestamp = oLayer.referenceDate
+                if fLastMapTimestamp == -1.0:
+                    fLastMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate > fLastMapTimestamp:
+                    fLastMapTimestamp = oLayer.referenceDate
 
-            #     oActualDate = oActualDate + oTimeDelta
+                oActualDate = oActualDate + oTimeDelta
 
             # Read the payload of the integrated sar archive
             aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
