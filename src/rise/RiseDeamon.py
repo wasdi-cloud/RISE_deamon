@@ -45,7 +45,9 @@ class RiseDeamon:
         wasdi.setUser(self.m_oConfig.wasdiConfig.wasdiUser)
         wasdi.setPassword(self.m_oConfig.wasdiConfig.wasdiPassword)
         wasdi.setBaseUrl(self.m_oConfig.wasdiConfig.wasdiBaseUrl)
-        wasdi.setVerbose(self.m_oConfig.wasdiConfig.verbose)
+        # TODO: ERROR - RiseDeamon exception: Error ->  'types.SimpleNamespace' object has no attribute 'verbose'
+        #wasdi.setVerbose(self.m_oConfig.wasdiConfig.verbose)
+        wasdi.setVerbose(False)
 
         if not wasdi.init():
             logging.error("RiseDeamon.run: There was an error initializing WASDI")
