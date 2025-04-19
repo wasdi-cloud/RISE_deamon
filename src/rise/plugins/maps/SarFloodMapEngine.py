@@ -162,9 +162,9 @@ class SarFloodMapEngine(RiseMapEngine):
 
     def handleTask(self, oTask):
         try:
-            # # First of all we check if it is safe and done
-            # if not super().handleTask(oTask):
-            #    return False
+            # First of all we check if it is safe and done
+            if not super().handleTask(oTask):
+               return False
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
             logging.info("SarFloodMapEngine.handleTask: handle task " + oTask.id)
@@ -454,36 +454,36 @@ class SarFloodMapEngine(RiseMapEngine):
             oTimeDelta = timedelta(days=1)
             oActualDate = oStartDay
 
-            # # For each date of the archive
-            # while oActualDate <= oEndDay:
-            #     sDate = oActualDate.strftime("%Y-%m-%d")
-            #     sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
+            # For each date of the archive
+            while oActualDate <= oEndDay:
+                sDate = oActualDate.strftime("%Y-%m-%d")
+                sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
 
-            #     # If the file is in the workspace
-            #     if sFileName not in asWorkspaceFiles:
-            #         oActualDate = oActualDate + oTimeDelta
-            #         continue
+                # If the file is in the workspace
+                if sFileName not in asWorkspaceFiles:
+                    oActualDate = oActualDate + oTimeDelta
+                    continue
 
-            #     logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
+                logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
 
-            #     oMapConfig = self.getMapConfig("sar_flood")
-            #     oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                oMapConfig = self.getMapConfig("sar_flood")
+                oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
-            #     if oLayer is None:
-            #         logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
-            #         continue
+                if oLayer is None:
+                    logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
+                    continue
 
-            #     if fFirstMapTimestamp == -1.0:
-            #         fFirstMapTimestamp = oLayer.referenceDate
-            #     elif oLayer.referenceDate < fFirstMapTimestamp:
-            #         fFirstMapTimestamp = oLayer.referenceDate
+                if fFirstMapTimestamp == -1.0:
+                    fFirstMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate < fFirstMapTimestamp:
+                    fFirstMapTimestamp = oLayer.referenceDate
 
-            #     if fLastMapTimestamp == -1.0:
-            #         fLastMapTimestamp = oLayer.referenceDate
-            #     elif oLayer.referenceDate > fLastMapTimestamp:
-            #         fLastMapTimestamp = oLayer.referenceDate
+                if fLastMapTimestamp == -1.0:
+                    fLastMapTimestamp = oLayer.referenceDate
+                elif oLayer.referenceDate > fLastMapTimestamp:
+                    fLastMapTimestamp = oLayer.referenceDate
 
-            #     oActualDate = oActualDate + oTimeDelta
+                oActualDate = oActualDate + oTimeDelta
 
             # Read the payload of the integrated sar archive
             aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
@@ -529,56 +529,56 @@ class SarFloodMapEngine(RiseMapEngine):
                 # This is the long term archive
                 sFullArchiveFFmMap = sBaseName + "_archiveffm_flood.tif"
 
-                # if sFullArchiveFFmMap in asWorkspaceFiles:
+                if sFullArchiveFFmMap in asWorkspaceFiles:
 
-                #     logging.info("SarFloodMapEngine.handleArchiveTask: trying to sum full FFM with the short archive one")
+                    logging.info("SarFloodMapEngine.handleArchiveTask: trying to sum full FFM with the short archive one")
 
-                #     # We have the ffm done for the full archive: we need to sum it to the short-near real time one
-                #     aoTiffAddParams = {}
+                    # We have the ffm done for the full archive: we need to sum it to the short-near real time one
+                    aoTiffAddParams = {}
 
-                #     # Sum the long and short archive maps
-                #     aoTiffAddParams["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
-                #     aoTiffAddParams["DATA_TYPE"] = "uint16"
-                #     aoTiffAddParams["OVERRIDE_OUTPUT"] = True
+                    # Sum the long and short archive maps
+                    aoTiffAddParams["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox)
+                    aoTiffAddParams["DATA_TYPE"] = "uint16"
+                    aoTiffAddParams["OVERRIDE_OUTPUT"] = True
 
-                #     aoTiffAddParams["INPUT_FILES"] = [sFFmMap, sFullArchiveFFmMap]
-                #     aoTiffAddParams["OUTPUT_FILE"] = sFFmMap
+                    aoTiffAddParams["INPUT_FILES"] = [sFFmMap, sFullArchiveFFmMap]
+                    aoTiffAddParams["OUTPUT_FILE"] = sFFmMap
 
-                #     if not self.m_oConfig.daemon.simulate:
-                #         sSumFloodMapsId = wasdi.executeProcessor("tiff_images_add", aoTiffAddParams)
+                    if not self.m_oConfig.daemon.simulate:
+                        sSumFloodMapsId = wasdi.executeProcessor("tiff_images_add", aoTiffAddParams)
 
-                #         # We should have also the data maps
-                #         sDataMap = sBaseName + "_ffm_data.tif"
-                #         sFullDataMap = sBaseName + "_archiveffm_data.tif"
+                        # We should have also the data maps
+                        sDataMap = sBaseName + "_ffm_data.tif"
+                        sFullDataMap = sBaseName + "_archiveffm_data.tif"
 
-                #         if sDataMap in asWorkspaceFiles and sFullDataMap in asWorkspaceFiles:
-                #             aoTiffAddParams["INPUT_FILES"] = [sDataMap, sFullDataMap]
-                #             aoTiffAddParams["OUTPUT_FILE"] = sDataMap
+                        if sDataMap in asWorkspaceFiles and sFullDataMap in asWorkspaceFiles:
+                            aoTiffAddParams["INPUT_FILES"] = [sDataMap, sFullDataMap]
+                            aoTiffAddParams["OUTPUT_FILE"] = sDataMap
 
-                #             sSumDataMapsId2 = wasdi.executeProcessor("tiff_images_add", aoTiffAddParams)
-                #             sStatus = wasdi.waitProcess(sSumDataMapsId2)
-                #             # We do not publish yet the Data Sub-Map 
-                #             # if sStatus == "DONE":
-                #             #     oLayer = self.addAndPublishLayer(sDataMap, oActualDate, True,
-                #             #                                      "flood_frequency_map", sResolution=oMapConfig.resolution,
-                #             #                                      sDataSource=oMapConfig.dataSource,
-                #             #                                      sInputData=oMapConfig.inputData,
-                #             #                                      sOverrideMapId=oMapConfig.id, bForceRepublish=True, bKeepLayer=True)
+                            sSumDataMapsId2 = wasdi.executeProcessor("tiff_images_add", aoTiffAddParams)
+                            sStatus = wasdi.waitProcess(sSumDataMapsId2)
+                            # We do not publish yet the Data Sub-Map 
+                            # if sStatus == "DONE":
+                            #     oLayer = self.addAndPublishLayer(sDataMap, oActualDate, True,
+                            #                                      "flood_frequency_map", sResolution=oMapConfig.resolution,
+                            #                                      sDataSource=oMapConfig.dataSource,
+                            #                                      sInputData=oMapConfig.inputData,
+                            #                                      sOverrideMapId=oMapConfig.id, bForceRepublish=True, bKeepLayer=True)
 
-                #             #     if oLayer is None:
-                #             #         logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data map!")
+                            #     if oLayer is None:
+                            #         logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data map!")
 
-                #         sStatus = wasdi.waitProcess(sSumFloodMapsId)
-                #         if sStatus == "DONE":
-                #             oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, "flood_frequency_map",
-                #                                              sResolution=oMapConfig.resolution,
-                #                                              sDataSource=oMapConfig.dataSource,
-                #                                              sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bForceRepublish=True)
+                        sStatus = wasdi.waitProcess(sSumFloodMapsId)
+                        if sStatus == "DONE":
+                            oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, "flood_frequency_map",
+                                                             sResolution=oMapConfig.resolution,
+                                                             sDataSource=oMapConfig.dataSource,
+                                                             sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bForceRepublish=True)
 
-                #             if oLayer is None:
-                #                 logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
-                #     else:
-                #         logging.info("SarFloodMapEngine.handleArchiveTask: simulation mode on")
+                            if oLayer is None:
+                                logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+                    else:
+                        logging.info("SarFloodMapEngine.handleArchiveTask: simulation mode on")
 
             self.updateChainParamsDate(sEndDate, aoChainParams)
 
