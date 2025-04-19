@@ -321,12 +321,61 @@ class SarFloodMapEngine(RiseMapEngine):
                         if oImpactsMapConfig is not None:
                             self.addAndPublishLayer(sExtensionExposureImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
 
+                    sExtensionMarkersImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_markers.shp"
+                    if sExtensionMarkersImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"markers")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sExtensionMarkersImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
                     sExtensionPopImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_pop_affected.tif"
                     if sExtensionPopImpacts in asWorkspaceFiles:
                         sInputData = sCompositeMap
                         oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"population")
                         if oImpactsMapConfig is not None:
                             self.addAndPublishLayer(sExtensionPopImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sExtensionCropsImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_crops.tif"
+                    if sExtensionCropsImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"crops")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sExtensionCropsImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sUrbanRoadImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_roads.shp"
+                    if sUrbanRoadImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"roads")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sUrbanRoadImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sUrbanExposureImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_exposure.shp"
+                    if sUrbanExposureImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"exposures")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sUrbanExposureImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sUrbanMarkersImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_markers.shp"
+                    if sUrbanMarkersImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"markers")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sUrbanMarkersImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sUrbanPopImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_pop_affected.tif"
+                    if sUrbanPopImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"population")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sUrbanPopImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+                    sUrbanCropsImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_crops.tif"
+                    if sUrbanCropsImpacts in asWorkspaceFiles:
+                        sInputData = sCompositeMap
+                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"crops")
+                        if oImpactsMapConfig is not None:
+                            self.addAndPublishLayer(sUrbanCropsImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
 
 
                     iPeakDate = datetime.now().timestamp()
