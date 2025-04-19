@@ -146,7 +146,7 @@ class ImpactMapEngine(RiseMapEngine):
                     logging.info(
                         "ImpactMapEngine.updateImpactMapsForDay: simulation mode is on, think I started an impact detection on bare soil for day " + sDay)
             else:
-                logging.info("ImpactMapEngine.updateImpactMapsForDay: no flood map for date " + sDay + ", nothing to do")
+                logging.info("ImpactMapEngine.updateImpactMapsForDay: No Bare Soil Flood Map found for date " + sDay)
 
         if bRunForUrban:
             sBaseName = self.getBaseName("urban_flood")

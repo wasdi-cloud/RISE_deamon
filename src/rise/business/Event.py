@@ -3,7 +3,7 @@ from src.rise.business.RiseEntity import RiseEntity
 
 class Event(RiseEntity):
 
-    def Event(self, **kwargs):
+    def __init__(self, **kwargs):
         self.name = str()
         self.type = str()
         self.bbox = str()

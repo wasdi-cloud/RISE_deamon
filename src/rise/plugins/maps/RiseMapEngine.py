@@ -167,17 +167,18 @@ class RiseMapEngine:
                     # Delete it
                     oGeoserverService.deleteLayer(oLayer.layerId)
 
+                # Set the layer as none to re-publish it
+                oTestLayer = None
+
+            if bForceRepublish:
                 # If we have already a local WASDI copy, delete it to be sure to take the last one from the workspace
                 sLocalFilePath = wasdi.getSavePath() + sFileName
-
+                
                 try:
                     if os.path.exists(sLocalFilePath):
                         os.remove(sLocalFilePath)
                 except Exception as oEx:
                     logging.warning("Error removing local file " + sLocalFilePath)
-
-                # Set the layer as none to re-publish it
-                oTestLayer = None
 
 
             if oTestLayer is None:
@@ -191,7 +192,7 @@ class RiseMapEngine:
                     else:
                         sStyle = self.getStyleForMap()
 
-                if bPublish:
+                if bPublish or bForceRepublish:
 
                     if self.isRasterFile(sFileName):
                         if not self.publishRasterLayer(sFileName, sStyle):
