@@ -1,0 +1,8 @@
+wasdi
+numpy
+geoserver-rest
+mailjet-rest
+pandas
+pymongo
+shapely
+
