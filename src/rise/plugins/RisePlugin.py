@@ -147,17 +147,17 @@ class RisePlugin:
         '''
         # Task must exists
         if oTask is None:
-            logging.error("RiseMapEngine.handleTask: task is null")
+            logging.error("RisePlugin.handleTask: task is null")
             return
 
         # Get the Map engine associated
         oMapEngine = self.getMapEngineFromMapId(oTask.mapId)
 
         if oMapEngine is None:
-            logging.error("RiseMapEngine.handleTask: Map Engine not found " + oTask.mapId + " for task " + oTask.id)
+            logging.error("RisePlugin.handleTask: Map Engine not found " + oTask.mapId + " for task " + oTask.id)
             return
 
-        logging.debug("RiseMapEngine.handleTask: calling handle Task on map " + oTask.mapId + " for plugin " + oTask.pluginId + " AreaId: " + oTask.areaId)
+        logging.debug("RisePlugin.handleTask: calling handle Task on map " + oTask.mapId + " for plugin " + oTask.pluginId + " AreaId: " + oTask.areaId)
 
         # Ask the map to handle the task
         return oMapEngine.handleTask(oTask)
@@ -170,11 +170,14 @@ class RisePlugin:
         Trigger new area processors for this plugin
         :return:
         """
-        logging.debug("RisePlugin.updateNewMaps")
         try:
-            for oMapEngine in self.m_aoMapEngines:
-                logging.info("RisePlugin.updateNewMaps: Starting new Maps for Map Engine Named: " + oMapEngine.getName())
-                oMapEngine.updateNewMaps()
+
+            if len(self.m_aoMapEngines)>0:
+                for oMapEngine in self.m_aoMapEngines:
+                    logging.info("RisePlugin.updateNewMaps: Starting new Maps for Map Engine Named: " + oMapEngine.getName())
+                    oMapEngine.updateNewMaps()
+            else:
+                logging.warning("RisePlugin.updateNewMaps:  this plugin has no map engines")
 
         except Exception as oEx:
             logging.error("RisePlugin.updateNewMaps: exception " + str(oEx))

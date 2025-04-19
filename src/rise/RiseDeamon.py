@@ -45,9 +45,8 @@ class RiseDeamon:
         wasdi.setUser(self.m_oConfig.wasdiConfig.wasdiUser)
         wasdi.setPassword(self.m_oConfig.wasdiConfig.wasdiPassword)
         wasdi.setBaseUrl(self.m_oConfig.wasdiConfig.wasdiBaseUrl)
-        # TODO: ERROR - RiseDeamon exception: Error ->  'types.SimpleNamespace' object has no attribute 'verbose'
-        #wasdi.setVerbose(self.m_oConfig.wasdiConfig.verbose)
-        wasdi.setVerbose(False)
+        wasdi.setVerbose(self.m_oConfig.wasdiConfig.verbose)
+        
 
         if not wasdi.init():
             logging.error("RiseDeamon.run: There was an error initializing WASDI")
@@ -287,6 +286,10 @@ class RiseDeamon:
                 if oGeoService.deleteLayer(sLayerId):
                     aoDeletedEntitiesIds.append(oEntity.id)
                     logging.debug(f"RiseDeamon.cleanLayers: layer {sLayerId} has been deleted from Geoserver")
+                else:
+                    if not oGeoService.existsLayer(sLayerId):
+                        logging.info("RiseDeamon.cleanLayers: the layer " + sLayerId + " does not exists in Geoserver, we consider it deleted")
+                        aoDeletedEntitiesIds.append(oEntity.id)
 
             iDeletedLayers = 0
             # to be sure that the Layer entities have not been updated while we were deleting the layers from Geoserver,

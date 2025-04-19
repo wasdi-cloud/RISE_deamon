@@ -135,6 +135,8 @@ class BuildingMapEngine(RiseMapEngine):
 
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
+            bAddedAtLeastOneFile = False
+
             for sFile in asWorkspaceFiles:
                 asNameParts = sFile.split("_")
                 bAddFile = True
@@ -157,9 +159,15 @@ class BuildingMapEngine(RiseMapEngine):
                         oMapConfig = self.getMapConfig("building_cw")
 
                     self.addAndPublishLayer(sFile, oActualDate, True, "building_cw", True, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
+                    bAddedAtLeastOneFile = True
                 else:
-                    logging.info("BuildingMapEngine.handleTask: delete not building map file " + sFile)
-                    wasdi.deleteProduct(sFile)
+                    if self.m_oPluginConfig.cleanNotMapsWasdiWorkspaceFiles:
+                        logging.info("BuildingMapEngine.handleTask: delete not building map file " + sFile)
+                        wasdi.deleteProduct(sFile)
+
+            if not bAddedAtLeastOneFile:
+                logging.info("BuildingMapEngine.handleTask: no new files found to add, we finish here")
+                
         except Exception as oEx:
             logging.error("BuildingMapEngine.handleTask: exception " + str(oEx))
 
@@ -172,7 +180,7 @@ class BuildingMapEngine(RiseMapEngine):
 
         # without this config we have a problem
         if oMapConfig is None:
-            logging.warning("BuildingMapEngine.updateNewMaps: impossible to find configuration for map  citywatch")
+            logging.warning("BuildingMapEngine.updateNewMaps: impossible to find configuration for map citywatch")
             return
 
         asFilesInWorkspace = wasdi.getProductsByActiveWorkspace()
@@ -184,11 +192,11 @@ class BuildingMapEngine(RiseMapEngine):
             bIsUrbanMap = True
             if len(asNameParts) != 3:
                 bIsUrbanMap = False
-            if len(asNameParts) < 3:
+            elif len(asNameParts) < 3:
                 bIsUrbanMap = False
-            if asNameParts[0] != self.getBaseName():
+            elif asNameParts[0] != self.getBaseName():
                 bIsUrbanMap = False
-            if asNameParts[2] != "Urban.tif":
+            elif asNameParts[2] != "Urban.tif":
                 bIsUrbanMap = False
 
             if bIsUrbanMap:
@@ -238,14 +246,15 @@ class BuildingMapEngine(RiseMapEngine):
                 aoCityWatchParameters["OUTPUT_BASENAME"] = self.getBaseName()
                 aoCityWatchParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
                 aoCityWatchParameters["END_DATE"] = sToday
-                sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoCityWatchParameters)
+                #sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoCityWatchParameters)
 
-                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoCityWatchParameters,oMapConfig.processor,sToday)
-                oWasdiTaskRepository.addEntity(oWasdiTask)
+                #oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoCityWatchParameters,oMapConfig.processor,sToday)
+                #oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                logging.info(
-                    "BuildingMapEngine.updateNewMaps: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                #logging.info(
+                #    "BuildingMapEngine.updateNewMaps: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                #        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                logging.info("BuildingMapEngine.updateNewMaps: AT THE MOMENT DISABLED. Not really running")
             else:
                 logging.warning("BuildingMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
         else:

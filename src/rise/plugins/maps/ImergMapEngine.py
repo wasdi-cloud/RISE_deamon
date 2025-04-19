@@ -66,9 +66,9 @@ class ImergMapEngine(RiseMapEngine):
             oWasdiTask.pluginPayload["time"] = sHour
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info("ViirsFloodMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
+            logging.info("ImergMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
         else:
-            logging.warning("ViirsFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+            logging.warning("ImergMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
 
     def handleTask(self, oTask):
         try:

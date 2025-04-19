@@ -112,7 +112,10 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             oMapConfig = self.getMapConfig("viirs_flood")
 
+            bFileAdded = False
+
             if sFileName in asWorkspaceFiles:
+                bFileAdded = True
                 self.addAndPublishLayer(sFileName, oDate, True, "viirs_daily_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
             oTimeDelta = timedelta(days=1)
@@ -120,10 +123,14 @@ class ViirsFloodMapEngine(RiseMapEngine):
             sDate = oYesterday.strftime("%Y-%m-%d")
             sFileName = sBaseName + "_" + sDate + "_flooded.tif"
             if sFileName in asWorkspaceFiles:
+                bFileAdded = True
                 self.addAndPublishLayer(sFileName, oYesterday, True, "viirs_daily_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
+            if not bFileAdded:
+                logging.info("ViirsFloodMapEngine.handleDailyMap: no new maps found to publish, we finish here")                
+
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
+            logging.error("ViirsFloodMapEngine.handleDailyMap: exception " + str(oEx))
 
     def handleArchiveTask(self, oTask, asWorkspaceFiles, bOnlyLastWeek):
 
@@ -131,7 +138,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
         fLastMapTimestamp = -1.0
 
         try:
-            logging.info("ViirsFloodMapEngine.handleTask: task done, lets proceed!")
+            logging.info("ViirsFloodMapEngine.handleArchiveTask: task done, lets proceed!")
 
             sBaseName = oTask.inputParams["VIIRS_BASENAME"]
             sStartDate = oTask.inputParams["ARCHIVE_START_DATE"]
@@ -140,13 +147,13 @@ class ViirsFloodMapEngine(RiseMapEngine):
             try:
                 oStartDay = datetime.strptime(sStartDate, '%Y-%m-%d')
             except:
-                logging.error('ViirsFloodMapEngine.handleShortArchiveTask: Start Date not valid')
+                logging.error('ViirsFloodMapEngine.handleArchiveTask: Start Date not valid')
                 return False
 
             try:
                 oEndDay = datetime.strptime(sEndDate, '%Y-%m-%d')
             except:
-                logging.error('ViirsFloodMapEngine.handleShortArchiveTask: End Date not valid')
+                logging.error('ViirsFloodMapEngine.handleArchiveTask: End Date not valid')
                 return False
 
             oTimeDelta = timedelta(days=1)
@@ -161,7 +168,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                     oActualDate = oActualDate + oTimeDelta
                     continue
 
-                logging.info("ViirsFloodMapEngine.handleShortArchiveTask: Found " + sFileName + ", publish it")
+                logging.info("ViirsFloodMapEngine.handleArchiveTask: Found " + sFileName + ", publish it")
 
                 oMapConfig = self.getMapConfig("viirs_flood")
                 oLayer = self.addAndPublishLayer(sFileName, oActualDate, bOnlyLastWeek, sMapIdForStyle="viirs_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
@@ -184,7 +191,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             return True
         except Exception as oEx:
-            logging.error("ViirsFloodMapEngine.handleShortArchiveTask: exception " + str(oEx))
+            logging.error("ViirsFloodMapEngine.handleArchiveTask: exception " + str(oEx))
             return False
         finally:
             bChanged = False
@@ -221,7 +228,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
         # if we have existing tasks
         for oTask in aoExistingTasks:
             if self.isRunningStatus(oTask.status):
-                logging.info("ViirsFloodMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
+                logging.info("ViirsFloodMapEngine.viirsMapFromDate: a task is still ongoing  for day " + sToday + " we will wait it to finish " + oTask.id)
                 return
 
         sBaseName = self.getBaseName()
@@ -245,11 +252,11 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoViirsParameters,oMapConfig.processor,sToday)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                logging.info("ViirsFloodMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for date " + sToday)
+                logging.info("ViirsFloodMapEngine.viirsMapFromDate: Started " + oMapConfig.processor + " for date " + sToday)
             else:
-                logging.warning("ViirsFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+                logging.warning("ViirsFloodMapEngine.viirsMapFromDate: simulation mode on - we do not run nothing")
         else:
-            logging.info("ViirsFloodMapEngine.updateNewMaps: the VIIRS map for " + sToday + " is already available")
+            logging.info("ViirsFloodMapEngine.viirsMapFromDate: the VIIRS map for " + sToday + " is already available")
 
     def updateNewMaps(self):
         # Open our workspace
