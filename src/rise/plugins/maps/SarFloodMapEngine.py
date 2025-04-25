@@ -370,15 +370,9 @@ class SarFloodMapEngine(RiseMapEngine):
                         oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"population")
                         if oImpactsMapConfig is not None:
                             self.addAndPublishLayer(sUrbanPopImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-
-                    sUrbanCropsImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_crops.tif"
-                    if sUrbanCropsImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"crops")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sUrbanCropsImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-
-
+                    
+                    #NOTE: Crops are disabled for Urban Floods
+                    
                     iPeakDate = datetime.now().timestamp()
                     try:
                         iPeakDate = datetime.strptime(oEvent["peakDate"], "%Y-%m-%d").timestamp()
