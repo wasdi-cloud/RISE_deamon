@@ -165,6 +165,7 @@ class SarFloodMapEngine(RiseMapEngine):
             # First of all we check if it is safe and done
             if not super().handleTask(oTask):
                return False
+            
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
             logging.info("SarFloodMapEngine.handleTask: handle task " + oTask.id)
