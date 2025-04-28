@@ -23,51 +23,12 @@ class ImpactMapEngine(RiseMapEngine):
 
     def updateNewMaps(self):
 
-        # We need the flood plugin config
-        oPluginConfig = self.m_oPluginEngine.getPluginConfig()
-        sFloodsPluginId = "rise_flood_plugin"
-
-        if oPluginConfig is not None:
-            try:
-                sFloodsPluginId = oPluginConfig.floods_plugin_id
-            except:
-                pass
-
-        # And the sar_flood config
-        sSarFloodMapId = "sar_flood"
-
-        if oPluginConfig is not None:
-            try:
-                sSarFloodMapId = oPluginConfig.flood_sarmap_id
-            except:
-                pass
-
-        # Default value
-        sSuffix = "baresoil-flood.tif"
-        # Open the flood plugin config
-        oParentPath = Path(self.m_oConfig.myFilePath).parent
-        oPluginConfigPath = oParentPath.joinpath(sFloodsPluginId + ".json")
-        if os.path.isfile(oPluginConfigPath):
-
-            oSarMapConfig = None
-
-            oFloodPluginConfig = RiseDeamon.readConfigFile(oPluginConfigPath)
-
-            for oMapConfig in oFloodPluginConfig.maps:
-                if oMapConfig.id == sSarFloodMapId:
-                    oSarMapConfig = oMapConfig
-                    break
-
-            if oSarMapConfig:
-                aoParams = oSarMapConfig.params
-                aoParams = vars(aoParams)
-                sSuffix = aoParams["SUFFIX"]
-
-        # We need to interact with the buildings. Here we pass to the app the workspace and the area name
-        sFloodsWorkspaceName = self.m_oArea.id + "|" + sFloodsPluginId + "|" + sSarFloodMapId
-
         # Open our workspace
-        sWorkspaceId = wasdi.openWorkspace(sFloodsWorkspaceName)
+        sWorkspaceId = self.openSarFloodWorkspace()
+        # Get the baresoil flood Suffix
+        sSuffix = self.getBaresoilSuffix()
+        
+        
         # Get the list of files
         asFiles = wasdi.getProductsByActiveWorkspace()
 
@@ -201,48 +162,127 @@ class ImpactMapEngine(RiseMapEngine):
             if not "targetMapType" in oTask.pluginPayload:
                 logging.info("ImpactMapEngine.handleTask: the task does not have the targetMapType tag, I can only exit" )
                 return False
+            
+            self.openSarFloodWorkspace()
 
             sTargetMapType = oTask.pluginPayload["targetMapType"]
 
             sDay = oTask.referenceDate
 
             asFiles = wasdi.getProductsByActiveWorkspace()
-
+            sBaseName = self.getBaseName("sar_flood")
+            
             if sTargetMapType == "baresoil":
+                sSuffix = self.getBaresoilSuffix()
+                sSuffix = sSuffix.replace(".tif","")
+
                 logging.info("ImpactMapEngine.handleTask: handling impacts on bare soil map")
                 sImpactFile = "exposure_baresoil_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "exposures")
                 sImpactFile = "markers_baresoil_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "markers")
                 sImpactFile = "roads_baresoil_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
-                sImpactFile = "lulc_baresoil_" + sDay + ".tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "roads")
+                sImpactFile = sBaseName + "_" + sDay + "_" + sSuffix + "_pop_affected.tif"
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "population")
                 sImpactFile = "crops_baresoil_" + sDay + ".tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "crops")
             elif sTargetMapType == "urban":
                 logging.info("ImpactMapEngine.handleTask: handling impacts on urban map")
                 sImpactFile = "exposure_urban_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "exposures")
                 sImpactFile = "markers_urban_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "markers")
                 sImpactFile = "roads_urban_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
-                sImpactFile = "lulc_urban_" + sDay + ".tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "roads")
+                # TODO VERIFY THIS NAME!!!
+                sImpactFile = sBaseName + "_" + sDay + "_Urban_pop_affected.tif"
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "population")
                 sImpactFile = "crops_urban_" + sDay + ".tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask)
+                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "crops")
             else:
                 logging.warning("ImpactMapEngine.handleTask: target map type not recognized:" + sTargetMapType + " . we stop here")
 
         except Exception as oEx:
             logging.error("ImpactMapEngine.handleTask: exception " + str(oEx))
 
-    def checkAndPublishImpactLayer(self, sFile, asFiles, oTask):
+    def checkAndPublishImpactLayer(self, sFile, asFiles, oTask, sMapId):
         if sFile in asFiles:
             oMapConfig = self.getMapConfig()
             logging.info("ImpactMapEngine.checkAndPublishImpactLayer: found impacts Map to publish " + sFile)
-            self.addAndPublishLayer(sFile, datetime.strptime(oTask.referenceDate, "%Y-%m-%d"), True,
-                                    "urban_flood",
+            self.addAndPublishLayer(sFile, datetime.strptime(oTask.referenceDate, "%Y-%m-%d"), bPublish=True,
+                                    sMapIdForStyle=sMapId,
+                                    sOverrideMapId=sMapId,
                                     sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
                                     sInputData=oMapConfig.inputData)
+
+    def openSarFloodWorkspace(self):
+        # We need the flood plugin config
+        oPluginConfig = self.m_oPluginEngine.getPluginConfig()
+        sFloodsPluginId = "rise_flood_plugin"
+
+        if oPluginConfig is not None:
+            try:
+                sFloodsPluginId = oPluginConfig.floods_plugin_id
+            except:
+                pass
+
+        # And the sar_flood config
+        sSarFloodMapId = "sar_flood"
+
+        if oPluginConfig is not None:
+            try:
+                sSarFloodMapId = oPluginConfig.flood_sarmap_id
+            except:
+                pass
+        
+        # We need to interact with the buildings. Here we pass to the app the workspace and the area name
+        sFloodsWorkspaceName = self.m_oArea.id + "|" + sFloodsPluginId + "|" + sSarFloodMapId
+
+        # Open our workspace
+        sWorkspaceId = wasdi.openWorkspace(sFloodsWorkspaceName)
+
+        return sWorkspaceId        
+    
+    def getBaresoilSuffix(self):
+        # We need the flood plugin config
+        oPluginConfig = self.m_oPluginEngine.getPluginConfig()
+        sFloodsPluginId = "rise_flood_plugin"
+
+        if oPluginConfig is not None:
+            try:
+                sFloodsPluginId = oPluginConfig.floods_plugin_id
+            except:
+                pass
+
+        # And the sar_flood config
+        sSarFloodMapId = "sar_flood"
+
+        if oPluginConfig is not None:
+            try:
+                sSarFloodMapId = oPluginConfig.flood_sarmap_id
+            except:
+                pass
+
+        # Default value
+        sSuffix = "baresoil-flood.tif"
+        # Open the flood plugin config
+        oParentPath = Path(self.m_oConfig.myFilePath).parent
+        oPluginConfigPath = oParentPath.joinpath(sFloodsPluginId + ".json")
+        if os.path.isfile(oPluginConfigPath):
+
+            oSarMapConfig = None
+
+            oFloodPluginConfig = RiseDeamon.readConfigFile(oPluginConfigPath)
+
+            for oMapConfig in oFloodPluginConfig.maps:
+                if oMapConfig.id == sSarFloodMapId:
+                    oSarMapConfig = oMapConfig
+                    break
+
+            if oSarMapConfig:
+                aoParams = oSarMapConfig.params
+                aoParams = vars(aoParams)
+                sSuffix = aoParams["SUFFIX"]
+        
+        return sSuffix                
