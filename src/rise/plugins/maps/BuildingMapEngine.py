@@ -142,11 +142,9 @@ class BuildingMapEngine(RiseMapEngine):
                 bAddFile = True
                 if len(asNameParts) != 3:
                     bAddFile = False
-                if len(asNameParts) < 3:
+                elif asNameParts[0] != self.getBaseName():
                     bAddFile = False
-                if asNameParts[0] != self.getBaseName():
-                    bAddFile = False
-                if asNameParts[2] != "Urban.tif":
+                elif asNameParts[2] != "Urban.tif":
                     bAddFile = False
 
                 if bAddFile:
