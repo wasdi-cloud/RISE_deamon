@@ -9,7 +9,6 @@ from src.rise.RiseDeamon import RiseDeamon
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
 
-
 class ImpactMapEngine(RiseMapEngine):
 
     def __init__(self, oConfig, oArea, oPlugin, oPluginEngine, oMap):
@@ -27,7 +26,6 @@ class ImpactMapEngine(RiseMapEngine):
         sWorkspaceId = self.openSarFloodWorkspace()
         # Get the baresoil flood Suffix
         sSuffix = self.getBaresoilSuffix()
-        
         
         # Get the list of files
         asFiles = wasdi.getProductsByActiveWorkspace()
@@ -74,8 +72,8 @@ class ImpactMapEngine(RiseMapEngine):
                         logging.info("ImpactMapEngine.updateNewMaps: run on urban already done today")
 
         if bRunForBareSoil:
-            sBaseName = self.getBaseName("sar_flood")
-            sBaseName += "_" + sDay + "_" + sSuffix
+            sOriginalBaseName = self.getBaseName("sar_flood")
+            sBaseName = sOriginalBaseName + "_" + sDay + "_" + sSuffix
 
             if sBaseName in asFiles:
                 logging.info("ImpactMapEngine.updateImpactMapsForDay: found a new daily sar map")
@@ -87,11 +85,11 @@ class ImpactMapEngine(RiseMapEngine):
                 aoParams["hazard_input"] = sBaseName
                 aoParams["hazard_pixel_value"] = 3
 
-                aoParams["exposure_file_name"] = "exposure_baresoil_" + sDay + ".shp"
-                aoParams["exposure_markers_file"] = "markers_baresoil_" + sDay + ".shp"
-                aoParams["roads_file_name"] = "roads_baresoil_" + sDay + ".shp"
-                aoParams["lulc_map_name"] = "lulc_baresoil_" + sDay + ".tif"
-                aoParams["crops_file_name"] = "crops_baresoil_" + sDay + ".tif"
+                aoParams["exposure_file_name"] =  sOriginalBaseName + "_exposure_baresoil_" + sDay + ".shp"
+                aoParams["exposure_markers_file"] = sOriginalBaseName + "_markers_baresoil_" + sDay + ".shp"
+                aoParams["roads_file_name"] = sOriginalBaseName + "_roads_baresoil_" + sDay + ".shp"
+                aoParams["lulc_map_name"] = sOriginalBaseName + "_lulc_baresoil_" + sDay + ".tif"
+                aoParams["crops_file_name"] = sOriginalBaseName + "_crops_baresoil_" + sDay + ".tif"
 
                 if not self.m_oConfig.daemon.simulate:
                     sTaskId = wasdi.executeProcessor(oMapConfig.processor, aoParams)
@@ -132,11 +130,13 @@ class ImpactMapEngine(RiseMapEngine):
                         aoParams["hazard_input"] = sBaseName
                         aoParams["hazard_pixel_value"] = 1
 
-                        aoParams["exposure_file_name"] = "exposure_urban_" + sDay + ".shp"
-                        aoParams["exposure_markers_file"] = "markers_urban_" + sDay + ".shp"
-                        aoParams["roads_file_name"] = "roads_urban_" + sDay + ".shp"
-                        aoParams["lulc_map_name"] = "lulc_urban_" + sDay + ".tif"
-                        aoParams["crops_file_name"] = "crops_urban_" + sDay + ".tif"
+                        aoParams["exposure_file_name"] = sOriginalBaseName + "_exposure_urban_" + sDay + ".shp"
+                        aoParams["exposure_markers_file"] = sOriginalBaseName + "_markers_urban_" + sDay + ".shp"
+                        aoParams["roads_file_name"] = sOriginalBaseName + "_roads_urban_" + sDay + ".shp"
+                        aoParams["lulc_map_name"] = sOriginalBaseName + "_lulc_urban_" + sDay + ".tif"
+                        aoParams["crops_file_name"] = sOriginalBaseName + "_crops_urban_" + sDay + ".tif"
+                        aoParams["pop_file_name"] = sOriginalBaseName + "_pop_urban_" + sDay + ".tif"
+                        aoParams["compute_crops"] = False
 
                         if not self.m_oConfig.daemon.simulate:
                             sTaskId = wasdi.executeProcessor(oMapConfig.processor, aoParams)
@@ -177,29 +177,26 @@ class ImpactMapEngine(RiseMapEngine):
                 sSuffix = sSuffix.replace(".tif","")
 
                 logging.info("ImpactMapEngine.handleTask: handling impacts on bare soil map")
-                sImpactFile = "exposure_baresoil_" + sDay + ".shp"
+                sImpactFile = sBaseName + "_exposure_baresoil_" + sDay + ".shp"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "exposures")
-                sImpactFile = "markers_baresoil_" + sDay + ".shp"
+                sImpactFile = sBaseName + "_markers_baresoil_" + sDay + ".shp"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "markers")
-                sImpactFile = "roads_baresoil_" + sDay + ".shp"
+                sImpactFile = sBaseName + "_roads_baresoil_" + sDay + ".shp"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "roads")
                 sImpactFile = sBaseName + "_" + sDay + "_" + sSuffix + "_pop_affected.tif"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "population")
-                sImpactFile = "crops_baresoil_" + sDay + ".tif"
+                sImpactFile = sBaseName + "_crops_baresoil_" + sDay + ".tif"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "crops")
             elif sTargetMapType == "urban":
                 logging.info("ImpactMapEngine.handleTask: handling impacts on urban map")
-                sImpactFile = "exposure_urban_" + sDay + ".shp"
+                sImpactFile = sBaseName + "_exposure_urban_" + sDay + ".shp"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "exposures")
-                sImpactFile = "markers_urban_" + sDay + ".shp"
+                sImpactFile = sBaseName + "_markers_urban_" + sDay + ".shp"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "markers")
-                sImpactFile = "roads_urban_" + sDay + ".shp"
+                sImpactFile = sBaseName + "_roads_urban_" + sDay + ".shp"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "roads")
-                # TODO VERIFY THIS NAME!!!
-                sImpactFile = sBaseName + "_" + sDay + "_Urban_pop_affected.tif"
+                sImpactFile = sBaseName + "_pop_urban_" + sDay + ".tif"
                 self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "population")
-                sImpactFile = "crops_urban_" + sDay + ".tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "crops")
             else:
                 logging.warning("ImpactMapEngine.handleTask: target map type not recognized:" + sTargetMapType + " . we stop here")
 
