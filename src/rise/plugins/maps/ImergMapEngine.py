@@ -129,8 +129,14 @@ class ImergMapEngine(RiseMapEngine):
 
                     oMapConfig = self.getMapConfig(sMapConfig)
 
+                    bKeepLayer=False
+                    if "event" in oTask.pluginPayload:
+                        if oTask.pluginPayload["event"]:
+                            logging.info("ImergMapEngine.handleTask: rain map related to an event, set Keep Layer = true")
+                            bKeepLayer = True
+
                     self.addAndPublishLayer(sFile, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
-                                            bKeepLayer=False, sDataSource=oMapConfig.dataSource,
+                                            bKeepLayer=bKeepLayer, sDataSource=oMapConfig.dataSource,
                                             sResolution=oMapConfig.resolution, sInputData=sInputData, sOverrideMapId=sMapConfig)
 
         except Exception as oEx:

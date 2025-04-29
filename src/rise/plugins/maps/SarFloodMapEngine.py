@@ -371,7 +371,7 @@ class SarFloodMapEngine(RiseMapEngine):
                         if oImpactsMapConfig is not None:
                             self.addAndPublishLayer(sUrbanPopImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
                     
-                    #NOTE: Crops are disabled for Urban Floods
+                    #Crops are disabled for Urban Floods
                     
                     iPeakDate = datetime.now().timestamp()
                     try:
@@ -379,9 +379,13 @@ class SarFloodMapEngine(RiseMapEngine):
                     except:
                         logging.warning("Error converting event peak date " + str(oEvent["peakDate"]))
 
+                    # Check if we already inserted the event
                     aoTestEvents = oEventRepository.findByParams(sAreaId=self.m_oArea.id, iPeakDate=iPeakDate, sType="FLOOD")
 
                     if len(aoTestEvents)<=0:
+                        #No: we start also the rain app!
+                        self.startRainMaps(oEvent["peakDate"])
+
                         oEventEntity = Event()
                         oEventEntity.name= "Flood_" + oEvent["peakDate"]
                         oEventEntity.type = "FLOOD"
@@ -755,3 +759,56 @@ class SarFloodMapEngine(RiseMapEngine):
 
         # And we add it, updated, to WASDI
         wasdi.addFileToWASDI(self.m_sChainParamsFile)
+    
+    def startRainMaps(self, sEventDate):
+        try:
+            logging.debug("SarFloodMapEngine.startRainMaps: Starting Rain Maps for event " + sEventDate)
+            
+            oWasdiTaskRepository = WasdiTaskRepository()
+
+            oRainPluginConfig = RiseDeamon.getPluginConfig("rise_rain_plugin")
+            oMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oRainPluginConfig, "imerg_cumulate_12")
+
+            aoParameters = oMapConfig.params
+            aoParameters = vars(aoParameters)
+
+            if not self.m_oConfig.daemon.simulate:
+                sWorkspaceId = self.openRainWorkspace()
+
+                aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
+                aoParameters["BASE_NAME"] = self.getBaseName()
+                aoParameters["REFERENCE_DATETIME"] = sEventDate + " " + "23:59"
+
+                sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
+
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sEventDate)
+                # Override: one for all in the tasks!
+                oWasdiTask.mapId = "imerg_cumulate"
+                oWasdiTask.pluginPayload["time"] = "23"
+                oWasdiTask.pluginPayload["event"] = True
+                oWasdiTaskRepository.addEntity(oWasdiTask)
+
+                logging.info("SarFloodMapEngine.startRainMaps: Started " + oMapConfig.processor + " for " + sEventDate)
+            else:
+                logging.warning("SarFloodMapEngine.startRainMaps: simulation mode on - we do not run nothing")
+
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.startRainMaps:" + str(oEx))
+        finally:
+            # Re-Open the right workspace
+            self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)            
+
+
+    def openRainWorkspace(self):
+        # We need the plugin 
+        sRainPluginId = "rise_rain_plugin"
+        # And the map id
+        sImergMapId = "imerg_cumulate_12"
+
+        # We need to interact with the buildings. Here we pass to the app the workspace and the area name
+        sFloodsWorkspaceName = self.m_oArea.id + "|" + sRainPluginId + "|" + sImergMapId
+
+        # Open our workspace
+        sWorkspaceId = wasdi.openWorkspace(sFloodsWorkspaceName)
+
+        return sWorkspaceId
