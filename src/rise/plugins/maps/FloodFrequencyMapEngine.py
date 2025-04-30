@@ -94,6 +94,10 @@ class FloodFrequencyMapEngine(RiseMapEngine):
             # Take the chain params
             aoChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, False)
 
+            if aoChainParams is None:
+                logging.warning("FloodFrequencyMapEngine.updateNewMaps: the chain params file is not available: likely, the archive still have to finish. We stop here")
+                return
+
             # Check the last date of the FFM
             sLastFFMDate = "0000-00-00"
             if "lastFFMUpdate" in aoChainParams:

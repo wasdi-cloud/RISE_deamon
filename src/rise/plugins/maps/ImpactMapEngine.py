@@ -71,8 +71,9 @@ class ImpactMapEngine(RiseMapEngine):
                         bRunForUrban = False
                         logging.info("ImpactMapEngine.updateNewMaps: run on urban already done today")
 
-        if bRunForBareSoil:
-            sOriginalBaseName = self.getBaseName("sar_flood")
+        sOriginalBaseName = self.getBaseName("sar_flood")
+
+        if bRunForBareSoil:    
             sBaseName = sOriginalBaseName + "_" + sDay + "_" + sSuffix
 
             if sBaseName in asFiles:
