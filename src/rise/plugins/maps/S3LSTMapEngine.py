@@ -92,7 +92,7 @@ class S3LSTMapEngine(RiseMapEngine):
             if sOutput in asFiles:
                 logging.info("S3LSTMapEngine.handleTask: publishing " + sOutput)
 
-                oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+                oReferenceDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
 
                 self.addAndPublishLayer(sOutput, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
                                         bKeepLayer=False, sDataSource=oMapConfig.dataSource,
