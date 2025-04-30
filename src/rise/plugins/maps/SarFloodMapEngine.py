@@ -781,6 +781,8 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sEventDate)
                 # Override: one for all in the tasks!
                 oWasdiTask.mapId = "imerg_cumulate"
+                oWasdiTask.pluginId = "rise_rain_plugin"
+                
                 oWasdiTask.pluginPayload["time"] = "23"
                 oWasdiTask.pluginPayload["event"] = True
                 oWasdiTaskRepository.addEntity(oWasdiTask)
