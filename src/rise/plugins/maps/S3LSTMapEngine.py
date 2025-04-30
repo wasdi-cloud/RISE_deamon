@@ -48,7 +48,7 @@ class S3LSTMapEngine(RiseMapEngine):
 
             aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
             aoParameters["STARTDATE"] = sYesterday
-            aoParameters["STARTDATE"] = sYesterday
+            aoParameters["ENDDATE"] = sYesterday
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
