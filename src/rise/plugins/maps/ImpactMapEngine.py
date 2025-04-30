@@ -128,7 +128,7 @@ class ImpactMapEngine(RiseMapEngine):
                         aoParams = vars(aoParams)
 
                         aoParams["date"] = sDay
-                        aoParams["hazard_input"] = sBaseName
+                        aoParams["hazard_input"] = sUrbanFloodFile
                         aoParams["hazard_pixel_value"] = 1
 
                         aoParams["exposure_file_name"] = sOriginalBaseName + "_exposure_urban_" + sDay + ".shp"
