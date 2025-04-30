@@ -11,6 +11,7 @@ from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.EventRepository import EventRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
+from src.rise.utils import RiseUtils
 
 
 class SarFloodMapEngine(RiseMapEngine):
@@ -251,6 +252,7 @@ class SarFloodMapEngine(RiseMapEngine):
             # For each event
             for iEvent in range(len(aoEvents)):
                 try:
+                    # Get the event and the maps
                     oEvent = aoEvents[iEvent]
                     sUrbanMap = asUrbanMaps[iEvent]
                     sCompositeMap = asCompositeMaps[iEvent]
@@ -259,119 +261,48 @@ class SarFloodMapEngine(RiseMapEngine):
 
                     sFloodMap = sBaseName + "_" + oEvent["peakDate"] + "_" + sSuffix 
 
+                    # Check if we have the daily flood map in the workspace
                     if sFloodMap in asWorkspaceFiles:
+                        # Ok we can publish it forcing Keep Layer to True
                         oMapConfig = self.getMapConfig("sar_flood")
                         sInputData = oMapConfig.inputData
                         self.addAndPublishLayer(sFloodMap, oEventPeakDate, True, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, bForceRepublish=True)
 
+                    # Check if we have the urban map in the workspace
                     if sUrbanMap in asWorkspaceFiles:
                         oMapConfig = self.getMapConfig("urban_flood")
-                        sInputData = oMapConfig.inputData
-
-                        try:
-                            if iEvent<len(aoUrbanDetections):
-                                oUrbanDetection = aoUrbanDetections[iEvent]
-                                sProcId = oUrbanDetection["PROCID"]
-                                aoPayload = wasdi.getProcessorPayloadAsJson(sProcId)
-                                if "UrbanBuildingMaps" in aoPayload:
-                                    sInputData = sInputData + " Buildings Map: " + aoPayload["UrbanBuildingMaps"]
-                                if "PRE_VV" in aoPayload:
-                                    sInputData = sInputData + " PRE VV Coherence: " + aoPayload["PRE_VV"]
-                                if "PRE_VH" in aoPayload:
-                                    sInputData = sInputData + " PRE VH Coherence: " + aoPayload["PRE_VH"]
-                                if "POST_VV" in aoPayload:
-                                    sInputData = sInputData + " POST VV Coherence: " + aoPayload["POST_VV"]
-                                if "POST_VH" in aoPayload:
-                                    sInputData = sInputData + " POST VH Coherence: " + aoPayload["POST_VH"]
-                        except:
-                            logging.warning("Error trying to read the inputs of Urban Detection for map " + sUrbanMap)
-                        
+                        sInputData = self.getInputDataForUrbanFlood(iEvent=iEvent, aoUrbanDetections=aoUrbanDetections, sInputData=oMapConfig.inputData)
                         self.addAndPublishLayer(sUrbanMap, oEventPeakDate, True, "urban_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sOverrideMapId=oMapConfig.id)
 
+                    # Check and publish the composite map
                     if sCompositeMap in asWorkspaceFiles:
                         oMapConfig = self.getMapConfig("flood_composite")
-                        sInputData = oMapConfig.inputData
-
-                        try:
-                            if iEvent<len(aoCompositeDetections):
-                                oCompositeDetection = aoCompositeDetections[iEvent]
-                                sProcId = oCompositeDetection["PROCID"]
-                                aoPayload = wasdi.getProcessorPayloadAsJson(sProcId)
-                                if "sar_added_files" in aoPayload:
-                                    sInputData = sInputData + " Buildings Map: " + str(aoPayload["sar_added_files"])
-                                else:
-                                    try:
-                                        sInputData = "Daily SAR Flood Maps from " + oEvent["startDate"] + " to " + oEvent["endDate"]
-                                    except Exception as oEx:
-                                        logging.warning("handleEvents: error building input data string " + str(oEx))
-                        except:
-                            logging.warning("Error trying to read the inputs of Urban Detection for map " + sUrbanMap)
+                        sInputData = self.getInputDateForCompositeMap(iEvent=iEvent, aoCompositeDetections=aoCompositeDetections, oEvent=oEvent, sInputData=oMapConfig.inputData)
                         self.addAndPublishLayer(sCompositeMap, oEventPeakDate, True, "flood_composite", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sOverrideMapId=oMapConfig.id)
 
+                    # Roads
                     sExtensionRoadImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_roads.shp"
-                    if sExtensionRoadImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"roads")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sExtensionRoadImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-
-                    sExtensionExposureImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_exposure.shp"
-                    if sExtensionExposureImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"exposures")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sExtensionExposureImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-
-                    sExtensionMarkersImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_markers.shp"
-                    if sExtensionMarkersImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"markers")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sExtensionMarkersImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-
-                    sExtensionPopImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_pop_affected.tif"
-                    if sExtensionPopImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"population")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sExtensionPopImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-
-                    sExtensionCropsImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_crops.tif"
-                    if sExtensionCropsImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"crops")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sExtensionCropsImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-
                     sUrbanRoadImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_roads.shp"
-                    if sUrbanRoadImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"roads")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sUrbanRoadImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+                    self.mergeOrPublishImpactsShape(sExtensionRoadImpacts, sUrbanRoadImpacts, sCompositeMap, sUrbanMap, "roads", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
 
+                    # Exposures
+                    sExtensionExposureImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_exposure.shp"
                     sUrbanExposureImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_exposure.shp"
-                    if sUrbanExposureImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"exposures")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sUrbanExposureImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+                    self.mergeOrPublishImpactsShape(sExtensionExposureImpacts, sUrbanExposureImpacts, sCompositeMap, sUrbanMap, "exposures", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
 
+                    # Markers
+                    sExtensionMarkersImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_markers.shp"
                     sUrbanMarkersImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_markers.shp"
-                    if sUrbanMarkersImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"markers")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sUrbanMarkersImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+                    self.mergeOrPublishImpactsShape(sExtensionMarkersImpacts, sUrbanMarkersImpacts, sCompositeMap, sUrbanMap, "markers", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
 
+                    # Population
+                    sExtensionPopImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_pop_affected.tif"
                     sUrbanPopImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_pop_affected.tif"
-                    if sUrbanPopImpacts in asWorkspaceFiles:
-                        sInputData = sCompositeMap
-                        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,"population")
-                        if oImpactsMapConfig is not None:
-                            self.addAndPublishLayer(sUrbanPopImpacts, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
-                    
+                    self.mergeOrPublishImpactsRaster(sExtensionPopImpacts, sUrbanPopImpacts, sCompositeMap, sUrbanMap, "population", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
+
                     #Crops are disabled for Urban Floods
+                    sExtensionCropsImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_crops.tif"
+                    self.checkAndPublishImpactLayer(sExtensionCropsImpacts, sCompositeMap,"crops", oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles)
                     
                     iPeakDate = datetime.now().timestamp()
                     try:
@@ -380,7 +311,7 @@ class SarFloodMapEngine(RiseMapEngine):
                         logging.warning("Error converting event peak date " + str(oEvent["peakDate"]))
 
                     # Check if we already inserted the event
-                    aoTestEvents = oEventRepository.findByParams(sAreaId=self.m_oArea.id, iPeakDate=iPeakDate, sType="FLOOD")
+                    aoTestEvents = oEventRepository.findByParams(sAreaId=self.m_oArea.id, sPeakStringDate=oEvent["peakDate"], sType="FLOOD")
 
                     if len(aoTestEvents)<=0:
                         #No: we start also the rain app!
@@ -390,7 +321,8 @@ class SarFloodMapEngine(RiseMapEngine):
                         oEventEntity.name= "Flood_" + oEvent["peakDate"]
                         oEventEntity.type = "FLOOD"
                         oEventEntity.bbox = self.m_oArea.bbox
-
+                        oEventEntity.peakStringDate = oEvent["peakDate"]
+ 
                         iStartDate = datetime.now().timestamp()
                         iEndDate = datetime.now().timestamp()
 
@@ -425,6 +357,67 @@ class SarFloodMapEngine(RiseMapEngine):
             logging.error("SarFloodMapEngine.handleEvents: error " + str(oEx))
         return
 
+    def getInputDataForUrbanFlood(self, iEvent, aoUrbanDetections, sInputData=""):
+        """
+        Get the input data for the Urban Flood Map
+            :param iEvent Index of the event in the list of urban detections
+            :param aoUrbanDetections List of the urban detections done
+            :param sInputData Initial input data string
+            :return: updated input data string 
+        """
+
+        try:
+            if iEvent<len(aoUrbanDetections):
+                oUrbanDetection = aoUrbanDetections[iEvent]
+                sProcId = oUrbanDetection["PROCID"]
+                aoPayload = wasdi.getProcessorPayloadAsJson(sProcId)
+                if "UrbanBuildingMaps" in aoPayload:
+                    sInputData = sInputData + " Buildings Map: " + aoPayload["UrbanBuildingMaps"]
+                if "PRE_VV" in aoPayload:
+                    sInputData = sInputData + " PRE VV Coherence: " + aoPayload["PRE_VV"]
+                if "PRE_VH" in aoPayload:
+                    sInputData = sInputData + " PRE VH Coherence: " + aoPayload["PRE_VH"]
+                if "POST_VV" in aoPayload:
+                    sInputData = sInputData + " POST VV Coherence: " + aoPayload["POST_VV"]
+                if "POST_VH" in aoPayload:
+                    sInputData = sInputData + " POST VH Coherence: " + aoPayload["POST_VH"]
+        except:
+            logging.warning("Error trying to read the inputs of Urban Detection for map")
+        
+        return sInputData
+
+    def getInputDateForCompositeMap(self, iEvent, aoCompositeDetections, oEvent, sInputData=""):
+        """
+        Get the input data for the Composite Map
+            :param iEvent Index of the event in the list of urban detections
+            :param aoCompositeDetections List of the composite detections done
+            :param oEvent Event object
+            :param sInputData Initial input data string
+            :return: updated input data string
+        """
+
+        try:
+            if iEvent<len(aoCompositeDetections):
+                oCompositeDetection = aoCompositeDetections[iEvent]
+                sProcId = oCompositeDetection["PROCID"]
+                aoPayload = wasdi.getProcessorPayloadAsJson(sProcId)
+                if "sar_added_files" in aoPayload:
+                    sInputData = sInputData + " Buildings Map: " + str(aoPayload["sar_added_files"])
+                else:
+                    try:
+                        sInputData = "Daily SAR Flood Maps from " + oEvent["startDate"] + " to " + oEvent["endDate"]
+                    except Exception as oEx:
+                        logging.warning("handleEvents: error building input data string " + str(oEx))
+        except:
+            logging.warning("Error trying to read the inputs of an Event Composite Map ")
+
+    def checkAndPublishImpactLayer(self, sImpactMap, sInputData, sMapId, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles):
+        if sImpactMap in asWorkspaceFiles:
+            oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,sMapId)
+            if oImpactsMapConfig is not None:
+                self.addAndPublishLayer(sImpactMap, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData, bKeepLayer=True, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+    
+
     def handleArchiveTask(self, oTask, asWorkspaceFiles, bFullArchive):
 
         fFirstMapTimestamp = -1.0
@@ -433,7 +426,7 @@ class SarFloodMapEngine(RiseMapEngine):
         try:
             logging.info("SarFloodMapEngine.handleArchiveTask: task done, lets proceed!")
 
-            # We take the base name, start and end
+            # We take the base name  and start/end archive date
             sBaseName = oTask.inputParams["MOSAICBASENAME"]
             sStartDate = oTask.inputParams["ARCHIVE_START_DATE"]
             sEndDate = oTask.inputParams["ARCHIVE_END_DATE"]
@@ -453,19 +446,22 @@ class SarFloodMapEngine(RiseMapEngine):
             oTimeDelta = timedelta(days=1)
             oActualDate = oStartDay
 
+            oMapConfig = self.getMapConfig("sar_flood")
+
             # For each date of the archive
             while oActualDate <= oEndDay:
                 sDate = oActualDate.strftime("%Y-%m-%d")
+
+                # Name of the daily bare soil flood map
                 sFileName = sBaseName + "_" +sDate + "_" + oTask.inputParams["SUFFIX"]
 
                 # If the file is in the workspace
                 if sFileName not in asWorkspaceFiles:
+                    # We can proceed to the next date
                     oActualDate = oActualDate + oTimeDelta
                     continue
 
                 logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
-
-                oMapConfig = self.getMapConfig("sar_flood")
                 oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
                 if oLayer is None:
@@ -514,6 +510,7 @@ class SarFloodMapEngine(RiseMapEngine):
             # Handle the events array
             self.handleEvents(sEventFinderId, asWorkspaceFiles, oTask.inputParams["SUFFIX"])
 
+            # Flood Frequency Map
             sFFmMap = sBaseName + "_ffm_flood.tif"
             oMapConfig = self.getMapConfig("flood_frequency_map")
 
@@ -525,7 +522,7 @@ class SarFloodMapEngine(RiseMapEngine):
                     if oLayer is None:
                         logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
             else:
-                # This is the long term archive
+                # This is the long term archive: we need to sum the short archive ffm with the long one
                 sFullArchiveFFmMap = sBaseName + "_archiveffm_flood.tif"
 
                 if sFullArchiveFFmMap in asWorkspaceFiles:
@@ -766,7 +763,7 @@ class SarFloodMapEngine(RiseMapEngine):
             
             oWasdiTaskRepository = WasdiTaskRepository()
 
-            oRainPluginConfig = RiseDeamon.getPluginConfig("rise_rain_plugin")
+            oRainPluginConfig = RiseDeamon.getPluginConfig("rise_rain_plugin", self.m_oConfig)
             oMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oRainPluginConfig, "imerg_cumulate_12")
 
             aoParameters = oMapConfig.params

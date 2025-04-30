@@ -4,6 +4,9 @@ from mailjet_rest import Client
 
 from datetime import datetime, timedelta, timezone
 
+import wasdi
+import geopandas as gpd
+import pandas as pd
 
 def getClass(sClassName):
     asParts = sClassName.split('.')
@@ -90,3 +93,27 @@ def getTimestampBackInDays(iDaysCount):
     oUTCNow = datetime.now(timezone.utc)  # Current UTC datetime
     oUTCPast = oUTCNow - timedelta(days=iDaysCount)  # go back in time of the specified amount of days
     return int(oUTCPast.timestamp())
+
+
+def mergeShapeFiles(asShapeFiles, sOutputFileName, sStyle=""):
+
+    try:
+        asFullPaths = []
+
+        for sFile in asShapeFiles:
+            asFullPaths.append(wasdi.getPath(sFile))
+
+        # Read and merge shapefiles
+        aoShapeDataFrames = [gpd.read_file(sShapeFullPath) for sShapeFullPath in asFullPaths]
+        oMergedShape = gpd.GeoDataFrame(pd.concat(aoShapeDataFrames, ignore_index=True))
+
+        # Save the merged shapefile
+        sOutputFullPath = wasdi.getPath(sOutputFileName)
+        oMergedShape.to_file(sOutputFullPath)
+
+        wasdi.addFileToWASDI(sOutputFileName, sStyle=sStyle)
+    except Exception as oEx:
+        logging.error("RiseUtils.mergeShapeFiles. Exception " + str(oEx))
+        return False
+
+    return True

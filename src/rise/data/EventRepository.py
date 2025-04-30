@@ -9,7 +9,7 @@ class EventRepository(RiseMongoRepository):
         self.m_sCollectionName = "events"
         self.m_sEntityClassName = f"{Event.__module__}.{Event.__qualname__}"
 
-    def findByParams(self, sAreaId="", iPeakDate="", sType=""):
+    def findByParams(self, sAreaId="", sPeakStringDate="", sType=""):
         try:
             oCollection = self.getCollection()
 
@@ -21,15 +21,15 @@ class EventRepository(RiseMongoRepository):
 
             if sAreaId is None:
                 sAreaId = ""
-            if iPeakDate is None:
-                iPeakDate = ""
+            if sPeakStringDate is None:
+                sPeakStringDate = ""
             if sType is None:
                 sType = ""
 
             if sAreaId != "":
                 aoFilters["areaId"] = sAreaId
-            if iPeakDate != "":
-                aoFilters["peakDate"] = iPeakDate
+            if sPeakStringDate != "":
+                aoFilters["peakStringDate"] = sPeakStringDate
             if sType != "":
                 aoFilters["type"] = sType
 

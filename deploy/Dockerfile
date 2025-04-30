@@ -89,7 +89,7 @@ USER appwasdi
 # RUN specific to install pip libs
 RUN python3 -m venv --system-site-packages /home/appwasdi/venv && \
     pip3 install --no-cache-dir --no-compile \
-        wasdi numpy geoserver-rest mailjet-rest pandas pymongo shapely && \
+        wasdi numpy geoserver-rest mailjet-rest pandas pymongo shapely geopandas && \
     find /home/appwasdi -xdev -type d -name __pycache__ -exec rm --recursive --force {} +
 
 

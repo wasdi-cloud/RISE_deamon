@@ -8,6 +8,7 @@ import wasdi
 from src.rise.RiseDeamon import RiseDeamon
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
+from src.rise.utils import RiseUtils
 
 class ImpactMapEngine(RiseMapEngine):
 
@@ -63,7 +64,6 @@ class ImpactMapEngine(RiseMapEngine):
             for oTask in aoExistingTasks:
                 if "targetMapType" in oTask.pluginPayload:
                     sTargetMapType = oTask.pluginPayload["targetMapType"]
-
                     if sTargetMapType == "baresoil":
                         bRunForBareSoil = False
                         logging.info("ImpactMapEngine.updateNewMaps: run on bare soil already done today")
@@ -164,43 +164,42 @@ class ImpactMapEngine(RiseMapEngine):
                 logging.info("ImpactMapEngine.handleTask: the task does not have the targetMapType tag, I can only exit" )
                 return False
             
-            self.openSarFloodWorkspace()
-
             sTargetMapType = oTask.pluginPayload["targetMapType"]
+            self.openSarFloodWorkspace()
+            oPluginConfig = self.m_oPluginEngine.getPluginConfig()
 
             sDay = oTask.referenceDate
 
             asFiles = wasdi.getProductsByActiveWorkspace()
             sBaseName = self.getBaseName("sar_flood")
             
-            if sTargetMapType == "baresoil":
-                sSuffix = self.getBaresoilSuffix()
-                sSuffix = sSuffix.replace(".tif","")
+            
+            sSuffix = self.getBaresoilSuffix()
+            sSuffix = sSuffix.replace(".tif","")
 
-                logging.info("ImpactMapEngine.handleTask: handling impacts on bare soil map")
-                sImpactFile = sBaseName + "_exposure_baresoil_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "exposures")
-                sImpactFile = sBaseName + "_markers_baresoil_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "markers")
-                sImpactFile = sBaseName + "_roads_baresoil_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "roads")
-                sImpactFile = sBaseName + "_" + sDay + "_" + sSuffix + "_pop_affected.tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "population")
-                sImpactFile = sBaseName + "_crops_baresoil_" + sDay + ".tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "crops")
-            elif sTargetMapType == "urban":
-                logging.info("ImpactMapEngine.handleTask: handling impacts on urban map")
-                sImpactFile = sBaseName + "_exposure_urban_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "exposures")
-                sImpactFile = sBaseName + "_markers_urban_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "markers")
-                sImpactFile = sBaseName + "_roads_urban_" + sDay + ".shp"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "roads")
-                sImpactFile = sBaseName + "_pop_urban_" + sDay + ".tif"
-                self.checkAndPublishImpactLayer(sImpactFile, asFiles, oTask, "population")
-            else:
-                logging.warning("ImpactMapEngine.handleTask: target map type not recognized:" + sTargetMapType + " . we stop here")
+            sInput1 = "Bare Soil Flood " + sDay
+            sInput2 = "Urban Flood " + sDay
 
+            logging.info("ImpactMapEngine.handleTask: handling impacts on bare soil map")
+            sBareSoilImpactFile = sBaseName + "_exposure_baresoil_" + sDay + ".shp"
+            sUrbanImpactFile = sBaseName + "_exposure_urban_" + sDay + ".shp"
+            self.mergeOrPublishImpactsShape(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "exposures",sBaseName, sDay, oPluginConfig, asFiles, False)
+
+            sBareSoilImpactFile = sBaseName + "_markers_baresoil_" + sDay + ".shp"
+            sUrbanImpactFile = sBaseName + "_markers_urban_" + sDay + ".shp"
+            self.mergeOrPublishImpactsShape(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "markers",sBaseName, sDay, oPluginConfig, asFiles, False)
+
+            sBareSoilImpactFile = sBaseName + "_roads_baresoil_" + sDay + ".shp"
+            sUrbanImpactFile = sBaseName + "_roads_urban_" + sDay + ".shp"
+            self.mergeOrPublishImpactsShape(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "roads",sBaseName, sDay, oPluginConfig, asFiles, False)
+
+            sBareSoilImpactFile = sBaseName + "_" + sDay + "_" + sSuffix + "_pop_affected.tif"
+            sUrbanImpactFile = sBaseName + "_pop_urban_" + sDay + ".tif"
+            self.mergeOrPublishImpactsRaster(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "population",sBaseName, sDay, oPluginConfig, asFiles, False)
+
+            sBareSoilImpactFile = sBaseName + "_crops_baresoil_" + sDay + ".tif"
+            self.checkAndPublishImpactLayer(sBareSoilImpactFile, asFiles, oTask, "crops")
+        
         except Exception as oEx:
             logging.error("ImpactMapEngine.handleTask: exception " + str(oEx))
 
@@ -213,6 +212,7 @@ class ImpactMapEngine(RiseMapEngine):
                                     sOverrideMapId=sMapId,
                                     sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
                                     sInputData=oMapConfig.inputData)
+    
 
     def openSarFloodWorkspace(self):
         # We need the flood plugin config

@@ -406,7 +406,7 @@ class RiseMapEngine:
                                            oUser.email, sMailTitle, sMailMessage, True)
 
         except Exception as oEx:
-            logging.error(f"RiseMApEngine.notifyEndOfTask. Error {oEx}")
+            logging.error(f"RiseMapEngine.notifyEndOfTask. Error {oEx}")
 
     def createNewTask(self, sTaskId=None, sWorkspaceId=None, aoParameters=None, sApplication=None, sReferenceDate=None):
         oWasdiTask = WasdiTask()
@@ -421,3 +421,89 @@ class RiseMapEngine:
         oWasdiTask.application = sApplication
         oWasdiTask.referenceDate = sReferenceDate
         return oWasdiTask
+
+    def mergeOrPublishImpactsShape(self, sImpactMap1, sImpactMap2, sInputData1, sInputData2, sMapId, sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, bKeepLayer=False):
+        """
+        Merge the two impact maps shape files and publish it
+        :param sImpactMap1: First impact map
+        :param sImpactMap2: Second impact map
+        :param sInputData1: Input data for the first impact map
+        :param sInputData2: Input data for the second impact map
+        :param sMapId: Map ID for the impact map
+        :param sBaseName: Base name for the impact map
+        :param oEventPeakDate: Event peak date
+        :param oImpactsPluginConfig: Plugin configuration for the impacts plugin
+        :param asWorkspaceFiles: List of files in the workspace
+        :return:
+        """
+
+        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,sMapId)
+        if oImpactsMapConfig is None:
+            logging.warning("RiseMapEngine.mergeOrPublishImpactsShape: impossible to find configuration for map " + sMapId)
+            return
+
+        # Check if we have only the first map in the workspace
+        if sImpactMap1 in asWorkspaceFiles and sImpactMap2 not in asWorkspaceFiles:
+            self.addAndPublishLayer(sImpactMap1, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+        # Check if we have only the second map in the workspace                
+        elif sImpactMap1 not in asWorkspaceFiles and sImpactMap2 in asWorkspaceFiles:
+            self.addAndPublishLayer(sImpactMap2, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+        # Check if we have both maps in the workspace
+        elif sImpactMap1 in asWorkspaceFiles and sImpactMap2 in asWorkspaceFiles:
+            # Create the merged impact map name
+            sMergedImpactMap = sBaseName + "_event_" + oEventPeakDate + "_merged_impacts_" + sMapId + ".shp"
+            
+            # Merge the shape files
+            if RiseUtils.mergeShapeFiles([sImpactMap1,sImpactMap2], sMergedImpactMap, oImpactsMapConfig.style):
+                # Publish the merged impact map
+                self.addAndPublishLayer(sMergedImpactMap, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True)
+            else:
+                # If the merge fails, we publish the two separated layers
+                logging.info("RiseMapEngine.mergeOrPublishImpactsShape: error merging shape files " + sImpactMap1 + " and " + sImpactMap2 + " we publish separated layers")
+                self.addAndPublishLayer(sImpactMap1, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)                
+                self.addAndPublishLayer(sImpactMap2, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+
+    def mergeOrPublishImpactsRaster(self, sImpactMap1, sImpactMap2, sInputData1, sInputData2, sMapId, sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, bKeepLayer=False):
+        """
+        Merge the two impact maps and publish it
+        :param sImpactMap1: First impact map
+        :param sImpactMap2: Second impact map
+        :param sInputData1: Input data for the first impact map
+        :param sInputData2: Input data for the second impact map
+        :param sMapId: Map ID for the impact map
+        :param sBaseName: Base name for the impact map
+        :param oEventPeakDate: Event peak date
+        :param oImpactsPluginConfig: Plugin configuration for the impacts plugin
+        :param asWorkspaceFiles: List of files in the workspace
+        :return:
+        """
+
+        oImpactsMapConfig = RiseDeamon.getMapConfigFromPluginConfig(oImpactsPluginConfig,sMapId)
+        if oImpactsMapConfig is None:
+            logging.warning("RiseMapEngine.mergeOrPublishImpactsRaster: impossible to find configuration for map " + sMapId)
+            return
+
+        # Check if we have only the first map in the workspace
+        if sImpactMap1 in asWorkspaceFiles and sImpactMap2 not in asWorkspaceFiles:
+            self.addAndPublishLayer(sImpactMap1, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+        # Check if we have only the second map in the workspace                
+        elif sImpactMap1 not in asWorkspaceFiles and sImpactMap2 in asWorkspaceFiles:
+            self.addAndPublishLayer(sImpactMap2, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+        # Check if we have both maps in the workspace
+        elif sImpactMap1 in asWorkspaceFiles and sImpactMap2 in asWorkspaceFiles:
+            # Create the merged impact map name
+            sMergedImpactMap = sBaseName + "_event_" + oEventPeakDate + "_merged_impacts_" + sMapId + ".tif"
+            # Make the mosaic
+            sMosaicStatus = wasdi.mosaic([sImpactMap1,sImpactMap2], sMergedImpactMap, oImpactsMapConfig.style,0)
+            
+            # Merge the shape files
+            if sMosaicStatus == "DONE":
+                # Publish the merged impact map
+                self.addAndPublishLayer(sMergedImpactMap, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True)
+            else:
+                # If the merge fails, we publish the two separated layers
+                logging.info("RiseMapEngine.mergeOrPublishImpactsRaster: error merging shape files " + sImpactMap1 + " and " + sImpactMap2 + " we publish separated layers")
+                self.addAndPublishLayer(sImpactMap1, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)                
+                self.addAndPublishLayer(sImpactMap2, oEventPeakDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+

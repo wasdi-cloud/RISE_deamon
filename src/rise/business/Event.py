@@ -10,6 +10,7 @@ class Event(RiseEntity):
         self.startDate = float()
         self.endDate = float()
         self.peakDate = float()
+        self.peakStringDate = str()
         self.id = str()
         self.areaId = str()
         self.description = str()
