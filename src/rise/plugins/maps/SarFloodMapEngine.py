@@ -597,6 +597,14 @@ class SarFloodMapEngine(RiseMapEngine):
                 self.m_oArea.archiveEndDate = fLastMapTimestamp
                 bChanged = True
 
+            if not self.m_oArea.firstShortArchivesReady and not bFullArchive:
+                self.m_oArea.firstShortArchivesReady = True
+                bChanged = True
+            
+            if not self.m_oArea.firstLongArchivesReady and bFullArchive:
+                self.m_oArea.firstLongArchivesReady = True
+                bChanged = True 
+
             if bChanged:
                 # Update the area if needed
                 oAreaRepository = AreaRepository()
