@@ -420,6 +420,7 @@ class RiseMapEngine:
         oWasdiTask.status = "CREATED"
         oWasdiTask.application = sApplication
         oWasdiTask.referenceDate = sReferenceDate
+        oWasdiTask.pluginPayload = {}
         return oWasdiTask
 
     def mergeOrPublishImpactsShape(self, sImpactMap1, sImpactMap2, sInputData1, sInputData2, sMapId, sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, bKeepLayer=False):
