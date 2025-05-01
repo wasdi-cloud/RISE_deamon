@@ -92,7 +92,7 @@ class RiseMapEngine:
             sNewStatus = wasdi.getProcessStatus(oTask.id)
 
             if sNewStatus == "ERROR" or sNewStatus == "STOPPED":
-                logging.warning("RiseMapEngine.handleTask: the new status is not done but " + sNewStatus + " update status and exit")
+                logging.warning("RiseMapEngine.handleTask: the new status is not done but " + sNewStatus + " update status and exit. Task id: " + oTask.id)
                 oTask.status = sNewStatus
                 oTaskRepo.updateEntity(oTask)
                 return False
