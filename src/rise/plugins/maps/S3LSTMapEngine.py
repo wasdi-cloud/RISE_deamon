@@ -49,6 +49,7 @@ class S3LSTMapEngine(RiseMapEngine):
             aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
             aoParameters["STARTDATE"] = sYesterday
             aoParameters["ENDDATE"] = sYesterday
+            aoParameters["BASE_NAME"] = self.getBaseName()
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
@@ -83,8 +84,8 @@ class S3LSTMapEngine(RiseMapEngine):
 
             sInputData = oMapConfig.inputData
 
-            if "IMERG_FILES" in aoPayload:
-                for sInputFile in aoPayload["IMERG_FILES"]:
+            if "s3_input_files" in aoPayload:
+                for sInputFile in aoPayload["s3_input_files"]:
                     sInputData += sInputFile + " "
 
             asFiles = wasdi.getProductsByActiveWorkspace()
