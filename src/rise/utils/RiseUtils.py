@@ -1,4 +1,6 @@
+import glob
 import logging
+import os
 
 from mailjet_rest import Client
 
@@ -105,15 +107,46 @@ def mergeShapeFiles(asShapeFiles, sOutputFileName, sStyle=""):
 
         # Read and merge shapefiles
         aoShapeDataFrames = [gpd.read_file(sShapeFullPath) for sShapeFullPath in asFullPaths]
+
+        for i in range(len(aoShapeDataFrames)):
+            aoShapeDataFrames[i]["ID"] = aoShapeDataFrames[i]["ID"].astype(str)        
+        
         oMergedShape = gpd.GeoDataFrame(pd.concat(aoShapeDataFrames, ignore_index=True))
 
-        # Save the merged shapefile
+        # Ensure the CRS is set to EPSG:4326
+        oMergedShape = oMergedShape.set_crs("EPSG:4326", allow_override=True)
+
+        # Clean the file from wasdi, if it exists
+        if wasdi.fileExistsOnWasdi(sOutputFileName):
+            wasdi.deleteProduct(sOutputFileName)
+
+        # Now get the full path
         sOutputFullPath = wasdi.getPath(sOutputFileName)
+
+        # And clean also the local copy if exists:
+        deleteShapeFile(sOutputFullPath);
+
+        # Save the merged shapefile
         oMergedShape.to_file(sOutputFullPath)
 
+        #Re - add the file to wasdi: note the upload of shape is not working in reality
         wasdi.addFileToWASDI(sOutputFileName, sStyle=sStyle)
     except Exception as oEx:
         logging.error("RiseUtils.mergeShapeFiles. Exception " + str(oEx))
         return False
 
     return True
+
+def deleteShapeFile(sShapeFileFullPath):
+    """
+    Delete a shapefile and its associated files (e.g., .shx, .dbf) from the filesystem.
+    :param sShapeFileFullPath: Full path to the shapefile (without extension).
+    """
+    try:
+        asFiles = glob.glob(sShapeFileFullPath.replace(".shp","*"))
+        
+        for sFile in asFiles:
+            os.remove(sFile)
+
+    except Exception as oEx:
+        logging.error("RiseUtils.deleteShapeFile. Exception " + str(oEx))

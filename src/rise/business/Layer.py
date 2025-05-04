@@ -19,6 +19,7 @@ class Layer(RiseEntity):
         self.createdDate = 0.0
         self.resolution = ""
         self.inputData = ""
+        self.workspaceId = ""
 
         for key, value in kwargs.items():
             setattr(self, key, value)

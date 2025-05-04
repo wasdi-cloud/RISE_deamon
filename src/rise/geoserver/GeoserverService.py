@@ -226,7 +226,7 @@ class GeoserverService:
                 return False
 
             sType = oLayerInfo.get('type')
-            logging.info(f"GeoserverService.deleteLayer. Type of later: {sType}")
+            logging.debug(f"GeoserverService.deleteLayer: Type of layer: {sType}")
 
             if sType == 'VECTOR':
                 return self.deleteShapeLayer(sDatastoreName, sWorkspaceName)

@@ -87,6 +87,10 @@ class UrbanFloodMapEngine(RiseMapEngine):
                 return False
 
             logging.info("UrbanFloodMapEngine.handleTask: handle task " + oTask.id)
+            oMapConfig = self.getMapConfig("sar_flood")
+
+            # Open our workspace
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(oMapConfig)
 
             if oTask.application == "flood_finder_in_archive":
                 # We executed a flood finder: we check if we need to start an urban flood or not

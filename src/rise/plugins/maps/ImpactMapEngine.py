@@ -173,7 +173,6 @@ class ImpactMapEngine(RiseMapEngine):
             asFiles = wasdi.getProductsByActiveWorkspace()
             sBaseName = self.getBaseName("sar_flood")
             
-            
             sSuffix = self.getBaresoilSuffix()
             sSuffix = sSuffix.replace(".tif","")
 
