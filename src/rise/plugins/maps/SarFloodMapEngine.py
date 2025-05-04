@@ -201,7 +201,7 @@ class SarFloodMapEngine(RiseMapEngine):
             oMapConfig = self.getMapConfig("autofloodchain2")
 
             if sFileName in asWorkspaceFiles:
-                self.updateChainParamsDate(sDate, None)
+                self.updateChainParamsDate(sDate, "lastMapDate")
                 self.addAndPublishLayer(sFileName, oDate, True, "autofloodchain2", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
         except Exception as oEx:
@@ -576,7 +576,7 @@ class SarFloodMapEngine(RiseMapEngine):
                     else:
                         logging.info("SarFloodMapEngine.handleArchiveTask: simulation mode on")
 
-            self.updateChainParamsDate(sEndDate, aoChainParams)
+            self.updateChainParamsDate(sEndDate, "lastMapDate")
 
             # notify users
             self.notifyEndOfTask(oTask.areaId, True, "High Res Flooded Area Detection")
@@ -640,7 +640,7 @@ class SarFloodMapEngine(RiseMapEngine):
         bStillToRun = False
 
         # Now we try to read the params saved in the workspace
-        aoIntegratedChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, False)
+        aoIntegratedChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile)
 
         sChainOrbits = ""
         sWaterMap = ""
@@ -735,35 +735,34 @@ class SarFloodMapEngine(RiseMapEngine):
         else:
             logging.info("SarFloodMapEngine.updateNewMaps: nothing to re-start, done.")
 
-    def updateChainParamsDate(self, sEndDate, aoChainParams, sDateKey = "lastMapDate"):
-        # Previous version, if available
-        aoOldChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, True)
+    def updateChainParamsDate(self, sEndDate, sDateKey = "lastMapDate"):
+        try:
+            # Previous version, if available
+            aoChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile)
 
-        # Do we have a reference one?
-        if aoChainParams is None:
-            # No, try to get it from the workspace
-            aoChainParams = aoOldChainParams
+            if aoChainParams is not None:
+                if sDateKey in aoChainParams:
+                    sOldLastMapDate = aoChainParams[sDateKey]
+                    if sEndDate < sOldLastMapDate:
+                        sEndDate = sOldLastMapDate
+            else:
+                aoChainParams = {}
 
-        if aoOldChainParams is not None:
-            if sDateKey in aoOldChainParams:
-                sOldLastMapDate = aoOldChainParams[sDateKey]
-                if sEndDate < sOldLastMapDate:
-                    sEndDate = sOldLastMapDate
+            aoChainParams[sDateKey] = sEndDate
 
-        if aoChainParams is None:
-            aoChainParams = {}
+            # Take a local copy
+            sJsonFilePath = wasdi.getPath(self.m_sChainParamsFile)
 
-        aoChainParams[sDateKey] = sEndDate
+            # Now we write the new json
+            with open(sJsonFilePath, "w") as oFile:
+                json.dump(aoChainParams, oFile)
 
-        # Take a local copy
-        sJsonFilePath = wasdi.getPath(self.m_sChainParamsFile)
-
-        # Now we write the new json
-        with open(sJsonFilePath, "w") as oFile:
-            json.dump(aoChainParams, oFile)
-
-        # And we add it, updated, to WASDI
-        wasdi.addFileToWASDI(self.m_sChainParamsFile)
+            # Clean the old one
+            wasdi.deleteProduct(self.m_sChainParamsFile)
+            # And we add it, updated, to WASDI
+            wasdi.addFileToWASDI(self.m_sChainParamsFile)
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.updateChainParamsDate: exception " + str(oEx))
     
     def startRainMaps(self, sEventDate):
         try:

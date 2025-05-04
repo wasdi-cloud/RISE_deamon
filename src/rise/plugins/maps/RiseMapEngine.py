@@ -326,31 +326,27 @@ class RiseMapEngine:
     def updateNewMaps(self):
         pass
 
-    def getWorkspaceUpdatedJsonFile(self, sJsonFile, bDeleteFromWasdi):
+    def getWorkspaceUpdatedJsonFile(self, sJsonFile):
+
+        if os.path.isfile(sJsonFilePath):
+            # Clean it and re-take it updated from wasdi
+            os.remove(sJsonFilePath)
+
         # Take a local copy
         sJsonFilePath = wasdi.getPath(sJsonFile)
 
         # Previous version, if available
-        aoOldChainParams = None
+        aoChainParams = None
 
         # If we have a local file
         if os.path.isfile(sJsonFilePath):
-            # Clean it and re-take it updated from wasdi
-            os.remove(sJsonFilePath)
-            sJsonFilePath = wasdi.getPath(sJsonFile)
+            with open(sJsonFilePath, "r") as oFile:
+                try:
+                    aoChainParams = json.load(oFile)
+                except:
+                    pass
 
-            # also delete from WASDI now, it will be re-written
-            if bDeleteFromWasdi:
-                wasdi.deleteProduct(sJsonFile)
-
-            if os.path.isfile(sJsonFilePath):
-                with open(sJsonFilePath, "r") as oFile:
-                    try:
-                        aoOldChainParams = json.load(oFile)
-                    except:
-                        pass
-
-        return aoOldChainParams
+        return aoChainParams
 
     def isRunningStatus(self, sStatus):
         if sStatus is None:

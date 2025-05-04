@@ -40,7 +40,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
             if sFileName in asWorkspaceFiles:
-                self.updateChainParamsDate(sDate, None, "lastFFMUpdate")
+                self.updateChainParamsDate(sDate, "lastFFMUpdate")
                 self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, bForceRepublish=True)
 
         except Exception as oEx:
@@ -60,7 +60,6 @@ class FloodFrequencyMapEngine(RiseMapEngine):
         # Take today as reference date
         oMapRepository = MapRepository()
         oSarMap = oMapRepository.getEntityById("sar_flood")
-
 
         # We open the workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(oSarMap)
@@ -92,7 +91,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
         # Is the file in the workspace?
         if sFileName in asFiles:
             # Take the chain params
-            aoChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, False)
+            aoChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile)
 
             if aoChainParams is None:
                 logging.warning("FloodFrequencyMapEngine.updateNewMaps: the chain params file is not available: likely, the archive still have to finish. We stop here")
@@ -134,32 +133,32 @@ class FloodFrequencyMapEngine(RiseMapEngine):
     def getFFMdataMapName(self):
         return self.getBaseName("sar_flood")+"_ffm_data.tif"
 
-    def updateChainParamsDate(self, sEndDate, aoChainParams, sDateKey = "lastMapDate"):
-        # Previous version, if available
-        aoOldChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile, True)
+    def updateChainParamsDate(self, sEndDate, sDateKey = "lastMapDate"):
+        try:
+            # Previous version, if available
+            aoChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile)
 
-        # Do we have a reference one?
-        if aoChainParams is None:
-            # No, try to get it from the workspace
-            aoChainParams = aoOldChainParams
+            if aoChainParams is not None:
+                if sDateKey in aoChainParams:
+                    sOldLastMapDate = aoChainParams[sDateKey]
+                    if sEndDate < sOldLastMapDate:
+                        sEndDate = sOldLastMapDate
+            else:
+                aoChainParams = {}    
 
-        if aoOldChainParams is not None:
-            if sDateKey in aoOldChainParams:
-                sOldLastMapDate = aoOldChainParams[sDateKey]
-                if sEndDate < sOldLastMapDate:
-                    sEndDate = sOldLastMapDate
+            aoChainParams[sDateKey] = sEndDate
 
-        if aoChainParams is None:
-            aoChainParams = {}
+            # Take a local copy
+            sJsonFilePath = wasdi.getPath(self.m_sChainParamsFile)
 
-        aoChainParams[sDateKey] = sEndDate
+            # Now we write the new json
+            with open(sJsonFilePath, "w") as oFile:
+                json.dump(aoChainParams, oFile)
 
-        # Take a local copy
-        sJsonFilePath = wasdi.getPath(self.m_sChainParamsFile)
-
-        # Now we write the new json
-        with open(sJsonFilePath, "w") as oFile:
-            json.dump(aoChainParams, oFile)
-
-        # And we add it, updated, to WASDI
-        wasdi.addFileToWASDI(self.m_sChainParamsFile)
+            # Force the clean
+            wasdi.deleteProduct(self.m_sChainParamsFile)
+            # And we add it, updated, to WASDI
+            wasdi.addFileToWASDI(self.m_sChainParamsFile)
+        except Exception as oEx:
+            logging.error("FloodFrequencyMapEngine.updateChainParamsDate: exception " + str(oEx))
+            
