@@ -328,6 +328,8 @@ class RiseMapEngine:
 
     def getWorkspaceUpdatedJsonFile(self, sJsonFile):
 
+        sJsonFilePath = wasdi.getSavePath() + sJsonFile
+
         if os.path.isfile(sJsonFilePath):
             # Clean it and re-take it updated from wasdi
             os.remove(sJsonFilePath)
@@ -532,10 +534,11 @@ class RiseMapEngine:
             
             # Merge the shape files
             if sMosaicStatus == "DONE":
-                self.deleteLayer(sImpactMap1)
-                self.deleteLayer(sImpactMap2)
                 # Publish the merged impact map
-                self.addAndPublishLayer(sMergedImpactMap, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True)
+                oPublishedLayer = self.addAndPublishLayer(sMergedImpactMap, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True)
+                if oPublishedLayer is not None:
+                    self.deleteLayer(sImpactMap1)
+                    self.deleteLayer(sImpactMap2)
             else:
                 # If the merge fails, we publish the two separated layers
                 logging.info("RiseMapEngine.mergeOrPublishImpactsRaster: error merging shape files " + sImpactMap1 + " and " + sImpactMap2 + " we publish separated layers")
