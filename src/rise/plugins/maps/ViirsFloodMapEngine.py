@@ -209,8 +209,8 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 self.m_oArea.firstShortArchivesReady = True
                 bChanged = True
             
-            if not self.m_oArea.firstLongArchivesReady and not bOnlyLastWeek:
-                self.m_oArea.firstLongArchivesReady = True
+            if not self.m_oArea.firstFullArchivesReady and not bOnlyLastWeek:
+                self.m_oArea.firstFullArchivesReady = True
                 bChanged = True                 
 
             if bChanged:
