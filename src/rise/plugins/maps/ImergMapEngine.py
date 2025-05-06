@@ -19,7 +19,7 @@ class ImergMapEngine(RiseMapEngine):
         logging.info("ImergMapEngine.triggerNewAreaArchives: IMERG long Archive Not supported")
 
     def updateNewMaps(self):
-        logging.info("ImergMapEngine.triggerNewAreaArchives: Update New Maps")
+        logging.info("ImergMapEngine.updateNewMaps: Update New Maps")
 
         oNow = datetime.datetime.now(datetime.UTC)
         sDay = oNow.strftime("%Y-%m-%d")

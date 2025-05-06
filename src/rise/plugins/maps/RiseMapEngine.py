@@ -325,6 +325,47 @@ class RiseMapEngine:
 
     def updateNewMaps(self):
         pass
+    
+    def saveChainParams(self, sFile, aoChainParams):
+        try:
+            # Take a local copy
+            sJsonFilePath = wasdi.getPath(sFile)
+
+            # Now we write the new json
+            with open(sJsonFilePath, "w") as oFile:
+                json.dump(aoChainParams, oFile)
+
+            # And we add it, updated, to WASDI
+            wasdi.addFileToWASDI(sFile, bForceUpdate=True)
+        except Exception as oEx:
+            logging.error("RiseMapEngine.saveChainParams: exception " + str(oEx))
+
+    def updateChainParamsDate(self, sFile, sEndDate, sDateKey = "lastMapDate"):
+        try:
+            # Previous version, if available
+            aoChainParams = self.getWorkspaceUpdatedJsonFile(sFile)
+
+            if aoChainParams is not None:
+                if sDateKey in aoChainParams:
+                    sOldLastMapDate = aoChainParams[sDateKey]
+                    if sEndDate < sOldLastMapDate:
+                        sEndDate = sOldLastMapDate
+            else:
+                aoChainParams = {}    
+
+            aoChainParams[sDateKey] = sEndDate
+
+            # Take a local copy
+            sJsonFilePath = wasdi.getPath(sFile)
+
+            # Now we write the new json
+            with open(sJsonFilePath, "w") as oFile:
+                json.dump(aoChainParams, oFile)
+
+            # And we add it, updated, to WASDI
+            wasdi.addFileToWASDI(sFile, bForceUpdate=True)
+        except Exception as oEx:
+            logging.error("RiseMapEngine.updateChainParamsDate: exception " + str(oEx))
 
     def getWorkspaceUpdatedJsonFile(self, sJsonFile):
 
@@ -348,7 +389,7 @@ class RiseMapEngine:
                 except:
                     pass
 
-        return aoChainParams
+        return aoChainParams        
 
     def isRunningStatus(self, sStatus):
         if sStatus is None:
