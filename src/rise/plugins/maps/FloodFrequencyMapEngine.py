@@ -40,7 +40,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
             if sFileName in asWorkspaceFiles:
-                self.updateChainParamsDate(sDate, "lastFFMUpdate")
+                self.updateChainParamsDate(self.m_sChainParamsFile, sDate, "lastFFMUpdate")
                 self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, bForceRepublish=True)
 
         except Exception as oEx:
