@@ -511,7 +511,7 @@ class SarFloodMapEngine(RiseMapEngine):
             self.saveChainParams(self.m_sChainParamsFile, aoChainParams)
 
             # Update the task with the chain params
-            try
+            try:
                 oTask.pluginPayload["chainParams"] = aoChainParams
                 oWasdiTaskRepository = WasdiTaskRepository()
                 oWasdiTaskRepository.updateEntity(oTask)
