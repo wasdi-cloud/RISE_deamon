@@ -106,7 +106,7 @@ class DroughtEcostressMapEngine(RiseMapEngine):
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
-            oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sDay)
+            oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sReferenceDate)
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
             logging.info("DroughtEcostressMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay)
