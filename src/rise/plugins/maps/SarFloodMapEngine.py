@@ -621,7 +621,6 @@ class SarFloodMapEngine(RiseMapEngine):
                 oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)
 
-
     def startDailySARFloodDetection(self, sDay, oMapConfig, aoFloodChainParameters):
         # Open our workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
@@ -638,7 +637,6 @@ class SarFloodMapEngine(RiseMapEngine):
 
         # if we have existing tasks
         for oTask in aoExistingTasks:
-
             if self.isRunningStatus(oTask.status):
                 logging.info("SarFloodMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
                 return
@@ -658,11 +656,18 @@ class SarFloodMapEngine(RiseMapEngine):
         sCopDemMap = ""
         sLastMapDate = ""
 
+        if aoIntegratedChainParams is None:
+            aoIntegratedChainParams = self.recoverChainParams()
+
         if aoIntegratedChainParams is not None:
             sChainOrbits = aoIntegratedChainParams["orbits"]
             sWaterMap = aoIntegratedChainParams["water_map"]
             sCopDemMap = aoIntegratedChainParams["CopDemMap"]
             sLastMapDate = aoIntegratedChainParams["lastMapDate"]
+        else:
+            logging.warning("SarFloodMapEngine.updateNewMaps: no chain params found, we try to recover at least orbits from past run")
+            sChainOrbits = self.recoverOrbitsFromAutofloodChain()
+            sWaterMap = "HighResWaterMap.tif"
 
         # If we have a task
         if sTodayTaskId is not None:
@@ -800,3 +805,38 @@ class SarFloodMapEngine(RiseMapEngine):
         sWorkspaceId = wasdi.openWorkspace(sFloodsWorkspaceName)
 
         return sWorkspaceId
+    
+
+    def recoverChainParams(self):    
+        try:
+            oWasdiTaskRepository = WasdiTaskRepository()
+            aoOldRun = wasdi.getProcessesByWorkspace(iStartIndex=0, iEndIndex=20, sStatus="DONE", sOperationType="RUNPROCESSOR", sName="integrated_sar_flood_archive")
+
+            for oOldRun in aoOldRun:
+                sTaskId = oOldRun["processObjId"]
+                oIntegratedChainTask = oWasdiTaskRepository.getEntityById(sTaskId)
+                if oIntegratedChainTask is not None:
+                    if oIntegratedChainTask.pluginPayload is not None:
+                        if "chainParams" in oIntegratedChainTask.pluginPayload:
+                            aoIntegratedChainParams = oIntegratedChainTask.pluginPayload["chainParams"]
+                            return aoIntegratedChainParams
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.recoverChainParams: error " + str(oEx))
+            return None
+        
+    def recoverOrbitsFromAutofloodChain(self):    
+        try:
+            aoOldRun = wasdi.getProcessesByWorkspace(iStartIndex=0, iEndIndex=20, sStatus="DONE", sOperationType="RUNPROCESSOR", sName="autofloodchain2")
+
+            for oOldRun in aoOldRun:
+                sTaskId = oOldRun["processObjId"]
+                oPayload = wasdi.getProcessorPayloadAsJson(sTaskId)
+                if oPayload is not None:
+                    if "Orbits" in oPayload:
+                        sOrbits = oPayload["Orbits"]
+                        if sOrbits != "":
+                            return sOrbits
+
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.recoverOrbitsFromAutofloodChain: error " + str(oEx))
+            return ""        
