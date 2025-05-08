@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+import uuid
 
 import wasdi
 
@@ -299,6 +300,7 @@ class ImpactMapEngine(RiseMapEngine):
 
                 if "AffectedPopulation" in oPayload:
                     oWidgetInfo = WidgetInfo()
+                    oWidgetInfo.id = str(uuid.uuid4())
                     oWidgetInfo.widget = "population"
                     oWidgetInfo.type = "number"
                     oWidgetInfo.icon = "family_restroom"
@@ -311,7 +313,55 @@ class ImpactMapEngine(RiseMapEngine):
                     oWidgetInfo.areaId = self.m_oArea.id
 
                     oWidgetInfoRepository = WidgetInfoRepository()
-                    oWidgetInfoRepository.addEntity(oWidgetInfo)
+
+                    aoExistingWidgets = oWidgetInfoRepository.findByParams("population", oWidgetInfo.areaId, oWidgetInfo.referenceTime)
+
+                    if len(aoExistingWidgets) == 0:
+                        oWidgetInfoRepository.addEntity(oWidgetInfo)
+
+                if "Roads" in oPayload:
+                    oWidgetInfo = WidgetInfo()
+                    oWidgetInfo.id = str(uuid.uuid4())
+                    oWidgetInfo.widget = "alerts"
+                    oWidgetInfo.type = "text"
+                    oWidgetInfo.icon = "alert"
+                    oWidgetInfo.title = "Affected Roads"
+                    oWidgetInfo.content = str(len(oPayload["Roads"]))
+                    oWidgetInfo.bbox = self.m_oArea.bbox
+                    oDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+                    oWidgetInfo.referenceTime = oDate.timestamp()
+                    oWidgetInfo.organizationId = self.m_oArea.organizationId
+                    oWidgetInfo.areaId = self.m_oArea.id
+
+                    oWidgetInfoRepository = WidgetInfoRepository()
+
+                    aoExistingWidgets = oWidgetInfoRepository.findByParams("alerts", oWidgetInfo.areaId, oWidgetInfo.referenceTime, "Roads affected")
+
+                    if len(aoExistingWidgets) == 0:
+                        oWidgetInfoRepository.addEntity(oWidgetInfo)
+                
+                if "Exposures" in oPayload:
+                    oWidgetInfo = WidgetInfo()
+                    oWidgetInfo.id = str(uuid.uuid4())
+                    oWidgetInfo.widget = "alerts"
+                    oWidgetInfo.type = "text"
+                    oWidgetInfo.icon = "alert"
+                    oWidgetInfo.title = "Affected Exposures"
+                    oWidgetInfo.content = str(len(oPayload["Exposures"]))
+                    oWidgetInfo.bbox = self.m_oArea.bbox
+                    oDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+                    oWidgetInfo.referenceTime = oDate.timestamp()
+                    oWidgetInfo.organizationId = self.m_oArea.organizationId
+                    oWidgetInfo.areaId = self.m_oArea.id
+
+                    oWidgetInfoRepository = WidgetInfoRepository()
+
+                    aoExistingWidgets = oWidgetInfoRepository.findByParams("alerts", oWidgetInfo.areaId, oWidgetInfo.referenceTime, "Exposures affected")
+
+                    if len(aoExistingWidgets) == 0:
+                        oWidgetInfoRepository.addEntity(oWidgetInfo)
+
+                
 
         except Exception as oEx:
             logging.error("ImpactMapEngine.createWidgetInfo: exception " + str(oEx))
