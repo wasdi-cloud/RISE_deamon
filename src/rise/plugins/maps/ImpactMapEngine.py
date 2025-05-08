@@ -6,9 +6,11 @@ from pathlib import Path
 import wasdi
 
 from src.rise.RiseDeamon import RiseDeamon
+from src.rise.business.WidgetInfo import WidgetInfo
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
 from src.rise.utils import RiseUtils
+from src.rise.data.WidgetInfoRepository import WidgetInfoRepository
 
 class ImpactMapEngine(RiseMapEngine):
 
@@ -198,6 +200,8 @@ class ImpactMapEngine(RiseMapEngine):
 
             sBareSoilImpactFile = sBaseName + "_crops_baresoil_" + sDay + ".tif"
             self.checkAndPublishImpactLayer(sBareSoilImpactFile, asFiles, oTask, "crops")
+
+            self.createWidgetInfo(oTask)
         
         except Exception as oEx:
             logging.error("ImpactMapEngine.handleTask: exception " + str(oEx))
@@ -282,4 +286,32 @@ class ImpactMapEngine(RiseMapEngine):
                 aoParams = vars(aoParams)
                 sSuffix = aoParams["SUFFIX"]
         
-        return sSuffix                
+        return sSuffix
+    
+    def createWidgetInfo(self, oTask):
+        try:
+
+            self.openSarFloodWorkspace()
+
+            oPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
+
+            if oPayload is not None:
+
+                if "AffectedPopulation" in oPayload:
+                    oWidgetInfo = WidgetInfo()
+                    oWidgetInfo.widget = "population"
+                    oWidgetInfo.type = "number"
+                    oWidgetInfo.icon = "family_restroom"
+                    oWidgetInfo.title = "WIDGET.AFFECTED_PPL"
+                    oWidgetInfo.content = str(oPayload["AffectedPopulation"])
+                    oWidgetInfo.bbox = self.m_oArea.bbox
+                    oDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+                    oWidgetInfo.referenceTime = oDate.timestamp()
+                    oWidgetInfo.organizationId = self.m_oArea.organizationId
+                    oWidgetInfo.areaId = self.m_oArea.id
+
+                    oWidgetInfoRepository = WidgetInfoRepository()
+                    oWidgetInfoRepository.addEntity(oWidgetInfo)
+
+        except Exception as oEx:
+            logging.error("ImpactMapEngine.createWidgetInfo: exception " + str(oEx))
