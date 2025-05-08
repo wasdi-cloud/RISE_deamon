@@ -283,22 +283,22 @@ class SarFloodMapEngine(RiseMapEngine):
                     # Roads
                     sExtensionRoadImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_roads.shp"
                     sUrbanRoadImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_roads.shp"
-                    self.mergeOrPublishImpactsShape(sExtensionRoadImpacts, sUrbanRoadImpacts, sCompositeMap, sUrbanMap, "roads", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
+                    self.mergeOrPublishImpactsShape(sExtensionRoadImpacts, sUrbanRoadImpacts, sCompositeMap, sUrbanMap, "roads", sBaseName, oEvent["peakDate"], oImpactsPluginConfig, asWorkspaceFiles, True)
 
                     # Exposures
                     sExtensionExposureImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_exposure.shp"
                     sUrbanExposureImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_exposure.shp"
-                    self.mergeOrPublishImpactsShape(sExtensionExposureImpacts, sUrbanExposureImpacts, sCompositeMap, sUrbanMap, "exposures", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
+                    self.mergeOrPublishImpactsShape(sExtensionExposureImpacts, sUrbanExposureImpacts, sCompositeMap, sUrbanMap, "exposures", sBaseName, oEvent["peakDate"], oImpactsPluginConfig, asWorkspaceFiles, True)
 
                     # Markers
                     sExtensionMarkersImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_markers.shp"
                     sUrbanMarkersImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_impacts_markers.shp"
-                    self.mergeOrPublishImpactsShape(sExtensionMarkersImpacts, sUrbanMarkersImpacts, sCompositeMap, sUrbanMap, "markers", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
+                    self.mergeOrPublishImpactsShape(sExtensionMarkersImpacts, sUrbanMarkersImpacts, sCompositeMap, sUrbanMap, "markers", sBaseName, oEvent["peakDate"], oImpactsPluginConfig, asWorkspaceFiles, True)
 
                     # Population
                     sExtensionPopImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_pop_affected.tif"
                     sUrbanPopImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["endDate"] + "_urbanflood_pop_affected.tif"
-                    self.mergeOrPublishImpactsRaster(sExtensionPopImpacts, sUrbanPopImpacts, sCompositeMap, sUrbanMap, "population", sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, True)
+                    self.mergeOrPublishImpactsRaster(sExtensionPopImpacts, sUrbanPopImpacts, sCompositeMap, sUrbanMap, "population", sBaseName, oEvent["peakDate"], oImpactsPluginConfig, asWorkspaceFiles, True)
 
                     #Crops are disabled for Urban Floods
                     sExtensionCropsImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_crops.tif"
