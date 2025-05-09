@@ -526,16 +526,20 @@ class RiseMapEngine:
         elif sImpactMap1 in asWorkspaceFiles and sImpactMap2 in asWorkspaceFiles:
             # Create the merged impact map name
             sMergedImpactMap = sBaseName + "_event_" + oReferenceDate.strftime("%Y-%m-%d") + "_merged_impacts_" + sMapId + ".shp"
-            
-            # Merge the shape files
-            if RiseUtils.mergeShapeFiles([sImpactMap1,sImpactMap2], sMergedImpactMap, oImpactsMapConfig.style):
-                # Publish the merged impact map
-                self.addAndPublishLayer(sMergedImpactMap, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True, bForceDeleteLocalFile=False)
-            else:
-                # If the merge fails, we publish the two separated layers
-                logging.info("RiseMapEngine.mergeOrPublishImpactsShape: error merging shape files " + sImpactMap1 + " and " + sImpactMap2 + " we publish separated layers")
-                self.addAndPublishLayer(sImpactMap1, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)                
-                self.addAndPublishLayer(sImpactMap2, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
+
+            if sMergedImpactMap not in asWorkspaceFiles:
+                # Merge the shape files
+                if RiseUtils.mergeShapeFiles([sImpactMap1,sImpactMap2], sMergedImpactMap, oImpactsMapConfig.style):
+                    # Publish the merged impact map
+                    oPublishedLayer = self.addAndPublishLayer(sMergedImpactMap, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True, bForceDeleteLocalFile=False)
+                    if oPublishedLayer is not None:
+                        self.deleteLayer(sImpactMap1)
+                        self.deleteLayer(sImpactMap2)
+                else:
+                    # If the merge fails, we publish the two separated layers
+                    logging.info("RiseMapEngine.mergeOrPublishImpactsShape: error merging shape files " + sImpactMap1 + " and " + sImpactMap2 + " we publish separated layers")
+                    self.addAndPublishLayer(sImpactMap1, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)                
+                    self.addAndPublishLayer(sImpactMap2, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
 
 
     def mergeOrPublishImpactsRaster(self, sImpactMap1, sImpactMap2, sInputData1, sInputData2, sMapId, sBaseName, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles, bKeepLayer=False):
@@ -570,16 +574,18 @@ class RiseMapEngine:
         elif sImpactMap1 in asWorkspaceFiles and sImpactMap2 in asWorkspaceFiles:
             # Create the merged impact map name
             sMergedImpactMap = sBaseName + "_event_" + oReferenceDate.strftime("%Y-%m-%d") + "_merged_impacts_" + sMapId + ".tif"
-            # Make the mosaic
-            sMosaicStatus = wasdi.mosaic([sImpactMap1,sImpactMap2], sMergedImpactMap, iNoDataValue=0, iIgnoreInputValue=0)
-            
-            # Merge the shape files
-            if sMosaicStatus == "DONE":
-                # Publish the merged impact map
-                oPublishedLayer = self.addAndPublishLayer(sMergedImpactMap, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True)
-                if oPublishedLayer is not None:
-                    self.deleteLayer(sImpactMap1)
-                    self.deleteLayer(sImpactMap2)
+
+            if sMergedImpactMap not in asWorkspaceFiles:
+                # Make the mosaic
+                sMosaicStatus = wasdi.mosaic([sImpactMap1,sImpactMap2], sMergedImpactMap, iNoDataValue=0, iIgnoreInputValue=0)
+                
+                # Merge the shape files
+                if sMosaicStatus == "DONE":
+                    # Publish the merged impact map
+                    oPublishedLayer = self.addAndPublishLayer(sMergedImpactMap, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1 + " " + sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id, bForceRepublish=True)
+                    if oPublishedLayer is not None:
+                        self.deleteLayer(sImpactMap1)
+                        self.deleteLayer(sImpactMap2)
             else:
                 # If the merge fails, we publish the two separated layers
                 logging.info("RiseMapEngine.mergeOrPublishImpactsRaster: error merging shape files " + sImpactMap1 + " and " + sImpactMap2 + " we publish separated layers")

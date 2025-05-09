@@ -36,7 +36,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.2.2")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.2.3")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False

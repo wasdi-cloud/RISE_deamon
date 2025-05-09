@@ -168,6 +168,8 @@ class ImpactMapEngine(RiseMapEngine):
                 return False
             
             sTargetMapType = oTask.pluginPayload["targetMapType"]
+
+            # Open the SAR Workspace
             self.openSarFloodWorkspace()
             oPluginConfig = self.m_oPluginEngine.getPluginConfig()
 
@@ -182,26 +184,31 @@ class ImpactMapEngine(RiseMapEngine):
             sInput1 = "Bare Soil Flood " + sDay
             sInput2 = "Urban Flood " + sDay
 
-            logging.info("ImpactMapEngine.handleTask: handling impacts on bare soil map")
+            # Exposure
             sBareSoilImpactFile = sBaseName + "_exposure_baresoil_" + sDay + ".shp"
             sUrbanImpactFile = sBaseName + "_exposure_urban_" + sDay + ".shp"
             self.mergeOrPublishImpactsShape(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "exposures",sBaseName, sDay, oPluginConfig, asFiles, False)
 
+            # Markers
             sBareSoilImpactFile = sBaseName + "_markers_baresoil_" + sDay + ".shp"
             sUrbanImpactFile = sBaseName + "_markers_urban_" + sDay + ".shp"
             self.mergeOrPublishImpactsShape(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "markers",sBaseName, sDay, oPluginConfig, asFiles, False)
 
+            # Roads
             sBareSoilImpactFile = sBaseName + "_roads_baresoil_" + sDay + ".shp"
             sUrbanImpactFile = sBaseName + "_roads_urban_" + sDay + ".shp"
             self.mergeOrPublishImpactsShape(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "roads",sBaseName, sDay, oPluginConfig, asFiles, False)
 
+            # Population
             sBareSoilImpactFile = sBaseName + "_" + sDay + "_" + sSuffix + "_pop_affected.tif"
             sUrbanImpactFile = sBaseName + "_pop_urban_" + sDay + ".tif"
             self.mergeOrPublishImpactsRaster(sBareSoilImpactFile, sUrbanImpactFile, sInput1, sInput2, "population",sBaseName, sDay, oPluginConfig, asFiles, False)
 
+            # Crops 
             sBareSoilImpactFile = sBaseName + "_crops_baresoil_" + sDay + ".tif"
             self.checkAndPublishImpactLayer(sBareSoilImpactFile, asFiles, oTask, "crops")
 
+            # Create the widgets
             self.createWidgetInfo(oTask)
         
         except Exception as oEx:
@@ -302,14 +309,12 @@ class ImpactMapEngine(RiseMapEngine):
                 if "AffectedPopulation" in oPayload:
                     iPopulation = int(oPayload["AffectedPopulation"])
 
+                    # If there is population affected we create the widget
                     if iPopulation > 0:
 
+                        # Get the new Widget Info
                         oWidgetInfo = WidgetInfo.createWidgetInfo("population", self.m_oArea, "number", "family_restroom", "WIDGET.AFFECTED_PPL", str(iPopulation), oTask.referenceDate)
-
-                        oWidgetInfoRepository = WidgetInfoRepository()
-                        aoExistingWidgets = oWidgetInfoRepository.findByParams("population", oWidgetInfo.areaId, oWidgetInfo.referenceTime)
-                        if len(aoExistingWidgets) == 0:
-                            oWidgetInfoRepository.addEntity(oWidgetInfo)
+                        self.addOrUpdateIntegerWidget(oWidgetInfo, oTask)
 
                 # Add Affected Roads Widget if we have a roads value
                 if "Roads" in oPayload:
@@ -317,11 +322,7 @@ class ImpactMapEngine(RiseMapEngine):
 
                     if iRoads > 0:
                         oWidgetInfo = WidgetInfo.createWidgetInfo("alerts", self.m_oArea, "text", "bus_alert", "WIDGET.AFFECTED_ROAD", str(iRoads), oTask.referenceDate)
-
-                        oWidgetInfoRepository = WidgetInfoRepository()
-                        aoExistingWidgets = oWidgetInfoRepository.findByParams("alerts", oWidgetInfo.areaId, oWidgetInfo.referenceTime, "WIDGET.AFFECTED_ROAD")
-                        if len(aoExistingWidgets) == 0:
-                            oWidgetInfoRepository.addEntity(oWidgetInfo)
+                        self.addOrUpdateIntegerWidget(oWidgetInfo, oTask, "WIDGET.AFFECTED_ROAD")
                 
                 # Add Affected Buildings Widget if we have a buildings value
                 if "Exposures" in oPayload:
@@ -329,13 +330,53 @@ class ImpactMapEngine(RiseMapEngine):
 
                     if iExposures > 0:
                         oWidgetInfo = WidgetInfo.createWidgetInfo("alerts", self.m_oArea, "text", "home", "WIDGET.AFFECTED_BUILDINGS", str(iExposures), oTask.referenceDate)
-
-                        oWidgetInfoRepository = WidgetInfoRepository()
-                        aoExistingWidgets = oWidgetInfoRepository.findByParams("alerts", oWidgetInfo.areaId, oWidgetInfo.referenceTime, "WIDGET.AFFECTED_BUILDINGS")
-                        if len(aoExistingWidgets) == 0:
-                            oWidgetInfoRepository.addEntity(oWidgetInfo)
-
-                
+                        self.addOrUpdateIntegerWidget(oWidgetInfo, oTask, "WIDGET.AFFECTED_BUILDINGS")
 
         except Exception as oEx:
             logging.error("ImpactMapEngine.createWidgetInfo: exception " + str(oEx))
+
+    def addOrUpdateIntegerWidget(self, oWidgetInfo, oTask, sTitle=None):
+
+        # Search the input map used for these impacts
+        sInputMap = ""
+
+        if "targetMap" in oTask.pluginPayload:
+            sInputMap = oTask.pluginPayload["targetMap"]
+            oWidgetInfo.payload["input_maps"] = [sInputMap]
+
+        # Now we search if we have already a widget for this area and date
+        oWidgetInfoRepository = WidgetInfoRepository()
+        aoExistingWidgets = oWidgetInfoRepository.findByParams(oWidgetInfo.widget, oWidgetInfo.areaId, oWidgetInfo.referenceTime, sTitle)
+
+        if len(aoExistingWidgets) == 0 or sInputMap == "":
+            # It is the first, we create it
+            oWidgetInfoRepository.addEntity(oWidgetInfo)
+
+        elif len(aoExistingWidgets) == 1:
+            # We have one, check if we need to update it
+            oExistingWidget = aoExistingWidgets[0]
+
+            # Take the input maps 
+            asInputMaps = oExistingWidget.payload["input_maps"]
+
+            if asInputMaps is None:
+                asInputMaps = []
+
+            # Is this target map already in the list?
+            if sInputMap not in asInputMaps:
+
+                # No: we add it
+                asInputMaps.append(sInputMap)
+                # We update the widget
+                oExistingWidget.payload["input_maps"] = asInputMaps
+
+                # We have to sum the population
+                iOldNumber = int(oExistingWidget.content)
+                iNewNumber = int(oWidgetInfo.content) + iOldNumber
+                oExistingWidget.content = str(iNewNumber)
+
+                # We update the widget
+                oWidgetInfoRepository.updateEntity(oExistingWidget)
+            else:
+                # We have the same map, we do not need to update
+                logging.info("ImpactMapEngine.addOrUpdateIntegerWidget: widget already exists for this area and date")        

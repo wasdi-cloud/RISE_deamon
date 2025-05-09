@@ -36,6 +36,8 @@ class WidgetInfo(RiseEntity):
         oWidgetInfo.content = content
 
         oDate = datetime.strptime(referenceTime, "%Y-%m-%d")
+        # Set time to 12:00 PM (noon)
+        oDate = oDate.replace(hour=12, minute=0, second=0, microsecond=0)  
         oWidgetInfo.referenceTime = oDate.timestamp()
         
         return oWidgetInfo
