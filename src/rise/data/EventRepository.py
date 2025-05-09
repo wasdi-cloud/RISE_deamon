@@ -48,3 +48,32 @@ class EventRepository(RiseMongoRepository):
             logging.error("EventRepository.findByParams. Exception " + str(oEx))
 
         return []        
+    
+    def getOngoing(self, sAreaId=""):
+        try:
+            oCollection = self.getCollection()
+
+            if oCollection is None:
+                logging.warning(f"EventRepository.getOngoing. collection {self.m_sCollectionName} not found in {RiseMongoRepository.s_sDB_NAME} database")
+                return []
+
+            aoFilters = {}
+
+            aoFilters["areaId"] = sAreaId            
+            aoFilters["inGoing"] = True
+
+            oRetrievedResult = oCollection.find(aoFilters)
+
+            if oRetrievedResult is None:
+                logging.debug(f"EventRepository.getOngoing. no results retrieved from db")
+                return None
+
+            aoEntities = []
+            for oRes in oRetrievedResult:
+                aoEntities.append(Event(**oRes))
+
+            return aoEntities
+        except Exception as oEx:
+            logging.error("EventRepository.findByParams. Exception " + str(oEx))
+
+        return []            
