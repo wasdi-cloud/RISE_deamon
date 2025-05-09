@@ -1,3 +1,6 @@
+import uuid
+from datetime import datetime
+from src.rise.business import Area
 from src.rise.business.RiseEntity import RiseEntity
 
 
@@ -17,3 +20,22 @@ class WidgetInfo(RiseEntity):
 
         for key, value in kwargs.items():
             setattr(self, key, value)        
+
+    
+    @staticmethod
+    def createWidgetInfo(widget: str, oArea: Area, type: str, icon: str, title: str, content: str, referenceTime: str):
+        oWidgetInfo = WidgetInfo()
+        oWidgetInfo.id = str(uuid.uuid4())
+        oWidgetInfo.organizationId = oArea.organizationId
+        oWidgetInfo.areaId = oArea.id
+        oWidgetInfo.widget = widget
+        oWidgetInfo.bbox = oArea.bbox
+        oWidgetInfo.type = type
+        oWidgetInfo.icon = icon
+        oWidgetInfo.title = title
+        oWidgetInfo.content = content
+
+        oDate = datetime.strptime(referenceTime, "%Y-%m-%d")
+        oWidgetInfo.referenceTime = oDate.timestamp()
+        
+        return oWidgetInfo
