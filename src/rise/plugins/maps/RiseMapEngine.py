@@ -222,15 +222,18 @@ class RiseMapEngine:
                     if self.isRasterFile(sFileName):
                         if not self.publishRasterLayer(sFileName, sStyle):
                             logging.error("RiseMapEngine.addAndPublishLayer: impossible to publish raster " + sLayerName)
+                            return None
                         else:
                             oLayer.published = True
                     elif self.isShapeFile(sFileName):
                         if not self.publishShapeLayer(sFileName, sStyle):
                             logging.error("RiseMapEngine.addAndPublishLayer: impossible to publish shape " + sLayerName)
+                            return None
                         else:
                             oLayer.published = True
                     else:
                         logging.error("The file type of " + sLayerName + " is not recognized, we cannot publish!")
+                        return None
 
                 oLayerRepository.addEntity(oLayer)
             return oLayer
