@@ -115,7 +115,7 @@ class FloodEventFinderMapEngine(RiseMapEngine):
 
     def runForDate(self, sDate):
         # Get the flood depth map config
-        oFloodDepthConfig = self.getMapConfig()
+        oFloodEventFinderConfig = self.getMapConfig()
 
         sWorkspaceId = self.openSarFloodWorkspace()
 
@@ -124,7 +124,7 @@ class FloodEventFinderMapEngine(RiseMapEngine):
 
         # Take all our task for this day
         aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id,
-                                                            self.m_oPluginEntity.id, sWorkspaceId, oFloodDepthConfig.processor, sDate)
+                                                            self.m_oPluginEntity.id, sWorkspaceId, oFloodEventFinderConfig.processor, sDate)
 
         # if we have existing tasks
         if len(aoExistingTasks)>0:
@@ -150,12 +150,13 @@ class FloodEventFinderMapEngine(RiseMapEngine):
             aoParams["SUFFIX"] = sSuffix
             aoParams["UPDATE_MODE"] = True
             aoParams["SPECIFIC_DATE"] = sDate
+            aoParams["SAVE_PAYLOAD_TO_JSON"] = True
 
             if not self.m_oConfig.daemon.simulate:
                 # Run the Flood Depths app
-                sProcessorId = wasdi.executeProcessor(oFloodDepthConfig.processor, aoParams)
+                sProcessorId = wasdi.executeProcessor(oFloodEventFinderConfig.processor, aoParams)
 
-                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParams, oFloodDepthConfig.processor, sDate)
+                oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParams, oFloodEventFinderConfig.processor, sDate)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
                 logging.info(
