@@ -90,9 +90,27 @@ class DroughtEcostressMapEngine(RiseMapEngine):
                                                             self.m_oPluginEntity.id, sWorkspaceId,
                                                             oMapConfig.processor, sReferenceDate)
 
+        
+
+        bIsRunning = False
+
         if len(aoExistingTasks) > 0:
+
+            for oTask in aoExistingTasks:
+                if self.isRunningStatus(oTask.status):
+                    bIsRunning = True
+                    break
+
+        if bIsRunning:            
             logging.info("DroughtEcostrexssMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sDay + ". Nothing to do")
             return        
+        
+        sOutput = self.getBaseName() + "_" + oEndDate.strftime("%Y-%m") + "_" + str(iDecade) + ".tif"
+        aoFiles = wasdi.getProductsByActiveWorkspace()
+
+        if sOutput in aoFiles:
+            logging.info("DroughtEcostressMapEngine.updateNewMaps: file " + sOutput + " already exists. Nothing to do")
+            return
 
         aoParameters = oMapConfig.params
         aoParameters = vars(aoParameters)
