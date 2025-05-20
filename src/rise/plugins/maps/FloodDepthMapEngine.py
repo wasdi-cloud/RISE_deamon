@@ -56,7 +56,7 @@ class FloodDepthMapEngine(RiseMapEngine):
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
             if sDepthFileName in asWorkspaceFiles:
-                self.addAndPublishLayer(sDepthFileName, oDate, True, oMapConfig.style, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=sBareSoilFileName, bForceRepublish=True)
+                self.addAndPublishLayer(sDepthFileName, oDate, True, oMapConfig.id, sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=sBareSoilFileName, bForceRepublish=True)
 
             # NOTE: the surface?
             

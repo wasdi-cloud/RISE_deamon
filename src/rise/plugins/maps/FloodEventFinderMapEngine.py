@@ -29,16 +29,17 @@ class FloodEventFinderMapEngine(RiseMapEngine):
         # Take today as reference date
         oToday = datetime.now()
 
-        # sToday = oToday.strftime("%Y-%m-%d")
-        # # Check today
-        # self.runForDate(sToday)
+        sToday = oToday.strftime("%Y-%m-%d")
+        # Check today
+        bRanForToday = self.runForDate(sToday)
 
-        # Go to yesterday
-        oTimeDelta = timedelta(days=1)
-        oYesterday = oToday - oTimeDelta
-        sYesterday = oYesterday.strftime("%Y-%m-%d")
+        if not bRanForToday:
+            # Go to yesterday
+            oTimeDelta = timedelta(days=1)
+            oYesterday = oToday - oTimeDelta
+            sYesterday = oYesterday.strftime("%Y-%m-%d")
 
-        self.runForDate(sYesterday)
+            self.runForDate(sYesterday)
 
     def handleTask(self, oTask):
         try:
@@ -129,7 +130,7 @@ class FloodEventFinderMapEngine(RiseMapEngine):
         # if we have existing tasks
         if len(aoExistingTasks)>0:
             logging.info("FloodEventFinderMapEngine.runForDate: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
-            return
+            return True
 
         # We read the params of the floodchain to have the suffix        
         sBaseName = self.getBaseName("sar_flood")
@@ -164,8 +165,10 @@ class FloodEventFinderMapEngine(RiseMapEngine):
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
                 logging.info("FloodEventFinderMapEngine.updateNewMaps: simulation mode on, like I started event finder for date " + sDate)
+            return True
         else:
             logging.info("FloodEventFinderMapEngine.updateNewMaps: there is no new flood Map for date " + sDate)
+            return False
 
 
     def openSarFloodWorkspace(self):

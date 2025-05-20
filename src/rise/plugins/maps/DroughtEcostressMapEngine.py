@@ -91,7 +91,7 @@ class DroughtEcostressMapEngine(RiseMapEngine):
                                                             oMapConfig.processor, sReferenceDate)
 
         if len(aoExistingTasks) > 0:
-            logging.info("DroughtEcostressMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sDay + ". Nothing to do")
+            logging.info("DroughtEcostrexssMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sDay + ". Nothing to do")
             return        
 
         aoParameters = oMapConfig.params
