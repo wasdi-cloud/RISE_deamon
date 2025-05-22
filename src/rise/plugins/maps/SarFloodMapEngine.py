@@ -645,6 +645,9 @@ class SarFloodMapEngine(RiseMapEngine):
                     sTodayTaskId = oTask.id
                     iTimestamp = oTask.startDate
 
+
+        aoFloodChainParameters = vars(aoFloodChainParameters)
+
         bForceReRun = False
         bStillToRun = False
 
@@ -710,6 +713,9 @@ class SarFloodMapEngine(RiseMapEngine):
 
                     # Search the images
                     aoImages = wasdi.searchEOImages("S1", sDay, sDay, iOrbitNumber=int(sOrbit), sProductType="GRD", oBoundingBox=self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True))
+                    
+                    # Filter by Platform
+                    aoImages = self.filterImages(aoFloodChainPayload, aoImages)
 
                     # Do we have results?
                     if aoImages is not None:
@@ -725,7 +731,6 @@ class SarFloodMapEngine(RiseMapEngine):
         if bForceReRun or bStillToRun:
 
             if not self.m_oConfig.daemon.simulate:
-                aoFloodChainParameters = vars(aoFloodChainParameters)
                 aoFloodChainParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
                 aoFloodChainParameters["MOSAICBASENAME"] = self.getBaseName()
                 aoFloodChainParameters["ENDDATE"] = sDay
@@ -840,3 +845,20 @@ class SarFloodMapEngine(RiseMapEngine):
         except Exception as oEx:
             logging.error("SarFloodMapEngine.recoverOrbitsFromAutofloodChain: error " + str(oEx))
             return ""        
+        
+    def filterImagesByPlatform(self, aoFloodChainPayload, aoImages):
+
+        if "PLATFORM_FILTER" in aoFloodChainPayload:
+            # We need to filter the images
+            sPlatformFilter = aoFloodChainPayload["PLATFORM_FILTER"]
+            if sPlatformFilter is not None and sPlatformFilter != "":
+                # Filter the images
+                asPlatformFilter = [x.strip() for x in sPlatformFilter.split(',')]
+                aoFilteredImages = []
+                for oImage in aoImages:
+                    if oImage["fileName"].startswith(tuple(asPlatformFilter)):
+                        aoFilteredImages.append(oImage)
+
+                aoImages = aoFilteredImages
+        
+        return aoImages 
