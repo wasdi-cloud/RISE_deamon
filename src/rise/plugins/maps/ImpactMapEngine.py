@@ -169,6 +169,8 @@ class ImpactMapEngine(RiseMapEngine):
             
             sTargetMapType = oTask.pluginPayload["targetMapType"]
 
+            self.createImpactsOfTheDayWidget(oTask, sTargetMapType)
+
             # Open the SAR Workspace
             self.openSarFloodWorkspace()
             oPluginConfig = self.m_oPluginEngine.getPluginConfig()
@@ -380,3 +382,39 @@ class ImpactMapEngine(RiseMapEngine):
             else:
                 # We have the same map, we do not need to update
                 logging.info("ImpactMapEngine.addOrUpdateIntegerWidget: widget already exists for this area and date")        
+    
+    def createImpactsOfTheDayWidget(self, oTask, sMapType):
+        try:
+
+            self.openSarFloodWorkspace()
+            oPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
+
+            if oPayload is None:
+                logging.info("ImpactMapEngine.createImpactsOfTheDayWidget: no payload found for task " + oTask.id)
+                return
+            
+            oWidgetPayload = {}
+
+            if "Roads" in oPayload:
+                oWidgetPayload["roadsCount"] = len(oPayload["Roads"])
+            
+            if "Exposures" in oPayload:
+                oWidgetPayload["exposuresCount"] = len(oPayload["Exposures"])
+
+            if "AffectedPopulation" in oPayload:
+                oWidgetPayload["populationCount"] = int(oPayload["AffectedPopulation"])
+
+            if "AffectedLandUse" in oPayload:
+                oWidgetPayload["affectedLandUse"] = oPayload["AffectedLandUse"]
+
+            # Get the widget info
+            oWidgetInfo = WidgetInfo.createWidgetInfo("impacts_" + sMapType, self.m_oArea, "text", "warning", "", "", oTask.referenceDate)
+            oWidgetInfo.payload = oWidgetPayload
+
+            # Add or update the widget
+            oWidgetInfoRepository = WidgetInfoRepository()
+            oWidgetInfoRepository.addEntity(oWidgetInfo)
+            logging.info("ImpactMapEngine.createImpactsOfTheDayWidget: added daily impacts widget for " + sMapType)
+
+        except Exception as oEx:
+            logging.error("ImpactMapEngine.createImpactsOfTheDayWidget: exception " + str(oEx))
