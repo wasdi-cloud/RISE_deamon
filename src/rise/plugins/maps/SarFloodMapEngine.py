@@ -715,7 +715,7 @@ class SarFloodMapEngine(RiseMapEngine):
                     aoImages = wasdi.searchEOImages("S1", sDay, sDay, iOrbitNumber=int(sOrbit), sProductType="GRD", oBoundingBox=self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True))
                     
                     # Filter by Platform
-                    aoImages = self.filterImages(aoFloodChainPayload, aoImages)
+                    aoImages = self.filterImagesByPlatform(aoFloodChainPayload, aoImages)
 
                     # Do we have results?
                     if aoImages is not None:
