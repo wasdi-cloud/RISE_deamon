@@ -1,10 +1,12 @@
 import getopt
+import glob
 import json
 import logging
 import os
 from pathlib import Path
 import sys
 from types import SimpleNamespace
+import zipfile
 
 import wasdi
 
@@ -36,7 +38,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.2.3")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.2.4")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False
@@ -58,6 +60,7 @@ class RiseDeamon:
             self.checkResultsAndPublishLayers()
         else:
             logging.info("RiseDeamon.run: checkResultsAndPublishLayers Disabled by config")
+
 
         # Get the list of areas
         oAreaRepository = AreaRepository()
@@ -382,4 +385,68 @@ if __name__ == '__main__':
     except Exception as oEx:
         logging.error("RiseDeamon exception: Error ->  " + str(oEx))
 
+
+    '''
+    Utility method to publish a raster layer in Geoserver.
+    In theory should be deleted but is useful to replace existing layers
+    '''
+    def publishRasterLayer(self, sLocalFilePath, sStyleName=None):
+        try:
+            oGeoserverService = GeoserverService()
+            sLayerName = Path(str(sLocalFilePath)).stem
+
+            oWorkspace = oGeoserverService.getWorkspace(self.m_oConfig.geoserver.workspace)
+
+            if oWorkspace is None:
+                oGeoserverService.createWorkspace(self.m_oConfig.geoserver.workspace)
+
+            # If the layer exists
+            if oGeoserverService.existsLayer(sLayerName):
+                # Delete it
+                oGeoserverService.deleteLayer("rise:"+ sLayerName)                
+
+            oStore = oGeoserverService.publishRasterLayer(sLocalFilePath, self.m_oConfig.geoserver.workspace, sLayerName, sStyleName)
+
+            if oStore is not None:
+                return True
+            else:
+                return False
+        except Exception as oEx:
+            logging.error("RiseMapEngine.publishRasterLayer exception " + str(oEx))
+
+        return False
+
+    '''
+    Utility method to publish a shape layer in Geoserver.
+    In theory should be deleted but is useful to replace existing layers
+    '''
+    def publishShapeLayer(self, sFileName, sStyleName=None):
+        try:
+            oGeoserverService = GeoserverService()
+            sLocalFilePath = sFileName.replace(".shp", ".zip")
+            sLayerName = Path(str(sLocalFilePath)).stem
+
+            oWorkspace = oGeoserverService.getWorkspace(self.m_oConfig.geoserver.workspace)
+
+            if oWorkspace is None:
+                oGeoserverService.createWorkspace(self.m_oConfig.geoserver.workspace)
+
+            asFiles = glob.glob(sFileName.replace(".shp","*"))                
+
+            if not os.path.exists(sLocalFilePath):
+                with zipfile.ZipFile(sLocalFilePath, 'w') as oZipFile:
+                    for sFile in asFiles:
+                        oZipFile.write(sFile, arcname=os.path.basename(sFile))
+                asFiles.append(sLocalFilePath)
+
+            oStore = oGeoserverService.publishShapeLayer (sLocalFilePath, self.m_oConfig.geoserver.workspace, sLayerName, sStyleName)
+            
+            if oStore is not None:
+                return True
+            else:
+                return False
+        except Exception as oEx:
+            logging.error("RiseMapEngine.publishRasterLayer exception " + str(oEx))
+
+        return False
 

@@ -137,6 +137,34 @@ def mergeShapeFiles(asShapeFiles, sOutputFileName, sStyle=""):
 
     return True
 
+def mergeShapeFiles2(asShapeFiles, sOutputFileName):
+
+    try:
+        asFullPaths = []
+
+        for sFile in asShapeFiles:
+            asFullPaths.append(sFile)
+
+        # Read and merge shapefiles
+        aoShapeDataFrames = [gpd.read_file(sShapeFullPath) for sShapeFullPath in asFullPaths]
+
+        for i in range(len(aoShapeDataFrames)):
+            aoShapeDataFrames[i]["ID"] = aoShapeDataFrames[i]["ID"].astype(str)        
+        
+        oMergedShape = gpd.GeoDataFrame(pd.concat(aoShapeDataFrames, ignore_index=True))
+
+        # Ensure the CRS is set to EPSG:4326
+        oMergedShape = oMergedShape.set_crs("EPSG:4326", allow_override=True)
+
+        # Save the merged shapefile
+        oMergedShape.to_file(sOutputFileName)
+
+    except Exception as oEx:
+        logging.error("RiseUtils.mergeShapeFiles. Exception " + str(oEx))
+        return False
+
+    return True
+
 def deleteShapeFile(sShapeFileFullPath):
     """
     Delete a shapefile and its associated files (e.g., .shx, .dbf) from the filesystem.

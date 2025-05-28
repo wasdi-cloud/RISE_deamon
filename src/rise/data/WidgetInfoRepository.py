@@ -10,7 +10,7 @@ class WidgetInfoRepository(RiseMongoRepository):
         self.m_sCollectionName = "widget_infos"
         self.m_sEntityClassName = f"{WidgetInfo.__module__}.{WidgetInfo.__qualname__}"
     
-    def findByParams(self, sWidget="", sAreaId="", dReferenceTime=0, sTitle=""):
+    def findByParams(self, sWidget="", sAreaId="", sReferenceDate=0, sTitle=""):
         try:
             oCollection = self.getCollection()
 
@@ -31,8 +31,8 @@ class WidgetInfoRepository(RiseMongoRepository):
                 aoFilters["areaId"] = sAreaId
             if sWidget != "":
                 aoFilters["widget"] = sWidget
-            if dReferenceTime != "":
-                aoFilters["referenceTime"] = dReferenceTime
+            if sReferenceDate != "":
+                aoFilters["referenceDate"] = sReferenceDate
             if sTitle != "":
                 aoFilters["title"] = sTitle
 

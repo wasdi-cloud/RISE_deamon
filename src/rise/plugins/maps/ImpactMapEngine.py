@@ -348,7 +348,7 @@ class ImpactMapEngine(RiseMapEngine):
 
         # Now we search if we have already a widget for this area and date
         oWidgetInfoRepository = WidgetInfoRepository()
-        aoExistingWidgets = oWidgetInfoRepository.findByParams(oWidgetInfo.widget, oWidgetInfo.areaId, oWidgetInfo.referenceTime, sTitle)
+        aoExistingWidgets = oWidgetInfoRepository.findByParams(oWidgetInfo.widget, oWidgetInfo.areaId, oWidgetInfo.referenceDate, sTitle)
 
         if len(aoExistingWidgets) == 0 or sInputMap == "":
             # It is the first, we create it
@@ -386,6 +386,13 @@ class ImpactMapEngine(RiseMapEngine):
     def createImpactsOfTheDayWidget(self, oTask, sMapType):
         try:
 
+            oWidgetInfoRepository = WidgetInfoRepository()
+
+            aoWidgets = oWidgetInfoRepository.findByParams(sWidget="impacts_" + sMapType, sAreaId=self.m_oArea.id, sReferenceDate=oTask.referenceDate)
+
+            if len(aoWidgets) > 0:
+                return
+
             self.openSarFloodWorkspace()
             oPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
 
@@ -412,7 +419,6 @@ class ImpactMapEngine(RiseMapEngine):
             oWidgetInfo.payload = oWidgetPayload
 
             # Add or update the widget
-            oWidgetInfoRepository = WidgetInfoRepository()
             oWidgetInfoRepository.addEntity(oWidgetInfo)
             logging.info("ImpactMapEngine.createImpactsOfTheDayWidget: added daily impacts widget for " + sMapType)
 

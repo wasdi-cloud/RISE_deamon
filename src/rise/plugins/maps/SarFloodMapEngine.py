@@ -7,9 +7,11 @@ import wasdi
 
 from src.rise.RiseDeamon import RiseDeamon
 from src.rise.business.Event import Event
+from src.rise.business.WidgetInfo import WidgetInfo
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.EventRepository import EventRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
+from src.rise.data.WidgetInfoRepository import WidgetInfoRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
 from src.rise.utils import RiseUtils
 
@@ -243,6 +245,11 @@ class SarFloodMapEngine(RiseMapEngine):
             if "Composites" in aoEventFinderPayload:
                 aoCompositeDetections = aoEventFinderPayload["Composites"]
 
+            # List of impacts detections
+            aoImpactDetections = []
+            if "ImpactDetections" in aoEventFinderPayload:
+                aoImpactDetections = aoEventFinderPayload["ImpactDetections"]
+
 
             oEventRepository = EventRepository()
             sBaseName = self.getBaseName("sar_flood")
@@ -352,6 +359,15 @@ class SarFloodMapEngine(RiseMapEngine):
 
                 except Exception as oEx:
                     logging.error("SarFloodMapEngine.handleEvents: error creating events " + str(oEx))
+            
+            for oImpactDetection in aoImpactDetections:
+                try:
+                    sMapType = oImpactDetection["TYPE"]
+                    sProcessObjId = oImpactDetection["PROCID"]
+                    sDate = oImpactDetection["DATE"]
+                    self.createImpactsOfTheDayWidget(sProcessObjId, sDate,sMapType)
+                except Exception as oEx:
+                    logging.error("SarFloodMapEngine.handleEvents: error processing impact detection " + str(oEx))
 
         except Exception as oEx:
             logging.error("SarFloodMapEngine.handleEvents: error " + str(oEx))
@@ -862,3 +878,45 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoImages = aoFilteredImages
         
         return aoImages 
+    
+    def createImpactsOfTheDayWidget(self, sTaskId, sReferenceDate, sMapType):
+        try:
+
+            oWidgetInfoRepository = WidgetInfoRepository()
+
+            aoWidgets = oWidgetInfoRepository.findByParams(sWidget="impacts_" + sMapType, sAreaId=self.m_oArea.id, sReferenceDate=sReferenceDate)
+
+            if len(aoWidgets) > 0:
+                return
+
+            #self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+            oPayload = wasdi.getProcessorPayloadAsJson(sTaskId)
+
+            if oPayload is None:
+                logging.info("SarFloodMapEngine.createImpactsOfTheDayWidget: no payload found for task " + sTaskId)
+                return
+            
+            oWidgetPayload = {}
+
+            if "Roads" in oPayload:
+                oWidgetPayload["roadsCount"] = len(oPayload["Roads"])
+            
+            if "Exposures" in oPayload:
+                oWidgetPayload["exposuresCount"] = len(oPayload["Exposures"])
+
+            if "AffectedPopulation" in oPayload:
+                oWidgetPayload["populationCount"] = int(oPayload["AffectedPopulation"])
+
+            if "AffectedLandUse" in oPayload:
+                oWidgetPayload["affectedLandUse"] = oPayload["AffectedLandUse"]
+
+            # Get the widget info
+            oWidgetInfo = WidgetInfo.createWidgetInfo("impacts_" + sMapType, self.m_oArea, "text", "warning", "", "", sReferenceDate)
+            oWidgetInfo.payload = oWidgetPayload
+
+            # Add or update the widget
+            oWidgetInfoRepository.addEntity(oWidgetInfo)
+            logging.info("SarFloodMapEngine.createImpactsOfTheDayWidget: added daily impacts widget for " + sMapType)
+
+        except Exception as oEx:
+            logging.error("SarFloodMapEngine.createImpactsOfTheDayWidget: exception " + str(oEx))    

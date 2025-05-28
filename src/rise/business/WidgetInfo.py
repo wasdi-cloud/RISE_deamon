@@ -16,6 +16,7 @@ class WidgetInfo(RiseEntity):
         self.title: str = None
         self.content: str = None
         self.referenceTime: float = None
+        self.referenceDate: str = None
         self.payload: dict[str, object] = {}
 
         for key, value in kwargs.items():
@@ -23,7 +24,7 @@ class WidgetInfo(RiseEntity):
 
     
     @staticmethod
-    def createWidgetInfo(widget: str, oArea: Area, type: str, icon: str, title: str, content: str, referenceTime: str):
+    def createWidgetInfo(widget: str, oArea: Area, type: str, icon: str, title: str, content: str, referenceDate: str):
         oWidgetInfo = WidgetInfo()
         oWidgetInfo.id = str(uuid.uuid4())
         oWidgetInfo.organizationId = oArea.organizationId
@@ -34,8 +35,9 @@ class WidgetInfo(RiseEntity):
         oWidgetInfo.icon = icon
         oWidgetInfo.title = title
         oWidgetInfo.content = content
+        oWidgetInfo.referenceDate= referenceDate
 
-        oDate = datetime.strptime(referenceTime, "%Y-%m-%d")
+        oDate = datetime.strptime(referenceDate, "%Y-%m-%d")
         # Set time to 12:00 PM (noon)
         oDate = oDate.replace(hour=12, minute=0, second=0, microsecond=0)  
         oWidgetInfo.referenceTime = oDate.timestamp()
