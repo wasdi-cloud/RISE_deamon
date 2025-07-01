@@ -24,7 +24,7 @@ class RiseDeamon:
     def __init__(self, oConfig):
         self.m_oConfig = oConfig
         self.m_aoPluginEntities = []
-
+    
     def run(self):
         """
         Main Method of the Deamon.
@@ -54,6 +54,8 @@ class RiseDeamon:
             logging.error("RiseDeamon.run: There was an error initializing WASDI")
         else:
             logging.info("RiseDeamon.run: WASDI Initialized")
+
+        #self.forceLayerUpdate()
 
         if self.m_oConfig.daemon.checkResults:
             logging.info("RiseDeamon.run: check the status of the processes scheduled")
@@ -339,52 +341,22 @@ class RiseDeamon:
             logging.error("RiseDeamon.getMapConfigFromPluginConfig: exception " + str(oEx))
         
         return None        
+    
+    def forceLayerUpdate(self):
 
+        sLayerName = "d4e65fb4de5c46eeb9993f9d8742a08bsarflood_2023-02-03_water-depth"
+        sLayerId  = "rise:" + sLayerName
+        sFilePath = "C:\\Users\\p.campanella\\Downloads\\" + sLayerName + ".tif"
+        sStyle = "flood_depth"
 
-if __name__ == '__main__':
-    # Default configuration file Path
-    sConfigFilePath = '/etc/rise/riseConfig.json'
-
-    try:
-        # Read the command line args
-        aoOpts, asArgs = getopt.getopt(sys.argv[1:], "hc:", ["config="])
-    except getopt.GetoptError:
-        print('RISE Deamon: python RiseDeamon.py -c <configfile>')
-        sys.exit(2)
-
-    for sOpt, sArg in aoOpts:
-        if sOpt == '-h':
-            print('RISE Deamon: python RiseDeamon.py -c <configfile>')
-            sys.exit()
-        if sOpt in ("-c", "--config"):
-            # Override the config file path
-            sConfigFilePath = sArg
-
-    # Get the config as an object
-    oRiseConfig = RiseDeamon.readConfigFile(sConfigFilePath)
-
-    MongoDBClient._s_oConfig = oRiseConfig
-    GeoserverClient._s_oConfig = oRiseConfig
-
-    # Set a defaul log level
-    if oRiseConfig.logLevel is None:
-        oRiseConfig.logLevel = "INFO"
-
-    # Logger Basic configuration
-    logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))
-    logging.getLogger("pymongo").setLevel(logging.ERROR)
-
-    try:
-        # Create the Deamon class
-        oDemon = RiseDeamon(oRiseConfig)
-
-        # And start!
-        oDemon.run()
-
-        logging.info("RiseDeamon finished! bye bye")
-    except Exception as oEx:
-        logging.error("RiseDeamon exception: Error ->  " + str(oEx))
-
+        # Get the Geoserver Service
+        oGeoserverService = GeoserverService()
+        # If the layer exists
+        if oGeoserverService.existsLayer(sLayerName):
+            # Delete it
+            oGeoserverService.deleteLayer(sLayerId)
+        
+        self.publishRasterLayer(sFilePath, sStyle)
 
     '''
     Utility method to publish a raster layer in Geoserver.
@@ -449,4 +421,48 @@ if __name__ == '__main__':
             logging.error("RiseMapEngine.publishRasterLayer exception " + str(oEx))
 
         return False
+
+if __name__ == '__main__':
+    # Default configuration file Path
+    sConfigFilePath = '/etc/rise/riseConfig.json'
+
+    try:
+        # Read the command line args
+        aoOpts, asArgs = getopt.getopt(sys.argv[1:], "hc:", ["config="])
+    except getopt.GetoptError:
+        print('RISE Deamon: python RiseDeamon.py -c <configfile>')
+        sys.exit(2)
+
+    for sOpt, sArg in aoOpts:
+        if sOpt == '-h':
+            print('RISE Deamon: python RiseDeamon.py -c <configfile>')
+            sys.exit()
+        if sOpt in ("-c", "--config"):
+            # Override the config file path
+            sConfigFilePath = sArg
+
+    # Get the config as an object
+    oRiseConfig = RiseDeamon.readConfigFile(sConfigFilePath)
+
+    MongoDBClient._s_oConfig = oRiseConfig
+    GeoserverClient._s_oConfig = oRiseConfig
+
+    # Set a defaul log level
+    if oRiseConfig.logLevel is None:
+        oRiseConfig.logLevel = "INFO"
+
+    # Logger Basic configuration
+    logging.basicConfig(format="{asctime} - {levelname} - {message}", style="{", datefmt="%Y-%m-%d %H:%M", level=logging.getLevelName(oRiseConfig.logLevel))
+    logging.getLogger("pymongo").setLevel(logging.ERROR)
+
+    try:
+        # Create the Deamon class
+        oDemon = RiseDeamon(oRiseConfig)
+
+        # And start!
+        oDemon.run()
+
+        logging.info("RiseDeamon finished! bye bye")
+    except Exception as oEx:
+        logging.error("RiseDeamon exception: Error ->  " + str(oEx))
 

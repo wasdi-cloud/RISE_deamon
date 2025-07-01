@@ -320,7 +320,7 @@ class ImpactMapEngine(RiseMapEngine):
 
                 # Add Affected Roads Widget if we have a roads value
                 if "Roads" in oPayload:
-                    iRoads = int(len(oPayload["Roads"]))
+                    iRoads = self.countRoadsFromPayload(oPayload)
 
                     if iRoads > 0:
                         oWidgetInfo = WidgetInfo.createWidgetInfo("alerts", self.m_oArea, "text", "bus_alert", "WIDGET.AFFECTED_ROAD", str(iRoads), oTask.referenceDate)
@@ -403,7 +403,7 @@ class ImpactMapEngine(RiseMapEngine):
             oWidgetPayload = {}
 
             if "Roads" in oPayload:
-                oWidgetPayload["roadsCount"] = len(oPayload["Roads"])
+                oWidgetPayload["roadsCount"] = self.countRoadsFromPayload(oPayload)
             
             if "Exposures" in oPayload:
                 oWidgetPayload["exposuresCount"] = len(oPayload["Exposures"])
@@ -424,3 +424,45 @@ class ImpactMapEngine(RiseMapEngine):
 
         except Exception as oEx:
             logging.error("ImpactMapEngine.createImpactsOfTheDayWidget: exception " + str(oEx))
+
+    
+    def countRoadsFromPayload(self, oPayload):
+
+        # If we have no payload, we return 0
+        if oPayload is None:
+            return 0
+
+        try:
+            # We count the roads based on the original Element id.
+            iRoadsCount = 0
+            aiRoadIds = []
+
+            # If we have no roads, we return 0
+            if "Roads" in oPayload:
+                # Loop through the roads in the payload
+                for oRoad in oPayload["Roads"]:
+                    # Initialize the id as 0
+                    iRoadId = 0
+
+                    # But we should have it in the entity
+                    if "id" in oRoad:
+                        iRoadId = oRoad["id"]
+                    
+                    # Did we already count this road?
+                    if iRoadId not in aiRoadIds:
+                        # No, add it to the list
+                        aiRoadIds.append(iRoadId)
+                        iRoadsCount += 1
+                    # If it is already counted, should be another segment of the same road
+
+            # Ok, here we should have the count of roads
+            return iRoadsCount
+
+        except Exception as oEx:
+            logging.error("ImpactMapEngine.countRoadsFromPayload: exception " + str(oEx))
+            if "Roads" in oPayload:
+                # Try to return the length of the roads array
+                len(oPayload["Roads"])
+            else:
+                # At this point we return 0
+                return 0

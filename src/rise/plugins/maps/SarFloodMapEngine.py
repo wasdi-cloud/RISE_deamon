@@ -661,7 +661,6 @@ class SarFloodMapEngine(RiseMapEngine):
                     sTodayTaskId = oTask.id
                     iTimestamp = oTask.startDate
 
-
         aoFloodChainParameters = vars(aoFloodChainParameters)
 
         bForceReRun = False

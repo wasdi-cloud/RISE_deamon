@@ -125,7 +125,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
                     return
 
                 # Yes !!
-                logging.info("UrbanFloodMapEngine.handleTask: Found some flood " + str(fPercFlooded) + "% for date " + oTask.referenceDate)
+                logging.info("UrbanFloodMapEngine.handleTask: Found some flood " + str(fPercFlooded) + "% for date " + oTask.referenceDate)                
 
                 self.startUrbanFlood(oTask.referenceDate)
             elif oTask.application == "edrift_auto_urban_flood":
@@ -151,6 +151,13 @@ class UrbanFloodMapEngine(RiseMapEngine):
                         self.addAndPublishLayer(sUrbanMapFile, datetime.strptime(oTask.referenceDate,"%Y-%m-%d"), True, "urban_flood",
                                                 sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
                                                 sInputData=oMapConfig.inputData)
+                        
+                        # TODO: to be tested
+                        sReferenceBareSoilMap = self.getBareSoilMapName(oTask.referenceDate)
+                        logging.info("UrbanFloodMapEngine.handleTask: Update reference Bare Soil Map " + sReferenceBareSoilMap)
+                        self.addAndPublishLayer(sReferenceBareSoilMap, datetime.strptime(oTask.referenceDate,"%Y-%m-%d"), True, "autofloodchain2",
+                                                sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
+                                                sInputData=oMapConfig.inputData, bForceRepublish=True)
 
             else:
                 logging.warning("UrbanFloodMapEngine.handleTask: NOT recognized application " + oTask.application)
@@ -158,6 +165,19 @@ class UrbanFloodMapEngine(RiseMapEngine):
         except Exception as oEx:
             logging.error("UrbanFloodMapEngine.handleTask: exception " + str(oEx))
 
+
+    def getBareSoilMapName(self, sDay):
+        """
+        Returns the bare soil map name for the given day.
+        :param sDay: The day in YYYY-MM-DD format.
+        :return: The bare soil map name.
+        """
+        oMapConfig = self.getMapConfig("sar_flood")
+        aoParameters = oMapConfig.params
+        aoParameters = vars(aoParameters)
+
+        sBareSoilMapName = self.getBaseName("sar_flood") + "_" + sDay + "_" + aoParameters["SUFFIX"]
+        return sBareSoilMapName
 
     def startUrbanFlood(self, sDay):
         try:
@@ -170,6 +190,8 @@ class UrbanFloodMapEngine(RiseMapEngine):
             aoParameters["bbox"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
             aoParameters["areaName"] = self.getBaseName()
             aoParameters["date"] =  sDay
+
+            sTargetBareSoilMap = self.getBareSoilMapName(sDay)
 
             sBuildingsWorkspaceId = self.getBuildingsWorkspaceId()
             oDay = datetime.strptime(sDay, "%Y-%m-%d")
@@ -207,8 +229,8 @@ class UrbanFloodMapEngine(RiseMapEngine):
                 logging.info("UrbanFloodMapEngine.startUrbanFlood: Found " + str(len(aoBareSoilTasks)) + " run for day " + sDay)
 
                 for oTask in aoBareSoilTasks:
-                    # If are not DONE are not of our interest
 
+                    # If are not DONE are not of our interest
                     if self.isDoneStatus(oTask.status):
                         # Read the payload
                         aoBareSoilPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
@@ -242,6 +264,10 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
                     # Trigger the event
                     aoParameters["targetPostImage"] = sTargetSLCImage
+
+                    # TODO: to be tested
+                    # Pass the target Bare Soil Map to be updated with the new urban flood
+                    aoParameters["inputBareSoilMap"] = sTargetBareSoilMap
                     sTaskId = wasdi.executeProcessor("edrift_auto_urban_flood", aoParameters)
 
                     oWasdiTask = self.createNewTask(sTaskId,sTargetWorkspace,aoParameters,"edrift_auto_urban_flood",sDay)
