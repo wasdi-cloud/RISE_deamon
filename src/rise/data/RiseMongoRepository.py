@@ -201,6 +201,12 @@ class RiseMongoRepository:
         oUpdatedDocument = {"$set": vars(oEntity)}
 
         try:
+            if "_id" in oUpdatedDocument["$set"]:
+                del oUpdatedDocument["$set"]["_id"]
+        except Exception as oEx:
+            logging.error(f"RiseMongoRepository.updateEntity. Exception removing _id from updated document: {oEx}")
+
+        try:
             oCollection = self.getCollection()
 
             if oCollection is None:
