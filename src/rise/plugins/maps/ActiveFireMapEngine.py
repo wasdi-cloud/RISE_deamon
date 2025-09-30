@@ -27,13 +27,13 @@ class ActiveFireMapEngine(RiseMapEngine):
         sHour = oNow.strftime("%H")
 
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
-        oMapConfig = self.getMapConfig("imerg_cumulate_12")
+        oMapConfig = self.getMapConfig("active_fire_map")
 
         # Did we already start any map today?
         oWasdiTaskRepository = WasdiTaskRepository()
 
         # Take all our task for today
-        aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, "imerg_cumulate",
+        aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, "active_fire_map",
                                                             self.m_oPluginEntity.id, sWorkspaceId,
                                                             oMapConfig.processor, sDay)
 
@@ -56,9 +56,9 @@ class ActiveFireMapEngine(RiseMapEngine):
 
         if not self.m_oConfig.daemon.simulate:
 
-            aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
-            aoParameters["BASE_NAME"] = self.getBaseName()
-            aoParameters["REFERENCE_DATETIME"] = sDay + " " + sHour + ":00"
+            aoParameters["bbox"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
+            aoParameters["BASENAME"] = self.getBaseName()
+            # aoParameters["REFERENCE_DATETIME"] = sDay + " " + sHour + ":00"
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
@@ -72,3 +72,77 @@ class ActiveFireMapEngine(RiseMapEngine):
         else:
             logging.warning("ActiveFireMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
 
+
+
+
+    def handleTask(self, oTask):
+        try:
+            # First we check if it is safe and done
+            if not super().handleTask(oTask):
+                return False
+
+            logging.info("ActiveFireMapEngine.handleTask: handle task " + oTask.id)
+
+            aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
+
+            if aoPayload is None:
+                logging.info("ActiveFireMapEngine.handleTask: cannot read the payload, we stop here ")
+                return
+
+            if "OUTPUTS" not in aoPayload:
+                logging.info("ActiveFireMapEngine.handleTask: OUTPUTS not in the payload, we stop here ")
+                return
+
+            asOutputs = aoPayload["OUTPUTS"]
+
+            if len(asOutputs)<=0:
+                logging.info("ActiveFireMapEngine.handleTask: OUTPUTS array is empty, we stop here ")
+                return
+
+            sTime = "00"
+
+            try:
+                sTime = oTask.pluginPayload["time"]
+            except Exception as oInEx:
+                logging.warning("ActiveFireMapEngine.handleTask:  error reading the time from task payload " + str(oInEx))
+
+            sInputData = ""
+
+            if "IMERG_FILES" in aoPayload:
+                for sInputFile in aoPayload["IMERG_FILES"]:
+                    sInputData += sInputFile + " "
+
+            asFiles = wasdi.getProductsByActiveWorkspace()
+
+            for sFile in asOutputs:
+                if sFile in asFiles:
+                    logging.info("ActiveFireMapEngine.handleTask: publishing " + sFile)
+
+                    oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+                    oReferenceDate = oReferenceDate.replace(hour=int(sTime))
+
+                    sMapConfig = "imerg_cumulate_12"
+
+                    if "Cumulative_24hr" in sFile:
+                        sMapConfig = "imerg_cumulate_24"
+
+                    if "Cumulative_6hr" in sFile:
+                        sMapConfig = "imerg_cumulate_6"
+
+                    if "Cumulative_3hr" in sFile:
+                        sMapConfig = "imerg_cumulate_3"
+
+                    oMapConfig = self.getMapConfig(sMapConfig)
+
+                    bKeepLayer=False
+                    if "event" in oTask.pluginPayload:
+                        if oTask.pluginPayload["event"]:
+                            logging.info("ImergMapEngine.handleTask: rain map related to an event, set Keep Layer = true")
+                            bKeepLayer = True
+
+                    self.addAndPublishLayer(sFile, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
+                                            bKeepLayer=bKeepLayer, sDataSource=oMapConfig.dataSource,
+                                            sResolution=oMapConfig.resolution, sInputData=sInputData, sOverrideMapId=sMapConfig)
+
+        except Exception as oEx:
+            logging.error("ImergMapEngine.handleTask: exception " + str(oEx))
