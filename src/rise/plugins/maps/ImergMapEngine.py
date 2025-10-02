@@ -60,6 +60,9 @@ class ImergMapEngine(RiseMapEngine):
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
+            if not self.checkProcessorId(sProcessorId):
+                return
+
             oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sDay)
             # Override: one for all in the tasks!
             oWasdiTask.mapId = "imerg_cumulate"

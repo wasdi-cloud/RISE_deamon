@@ -595,3 +595,12 @@ class RiseMapEngine:
                 self.addAndPublishLayer(sImpactMap1, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData1, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)                
                 self.addAndPublishLayer(sImpactMap2, oReferenceDate, True, oImpactsMapConfig.id , sResolution=oImpactsMapConfig.resolution, sDataSource=oImpactsMapConfig.dataSource, sInputData=sInputData2, bKeepLayer=bKeepLayer, sForceStyle=oImpactsMapConfig.style, sOverridePluginId="rise_impact_plugin", sOverrideMapId=oImpactsMapConfig.id)
 
+    def checkProcessorId(self, sProcessorId):
+        if sProcessorId is None:
+            sProcessorId = ""
+        if sProcessorId == "":
+            # Please make a safe print. If the  self.m_oMapEntity != null print also the name 
+            logging.error("RiseMapEngine.checkProcessorId: cannot start the processor ")
+            return False
+        
+        return True
