@@ -13,6 +13,7 @@ from src.rise.business.Layer import Layer
 from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.LayerRepository import LayerRepository
+from src.rise.data.MapsParametersRepository import MapsParametersRepository
 from src.rise.data.UserRepository import UserRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverService import GeoserverService
@@ -39,8 +40,28 @@ class RiseMapEngine:
             logging.error("RiseMapEngine.init: exception " + str(oEx))
 
     def getMapConfig(self, sMapId=None):
+        # get the area id
+        sAreaId = self.m_oArea.id
+
+        # get the map id
         if sMapId is None:
             sMapId = self.m_oMapEntity.id
+
+        # look if, in the db, we have some custom parameters for the pair <area_id, map_id>
+        oMapsParametersRepo = MapsParametersRepository()
+        oFilter = {
+            'areaId': sAreaId,
+            'mapId': sMapId
+        }
+        aoParameters = oMapsParametersRepo.getEntitiesByField(oFilter)
+
+        oParameter = None
+        if aoParameters is not None :
+            if len(aoParameters) == 1:
+                oParameter = aoParameters[0]
+            elif len(oParameter) > 1:
+                # TODO
+                pass
 
         for oMapConfig in self.m_oPluginConfig.maps:
             if oMapConfig.id == sMapId:
