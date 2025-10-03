@@ -71,7 +71,8 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sTaskId = wasdi.executeProcessor("flood_finder_in_archive", aoFloodFinderInArchiveParams)
-
+                if not self.checkProcessorId(sTaskId):
+                    return
                 logging.info("UrbanFloodMapEngine.updateNewMaps: started flood finder in archive")
                 oWasdiTask = self.createNewTask(sTaskId,sWorkspaceId,aoFloodFinderInArchiveParams,"flood_finder_in_archive",sDay)
                 oWasdiTaskRepository.addEntity(oWasdiTask)

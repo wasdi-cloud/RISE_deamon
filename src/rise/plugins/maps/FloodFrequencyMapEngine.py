@@ -115,6 +115,8 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                 if not self.m_oConfig.daemon.simulate:
                     # Run the FFM to update
                     sProcessorId = wasdi.executeProcessor("floodfrequencymap", aoFFMParams)
+                    if not self.checkProcessorId(sProcessorId):
+                        return
 
                     oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoFFMParams,"floodfrequencymap", sDate)
                     oWasdiTaskRepository.addEntity(oWasdiTask)

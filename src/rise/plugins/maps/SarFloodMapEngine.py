@@ -760,6 +760,9 @@ class SarFloodMapEngine(RiseMapEngine):
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoFloodChainParameters)
 
+                if not self.checkProcessorId(sProcessorId):
+                    return
+
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoFloodChainParameters,oMapConfig.processor,sDay)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 

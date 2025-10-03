@@ -156,6 +156,8 @@ class FloodEventFinderMapEngine(RiseMapEngine):
             if not self.m_oConfig.daemon.simulate:
                 # Run the Flood Depths app
                 sProcessorId = wasdi.executeProcessor(oFloodEventFinderConfig.processor, aoParams)
+                if not self.checkProcessorId(sProcessorId):
+                    return
 
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParams, oFloodEventFinderConfig.processor, sDate)
                 oWasdiTaskRepository.addEntity(oWasdiTask)

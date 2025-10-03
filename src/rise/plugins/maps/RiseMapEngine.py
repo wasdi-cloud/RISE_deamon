@@ -599,8 +599,14 @@ class RiseMapEngine:
         if sProcessorId is None:
             sProcessorId = ""
         if sProcessorId == "":
-            # Please make a safe print. If the  self.m_oMapEntity != null print also the name 
-            logging.error("RiseMapEngine.checkProcessorId: cannot start the processor ")
-            return False
+            # Please make a safe print. If the self.m_oMapEntity != null print also the name
+            if self.m_oMapEntity is not None:
+                logging.error("RiseMapEngine.checkProcessorId: cannot start the processor "+self.m_oMapEntity.id)
+                return False
+            else:
+                logging.error("RiseMapEngine.checkProcessorId: cannot start the processor and also mapEntity is null")
+                return False
+
+
         
         return True

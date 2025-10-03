@@ -124,6 +124,9 @@ class DroughtEcostressMapEngine(RiseMapEngine):
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
+            if not self.checkProcessorId(sProcessorId):
+                return
+
             oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sReferenceDate)
             oWasdiTaskRepository.addEntity(oWasdiTask)
 

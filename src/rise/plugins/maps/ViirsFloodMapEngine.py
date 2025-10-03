@@ -59,6 +59,8 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsArchiveParameters)
+                if not self.checkProcessorId(sProcessorId):
+                    return
 
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoViirsArchiveParameters,oMapConfig.processor,"")
                 oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
