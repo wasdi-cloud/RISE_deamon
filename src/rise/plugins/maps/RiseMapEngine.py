@@ -40,12 +40,19 @@ class RiseMapEngine:
             logging.error("RiseMapEngine.init: exception " + str(oEx))
 
     def getMapConfig(self, sMapId=None):
-        # get the area id
-        sAreaId = self.m_oArea.id
 
         # get the map id
         if sMapId is None:
             sMapId = self.m_oMapEntity.id
+
+        oMapConfig = None
+        for oConfig in self.m_oPluginConfig.maps:
+            if oConfig.id == sMapId:
+                oMapConfig = oConfig
+                break
+
+        # get the area id
+        sAreaId = self.m_oArea.id
 
         # look if, in the db, we have some custom parameters for the pair <area_id, map_id>
         oMapsParametersRepo = MapsParametersRepository()
@@ -56,18 +63,22 @@ class RiseMapEngine:
         aoParameters = oMapsParametersRepo.getEntitiesByField(oFilter)
 
         oParameter = None
-        if aoParameters is not None :
+        if aoParameters is not None:
             if len(aoParameters) == 1:
                 oParameter = aoParameters[0]
-            elif len(oParameter) > 1:
-                # TODO
-                pass
+            elif len(aoParameters) > 1:
+                # we sort by decreasing modification timestamp, and we take the most recent modified parameters
+                aoParameters.sort(key=lambda oParams: oParams.creationTimestamp, reverse=True) # TODO: improve
+                oParameter = aoParameters[0]
 
-        for oMapConfig in self.m_oPluginConfig.maps:
-            if oMapConfig.id == sMapId:
+        if oParameter is not None:
+            try:
+                oMapConfig.params = json.loads(oParameter.payload)
                 return oMapConfig
+            except Exception as oEx:
+                logging.warning(f"RiseMapEngine.getMapConfig: exception {oEx}")
 
-        return None
+        return oMapConfig
 
     def getStyleForMap(self, sMapId=None):
 
