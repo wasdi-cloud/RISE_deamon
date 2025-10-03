@@ -97,6 +97,8 @@ class ImpactMapEngine(RiseMapEngine):
 
                 if not self.m_oConfig.daemon.simulate:
                     sTaskId = wasdi.executeProcessor(oMapConfig.processor, aoParams)
+                    if not self.checkProcessorId(sTaskId):
+                        return
 
                     logging.info("ImpactMapEngine.updateImpactMapsForDay: started impact detection for " + sBaseName)
 

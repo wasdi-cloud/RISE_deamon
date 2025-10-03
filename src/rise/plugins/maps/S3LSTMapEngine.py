@@ -53,6 +53,9 @@ class S3LSTMapEngine(RiseMapEngine):
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
+            if not self.checkProcessorId(sProcessorId):
+                return
+
             oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sYesterday)
             oWasdiTaskRepository.addEntity(oWasdiTask)
 

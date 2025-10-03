@@ -249,6 +249,12 @@ class RiseDeamon:
             if oArea is not None:
                 # Create the Plugin Engine
                 oPluginEngine = self.getRisePluginEngine(oTask.pluginId, oArea)
+
+                if oPluginEngine is None:
+                    # We should find it!
+                    logging.warning("RiseDeamon.checkResultsAndPublishLayers:  Task " + oTask.id + " - plugin not existing " + oTask.pluginId)
+                    continue
+
                 # Handle this task!
                 oPluginEngine.handleTask(oTask)
             else:
@@ -344,10 +350,10 @@ class RiseDeamon:
     
     def forceLayerUpdate(self):
 
-        sLayerName = "d4e65fb4de5c46eeb9993f9d8742a08bsarflood_2023-02-03_water-depth"
-        sLayerId  = "rise:" + sLayerName
+        sLayerName = "ESA_WorldCover_10m_2020_v100_N21W003_Map"
+        sLayerId  = "wasdi:" + sLayerName
         sFilePath = "C:\\Users\\p.campanella\\Downloads\\" + sLayerName + ".tif"
-        sStyle = "flood_depth"
+        sStyle = "raster"
 
         # Get the Geoserver Service
         oGeoserverService = GeoserverService()

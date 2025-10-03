@@ -115,6 +115,8 @@ class FloodDepthMapEngine(RiseMapEngine):
             if not self.m_oConfig.daemon.simulate:
                 # Run the Flood Depths app
                 sProcessorId = wasdi.executeProcessor(oFloodDepthConfig.processor, aoParams)
+                if not self.checkProcessorId(sProcessorId):
+                    return
 
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParams, oFloodDepthConfig.processor, sDate)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
