@@ -36,19 +36,12 @@ class ActiveFireMapEngine(RiseMapEngine):
                                                             self.m_oPluginEntity.id, sWorkspaceId,
                                                             oMapConfig.processor, sDay)
 
-        bWaitNextHour = False
+
+        # if we have existing tasks
         for oTask in aoExistingTasks:
-
-            if "time" in oTask.pluginPayload:
-                sTime = oTask.pluginPayload["time"]
-                if sTime == sHour:
-                    bWaitNextHour = True
-                    break
-
-        if bWaitNextHour:
-            logging.info(
-                "ActiveFireMapEngine.triggerNewAreaArchives: found task for " + sDay + " " + sHour + ", we wait next hour")
-            return
+            if self.isRunningStatus(oTask.status):
+                logging.info("ActiveFireMapEngine.updateNewMaps: a task is still ongoing  for day " + sDay + " we will wait it to finish " + oTask.id)
+                return
 
         aoParameters = oMapConfig.params
         aoParameters = vars(aoParameters)
@@ -67,8 +60,7 @@ class ActiveFireMapEngine(RiseMapEngine):
             oWasdiTask.pluginPayload["time"] = sHour
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info(
-                "ActiveFireMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
+            logging.info("ActiveFireMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
         else:
             logging.warning("ActiveFireMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
 
