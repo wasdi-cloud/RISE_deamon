@@ -61,7 +61,8 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
         if sBaseName in asFiles:
             logging.info("UrbanFloodMapEngine.updateNewMaps: found a new daily sar map")
-            aoFloodFinderInArchiveParams = {}
+            oMapConfig = self.getMapConfig()
+            aoFloodFinderInArchiveParams = vars(oMapConfig.params)
             aoFloodFinderInArchiveParams["FLOOD_VALUE"] = 3
             aoFloodFinderInArchiveParams["NOT_FLOODED_VALUE"] = 1
             aoFloodFinderInArchiveParams["PERMANENT_WATER_VALUE"] = 2
