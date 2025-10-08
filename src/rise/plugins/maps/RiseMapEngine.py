@@ -68,7 +68,7 @@ class RiseMapEngine:
                 oParameter = aoParameters[0]
             elif len(aoParameters) > 1:
                 # we sort by decreasing modification timestamp, and we take the most recent modified parameters
-                aoParameters.sort(key=lambda oParams: oParams.creationTimestamp, reverse=True) # TODO: improve
+                aoParameters.sort(key=lambda oParams: oParams.lastModifyTimestamp, reverse=True)
                 oParameter = aoParameters[0]
 
         if oParameter is not None:
