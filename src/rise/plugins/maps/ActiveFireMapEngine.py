@@ -42,6 +42,17 @@ class ActiveFireMapEngine(RiseMapEngine):
             if self.isRunningStatus(oTask.status):
                 logging.info("ActiveFireMapEngine.updateNewMaps: a task is still ongoing  for day " + sDay + " we will wait it to finish " + oTask.id)
                 return
+        oToday = datetime.datetime.today()
+        sToday = oToday.strftime("%Y-%m-%d")
+        sBaseName = self.getBaseName()
+        sOutputFileName ="ActiveFire_"+ sBaseName + "_" + sToday + ".tif"
+
+        asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
+
+        if sOutputFileName in asWorkspaceFiles:
+            logging.info("ActiveFireMapEngine.updateNewMaps: We already have this product ready for today , no need to run again , product name is " + sOutputFileName)
+            return
+
 
         aoParameters = oMapConfig.params
         aoParameters = vars(aoParameters)
@@ -53,7 +64,8 @@ class ActiveFireMapEngine(RiseMapEngine):
             # aoParameters["REFERENCE_DATETIME"] = sDay + " " + sHour + ":00"
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
-
+            if not self.checkProcessorId(sProcessorId):
+                return
             oWasdiTask = self.createNewTask(sProcessorId, sWorkspaceId, aoParameters, oMapConfig.processor, sDay)
             # Override: one for all in the tasks!
             oWasdiTask.mapId = "active_fire_map"
