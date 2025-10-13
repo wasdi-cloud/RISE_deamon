@@ -13,6 +13,7 @@ from src.rise.business.Layer import Layer
 from src.rise.business.WasdiTask import WasdiTask
 from src.rise.data.AreaRepository import AreaRepository
 from src.rise.data.LayerRepository import LayerRepository
+from src.rise.data.MapsParametersRepository import MapsParametersRepository
 from src.rise.data.UserRepository import UserRepository
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.geoserver.GeoserverService import GeoserverService
@@ -39,14 +40,45 @@ class RiseMapEngine:
             logging.error("RiseMapEngine.init: exception " + str(oEx))
 
     def getMapConfig(self, sMapId=None):
+
+        # get the map id
         if sMapId is None:
             sMapId = self.m_oMapEntity.id
 
-        for oMapConfig in self.m_oPluginConfig.maps:
-            if oMapConfig.id == sMapId:
-                return oMapConfig
+        oMapConfig = None
+        for oConfig in self.m_oPluginConfig.maps:
+            if oConfig.id == sMapId:
+                oMapConfig = oConfig
+                break
 
-        return None
+        # get the area id
+        sAreaId = self.m_oArea.id
+
+        # look if, in the db, we have some custom parameters for the pair <area_id, map_id>
+        oMapsParametersRepo = MapsParametersRepository()
+        oFilter = {
+            'areaId': sAreaId,
+            'mapId': sMapId
+        }
+        aoParameters = oMapsParametersRepo.getEntitiesByField(oFilter)
+
+        oParameter = None
+        if aoParameters is not None:
+            if len(aoParameters) == 1:
+                oParameter = aoParameters[0]
+            elif len(aoParameters) > 1:
+                # we sort by decreasing modification timestamp, and we take the most recent modified parameters
+                aoParameters.sort(key=lambda oParams: oParams.lastModifyTimestamp, reverse=True)
+                oParameter = aoParameters[0]
+
+        if oParameter is not None:
+            try:
+                oMapConfig.params = json.loads(oParameter.payload)
+                return oMapConfig
+            except Exception as oEx:
+                logging.warning(f"RiseMapEngine.getMapConfig: exception {oEx}")
+
+        return oMapConfig
 
     def getStyleForMap(self, sMapId=None):
 
