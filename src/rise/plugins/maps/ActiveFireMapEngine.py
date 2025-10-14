@@ -23,7 +23,6 @@ class ActiveFireMapEngine(RiseMapEngine):
 
         oNow = datetime.datetime.now(datetime.UTC)
         sDay = oNow.strftime("%Y-%m-%d")
-        sHour = oNow.strftime("%H")
 
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
         oMapConfig = self.getMapConfig("active_fire_map")
@@ -69,7 +68,6 @@ class ActiveFireMapEngine(RiseMapEngine):
             oWasdiTask = self.createNewTask(sProcessorId, sWorkspaceId, aoParameters, oMapConfig.processor, sDay)
             # Override: one for all in the tasks!
             oWasdiTask.mapId = "active_fire_map"
-            oWasdiTask.pluginPayload["time"] = sHour
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
             logging.info("ActiveFireMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
@@ -112,8 +110,6 @@ class ActiveFireMapEngine(RiseMapEngine):
                 logging.info("ActiveFireMapEngine.handleTask: the map does not exist in the product list ,something is wrong, we stop here ")
                 return
 
-
-
             oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
             sMapConfig = "active_fire_map"
             oMapConfig = self.getMapConfig(sMapConfig)
@@ -122,7 +118,6 @@ class ActiveFireMapEngine(RiseMapEngine):
                                     bKeepLayer=False, sDataSource=oMapConfig.dataSource,
                                     sResolution=oMapConfig.resolution, sInputData=oMapConfig.inputData,
                                     sOverrideMapId=sMapConfig)
-
 
         except Exception as oEx:
             logging.error("ActiveFireMapEngine.handleTask: exception " + str(oEx))

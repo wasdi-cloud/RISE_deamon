@@ -50,6 +50,7 @@ class S3LSTMapEngine(RiseMapEngine):
             aoParameters["STARTDATE"] = sYesterday
             aoParameters["ENDDATE"] = sYesterday
             aoParameters["BASE_NAME"] = self.getBaseName()
+            aoParameters["BASENAME"] = self.getBaseName()
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
 
