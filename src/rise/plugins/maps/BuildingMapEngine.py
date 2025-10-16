@@ -63,6 +63,8 @@ class BuildingMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
+                if not self.checkProcessorId(sProcessorId):
+                    return
 
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoAppParameters,oMapConfig.processor, "")
                 oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
@@ -111,6 +113,8 @@ class BuildingMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoAppParameters)
+                if not self.checkProcessorId(sProcessorId):
+                    return
                 oWasdiTask = self.createNewTask(sProcessorId, sWorkspaceId, aoAppParameters, oMapConfig.processor, "2020-06-01")
                 oWasdiTask.pluginPayload["fastBuildingMap"] = True
 

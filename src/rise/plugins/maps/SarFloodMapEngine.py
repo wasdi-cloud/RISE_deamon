@@ -148,6 +148,8 @@ class SarFloodMapEngine(RiseMapEngine):
 
             if not self.m_oConfig.daemon.simulate:
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoIntegratedArchiveParameters)
+                if not self.checkProcessorId(sProcessorId):
+                    return
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoIntegratedArchiveParameters,oMapConfig.processor,"")
                 oWasdiTask.pluginPayload["integratedArchive"] = True
                 oWasdiTask.pluginPayload["fullArchive"] = bFullArchive
@@ -794,7 +796,8 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoParameters["REFERENCE_DATETIME"] = sEventDate + " " + "23:59"
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
-
+                if not self.checkProcessorId(sProcessorId):
+                    return
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sEventDate)
                 # Override: one for all in the tasks!
                 oWasdiTask.mapId = "imerg_cumulate"

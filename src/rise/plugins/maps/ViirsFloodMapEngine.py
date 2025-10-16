@@ -258,7 +258,8 @@ class ViirsFloodMapEngine(RiseMapEngine):
                     aoViirsParameters["HIGH_RES_WATER_MAP"] = "HighResWaterMap.tif"
 
                 sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoViirsParameters)
-
+                if not self.checkProcessorId(sProcessorId):
+                    return
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoViirsParameters,oMapConfig.processor,sToday)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
