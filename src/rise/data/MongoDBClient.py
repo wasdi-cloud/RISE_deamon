@@ -29,6 +29,10 @@ class MongoDBClient:
             sConnectionString = "mongodb://" + MongoDBClient._s_oConfig.mongoMain.user + ":" + MongoDBClient._s_oConfig.mongoMain.password
             sConnectionString = sConnectionString + "@" + MongoDBClient._s_oConfig.mongoMain.address
             sConnectionString = sConnectionString + "/?authSource=" + MongoDBClient._s_oConfig.mongoMain.dbName
+
+            if getattr(MongoDBClient._s_oConfig.mongoMain, 'directConnection', False) == True:
+                sConnectionString = sConnectionString + "&directConnection=true&serverSelectionTimeoutMS=5000"
+
             return sConnectionString
 
         return "mongodb://localhost:27017"
