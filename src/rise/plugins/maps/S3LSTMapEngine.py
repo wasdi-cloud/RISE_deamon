@@ -36,10 +36,11 @@ class S3LSTMapEngine(RiseMapEngine):
         aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, oMapConfig.id,
                                                             self.m_oPluginEntity.id, sWorkspaceId,
                                                             oMapConfig.processor, sYesterday)
-
-        if len(aoExistingTasks)>0:
-            logging.info("S3LSTMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sYesterday + ". Nothing to do")
-            return
+                
+        for oTask in aoExistingTasks:
+            if self.isRunningStatus(oTask.status):
+                logging.info("S3LSTMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sYesterday + ". Nothing to do")
+                return
         
         aoParameters = oMapConfig.params
         aoParameters = vars(aoParameters)
@@ -49,7 +50,6 @@ class S3LSTMapEngine(RiseMapEngine):
             aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
             aoParameters["STARTDATE"] = sYesterday
             aoParameters["ENDDATE"] = sYesterday
-            aoParameters["BASE_NAME"] = self.getBaseName()
             aoParameters["BASENAME"] = self.getBaseName()
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
