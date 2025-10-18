@@ -38,7 +38,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.3.0")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.3.1")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False
@@ -209,6 +209,12 @@ class RiseDeamon:
 
             logging.info("RiseDeamon.updateNewMaps: Start new maps for area " + str(oArea.name) + " ["+oArea.id + "]")
 
+            asFilterPlugins = None
+
+            if hasattr(self.m_oConfig.daemon, 'filterPlugins'):
+                if self.m_oConfig.daemon.filterPlugins is not None and len(self.m_oConfig.daemon.filterPlugins)>0:
+                    asFilterPlugins = self.m_oConfig.daemon.filterPlugins
+
             # For all the plugins activated
             for sPluginId in oArea.plugins:
 
@@ -219,6 +225,10 @@ class RiseDeamon:
                     if oRisePlugin is None:
                         # We should find it!
                         logging.warning("RiseDeamon.updateNewMaps: Jumping plugin " + sPluginId)
+                        continue
+
+                    if asFilterPlugins is not None and sPluginId not in asFilterPlugins:
+                        logging.info("RiseDeamon.updateNewMaps: Skipping plugin " + sPluginId + " not in the filter list")
                         continue
 
                     # Ask the plugin to trigger the new operations
@@ -253,6 +263,16 @@ class RiseDeamon:
                 if oPluginEngine is None:
                     # We should find it!
                     logging.warning("RiseDeamon.checkResultsAndPublishLayers:  Task " + oTask.id + " - plugin not existing " + oTask.pluginId)
+                    continue
+
+                asFilterPlugins = None
+
+                if hasattr(self.m_oConfig.daemon, 'filterPlugins'):
+                    if self.m_oConfig.daemon.filterPlugins is not None and len(self.m_oConfig.daemon.filterPlugins)>0:
+                        asFilterPlugins = self.m_oConfig.daemon.filterPlugins
+
+                if asFilterPlugins is not None and oTask.pluginId not in asFilterPlugins:
+                    logging.info("RiseDeamon.checkResultsAndPublishLayers: Skipping plugin " + oTask.pluginId + " not in the filter list")
                     continue
 
                 # Handle this task!

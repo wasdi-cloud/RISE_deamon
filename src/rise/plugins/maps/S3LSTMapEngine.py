@@ -45,6 +45,32 @@ class S3LSTMapEngine(RiseMapEngine):
         aoParameters = oMapConfig.params
         aoParameters = vars(aoParameters)
 
+        sType = aoParameters["TYPE_OF_DAILY_MAPS"]
+
+        asTypes= []
+
+        try:
+            asTypes = sType.split(",")
+        except Exception as oE:
+            logging.error("Error splitting TYPE_OF_DAILY_MAPS parameter: " + str(oE))
+            asTypes = ["MAX"]        
+        
+        asReadyFiles = wasdi.getProductsByActiveWorkspace()
+
+        bMapsReady = True
+
+        for sCurrentType in asTypes:
+            sName = self.getBaseName() + "_S3_LST_Daily" + sCurrentType + "_" + sYesterday + ".tif"
+
+            if sName not in asReadyFiles:
+                logging.debug("S3LSTMapEngine.updateNewMaps: Not found  " + sName)
+                bMapsReady = False
+                break
+
+        if  bMapsReady:
+            logging.info("S3LSTMapEngine.updateNewMaps: All maps are already present for " + sYesterday + ". Nothing to do")
+            return
+        
         if not self.m_oConfig.daemon.simulate:
 
             aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
@@ -78,30 +104,50 @@ class S3LSTMapEngine(RiseMapEngine):
                 logging.info("S3LSTMapEngine.handleTask: cannot read the payload, we stop here ")
                 return
 
-            if "output" not in aoPayload:
+            if "output daily" not in aoPayload:
                 logging.info("S3LSTMapEngine.handleTask: output not in the payload, we stop here ")
                 return
 
-            sOutput = aoPayload["output"]
+            asOutputs = aoPayload["output daily"]
+
+            if asOutputs is None or len(asOutputs) == 0:
+                logging.info("S3LSTMapEngine.handleTask: output is empty, we stop here ")
+                return
 
             oMapConfig = self.getMapConfig()
 
             sInputData = oMapConfig.inputData
 
-            if "s3_input_files" in aoPayload:
-                for sInputFile in aoPayload["s3_input_files"]:
-                    sInputData += sInputFile + " "
+            try:
+                if "s3_input_files" in aoPayload:
+                    for sInputFile in aoPayload["s3_input_files"]:
+                        if isinstance(sInputFile, str):
+                            sInputData += sInputFile + " "
+                        else:
+                            # Convert to string if it's not a string
+                            sInputData += str(sInputFile) + " "
+            except Exception as oEx:
+                logging.error("S3LSTMapEngine.handleTask: error parsing input S3 files " + str(oEx))
+                
 
             asFiles = wasdi.getProductsByActiveWorkspace()
-        
-            if sOutput in asFiles:
-                logging.info("S3LSTMapEngine.handleTask: publishing " + sOutput)
 
-                oReferenceDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+            for sOutput in asOutputs:        
+                if sOutput in asFiles:
+                    logging.info("S3LSTMapEngine.handleTask: publishing " + sOutput)
 
-                self.addAndPublishLayer(sOutput, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
-                                        bKeepLayer=False, sDataSource=oMapConfig.dataSource,
-                                        sResolution=oMapConfig.resolution, sInputData=sInputData)
+                    oReferenceDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+
+                    sMapId = "s3_lst_max"
+
+                    if "MIN" in sOutput:
+                        sMapId = "s3_lst_min"
+                    elif "AVG" in sOutput:
+                        sMapId = "s3_lst_avg"
+
+                    self.addAndPublishLayer(sOutput, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
+                                            bKeepLayer=False, sDataSource=oMapConfig.dataSource,
+                                            sResolution=oMapConfig.resolution, sInputData=sInputData, sOverrideMapId=sMapId)
 
         except Exception as oEx:
             logging.error("S3LSTMapEngine.handleTask: exception " + str(oEx))
