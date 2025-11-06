@@ -70,7 +70,7 @@ class ActiveFireMapEngine(RiseMapEngine):
             oWasdiTask.mapId = "active_fire_map"
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info("ActiveFireMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
+            logging.info("ActiveFireMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay)
         else:
             logging.warning("ActiveFireMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
 

@@ -105,7 +105,7 @@ class GeoserverService:
 
         try:
             oGeoClient = GeoserverClient().client
-            logging.info("GeoserverService.deleteRasterLayer. Delete raster layer on Geoserver")
+            logging.debug("GeoserverService.deleteRasterLayer. Delete raster layer on Geoserver")
             oResult = oGeoClient.delete_coveragestore(coveragestore_name=sLayerName, workspace=sWorkspace)
             # TODO: improve error handling
             logging.info(f"GeoserverService.deleteRasterLayer. Result of the deletion {oResult}")
