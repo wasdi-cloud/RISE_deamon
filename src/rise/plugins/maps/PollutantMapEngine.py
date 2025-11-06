@@ -23,6 +23,7 @@ class PollutantMapEngine(RiseMapEngine):
         logging.info("PollutantMapEngine.updateNewMaps: Update New Maps")
 
         oNow = datetime.datetime.now(datetime.UTC)
+
         sDay = oNow.strftime("%Y-%m-%d")
 
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
@@ -41,8 +42,10 @@ class PollutantMapEngine(RiseMapEngine):
                 logging.info(
                     "PollutantMapEngine.updateNewMaps: a task is still ongoing  for day " + sDay + " we will wait it to finish " + oTask.id)
                 return
-        oToday = datetime.datetime.today()
-        sToday = oToday.strftime("%Y-%m-%d")
+        # oToday = datetime.datetime.today()
+        # sToday = oToday.strftime("%Y-%m-%d")
+        oYesterday = oNow - datetime.timedelta(days=1)
+        sYesterday = oYesterday.strftime("%Y-%m-%d")
         sBaseName = self.getBaseName()
         # TODO this is static for now but will change to be dynamic then will prob check a list of the other elements
 
@@ -50,7 +53,7 @@ class PollutantMapEngine(RiseMapEngine):
         asPollutantsToCreateNewAppFpr = []
         asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
         for sPollutantName in asPollutants:
-            sOutputFileName = sBaseName + "S5_" + sPollutantName + "_Day" + sToday + ".tif"
+            sOutputFileName = sBaseName + "S5_" + sPollutantName + "_Day" + sYesterday + ".tif"
             # here we found the pollutant element in the workspace so no need to do it again
             if sOutputFileName in asWorkspaceFiles:
                 logging.info(
@@ -58,7 +61,7 @@ class PollutantMapEngine(RiseMapEngine):
                 continue
             else:
                 asPollutantsToCreateNewAppFpr.append(sPollutantName)
-        # here we have product for each pollutant , so no need to lauch a new app
+        # here we have product for each pollutant, so no need to lauch a new app
         if len(asPollutantsToCreateNewAppFpr) == 0:
             logging.info(
                 "PollutantMapEngine.updateNewMaps: We already have for all pollutants element a  product ready for today , no need to run again")
@@ -72,8 +75,8 @@ class PollutantMapEngine(RiseMapEngine):
             aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
             aoParameters["BASENAME"] = self.getBaseName()
             aoParameters["Pollutants"] = listTostring(asPollutantsToCreateNewAppFpr)
-            aoParameters["STARTDATE"] = sToday
-            aoParameters["ENDDATE"] = sToday
+            aoParameters["STARTDATE"] = sYesterday
+            aoParameters["ENDDATE"] = sYesterday
             aoParameters["DELETEDAILYMAPS"] = True
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
@@ -98,8 +101,11 @@ class PollutantMapEngine(RiseMapEngine):
             if aoPayload is None:
                 logging.info("PollutantMapEngine.handleTask: cannot read the payload, we stop here ")
                 return
-            oToday = datetime.datetime.today()
-            sToday = oToday.strftime("%Y-%m-%d")
+            # oToday = datetime.datetime.today()
+            # sToday = oToday.strftime("%Y-%m-%d")
+            oNow = datetime.datetime.now(datetime.UTC)
+            oYesterday = oNow - datetime.timedelta(days=1)
+            sYesterday = oYesterday.strftime("%Y-%m-%d")
             sBaseName = self.getBaseName()
             # TODO this is static for now but will change to be dynamic then will prob check a list of the other elements
             asPollutants = ["NO2", "HCHO", "CO", "O3", "CH4", "SO2"]
@@ -108,8 +114,8 @@ class PollutantMapEngine(RiseMapEngine):
             sMapConfig = "pollution_map"
             oMapConfig = self.getMapConfig(sMapConfig)
             for sPollutantName in asPollutants:
-                sOutputFileName = sBaseName + "S5_" + sPollutantName + "_Day" + sToday + ".tif"
-                # checking if the file really exist in the wasdi product list
+                sOutputFileName = sBaseName + "S5_" + sPollutantName + "_Day" + sYesterday + ".tif"
+                # checking if the file really exists in the wasdi product list
                 if sOutputFileName not in asFiles:
                     # should exist
                     logging.info(
