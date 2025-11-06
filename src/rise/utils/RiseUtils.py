@@ -178,3 +178,18 @@ def deleteShapeFile(sShapeFileFullPath):
 
     except Exception as oEx:
         logging.error("RiseUtils.deleteShapeFile. Exception " + str(oEx))
+
+
+"""
+  Converts a list of strings into a single comma-separated string.
+
+  Args:
+    element_list (list): The input list containing string elements.
+
+  Returns:
+    str: A single string with elements joined by a comma and a space.
+  """
+def listTostring(asElementList):
+  # The syntax is: 'delimiter'.join(list)
+  # It inserts the delimiter between every element in the list.
+  return ",".join(asElementList)
