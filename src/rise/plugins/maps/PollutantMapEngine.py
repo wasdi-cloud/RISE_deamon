@@ -72,7 +72,9 @@ class PollutantMapEngine(RiseMapEngine):
             aoParameters["BBOX"] = self.m_oPluginEngine.getWasdiBbxFromWKT(self.m_oArea.bbox, True)
             aoParameters["BASENAME"] = self.getBaseName()
             aoParameters["Pollutants"] = listTostring(asPollutantsToCreateNewAppFpr)
-            # aoParameters["REFERENCE_DATETIME"] = sDay + " " + sHour + ":00"
+            aoParameters["STARTDATE"] = sToday
+            aoParameters["ENDDATE"] = sToday
+            aoParameters["DELETEDAILYMAPS"] = True
 
             sProcessorId = wasdi.executeProcessor(oMapConfig.processor, aoParameters)
             if not self.checkProcessorId(sProcessorId):
