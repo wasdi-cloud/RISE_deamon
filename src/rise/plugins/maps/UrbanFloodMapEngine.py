@@ -60,25 +60,28 @@ class UrbanFloodMapEngine(RiseMapEngine):
         sBaseName += "_" + sDay + "_" + sSuffix
 
         if sBaseName in asFiles:
-            logging.info("UrbanFloodMapEngine.updateNewMaps: found a new daily sar map")
-            oMapConfig = self.getMapConfig()
-            aoFloodFinderInArchiveParams = vars(oMapConfig.params)
-            aoFloodFinderInArchiveParams["FLOOD_VALUE"] = 3
-            aoFloodFinderInArchiveParams["NOT_FLOODED_VALUE"] = 1
-            aoFloodFinderInArchiveParams["PERMANENT_WATER_VALUE"] = 2
-            aoFloodFinderInArchiveParams["THREE_STATE"] = 1
-            aoFloodFinderInArchiveParams["NO_DATA_VALUE"] = 0
-            aoFloodFinderInArchiveParams["TARGET_FILE"] = sBaseName
+            try:
+                logging.info("UrbanFloodMapEngine.updateNewMaps: found a new daily sar map")
+                #oMapConfig = self.getMapConfig()
+                aoFloodFinderInArchiveParams = {}
+                aoFloodFinderInArchiveParams["FLOOD_VALUE"] = 3
+                aoFloodFinderInArchiveParams["NOT_FLOODED_VALUE"] = 1
+                aoFloodFinderInArchiveParams["PERMANENT_WATER_VALUE"] = 2
+                aoFloodFinderInArchiveParams["THREE_STATE"] = 1
+                aoFloodFinderInArchiveParams["NO_DATA_VALUE"] = 0
+                aoFloodFinderInArchiveParams["TARGET_FILE"] = sBaseName
 
-            if not self.m_oConfig.daemon.simulate:
-                sTaskId = wasdi.executeProcessor("flood_finder_in_archive", aoFloodFinderInArchiveParams)
-                if not self.checkProcessorId(sTaskId):
-                    return
-                logging.info("UrbanFloodMapEngine.updateNewMaps: started flood finder in archive")
-                oWasdiTask = self.createNewTask(sTaskId,sWorkspaceId,aoFloodFinderInArchiveParams,"flood_finder_in_archive",sDay)
-                oWasdiTaskRepository.addEntity(oWasdiTask)
-            else:
-                logging.info("UrbanFloodMapEngine.updateNewMaps: simulation mode is on, think I started a flood finder in archive for day " + sDay)
+                if not self.m_oConfig.daemon.simulate:
+                    sTaskId = wasdi.executeProcessor("flood_finder_in_archive", aoFloodFinderInArchiveParams)
+                    if not self.checkProcessorId(sTaskId):
+                        return
+                    logging.info("UrbanFloodMapEngine.updateNewMaps: started flood finder in archive")
+                    oWasdiTask = self.createNewTask(sTaskId,sWorkspaceId,aoFloodFinderInArchiveParams,"flood_finder_in_archive",sDay)
+                    oWasdiTaskRepository.addEntity(oWasdiTask)
+                else:
+                    logging.info("UrbanFloodMapEngine.updateNewMaps: simulation mode is on, think I started a flood finder in archive for day " + sDay)
+            except Exception as oEx:
+                logging.error("UrbanFloodMapEngine.updateNewMaps: exception " + str(oEx))
         else:
             logging.info("UrbanFloodMapEngine.updateNewMaps: no flood map for date " + sDay + ", nothing to do")
 

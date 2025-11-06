@@ -275,7 +275,7 @@ class GeoserverService:
             return oLayer is not None
 
         except Exception as oEx:
-            logging.error(f"GeoserverService.existsLayer. Exception {oEx}")
+            logging.warning(f"GeoserverService.existsLayer. Exception {oEx}")
 
         return None
 
@@ -290,15 +290,15 @@ class GeoserverService:
         """
 
         if sStyleName is None:
-            logging.warning(f"GeoserverService.existsLayer. Style name not specified")
+            logging.warning(f"GeoserverService.publishStyle. Style name not specified")
             return None
 
         if sLayerName is None:
-            logging.warning(f"GeoserverService.existsLayer. Layer name not specified")
+            logging.warning(f"GeoserverService.publishStyle. Layer name not specified")
             return None
 
         if sWorkspaceName is None:
-            logging.warning(f"GeoserverService.existsLayer. Workspace name not specified")
+            logging.warning(f"GeoserverService.publishStyle. Workspace name not specified")
             return None
 
         try:
@@ -311,7 +311,7 @@ class GeoserverService:
             return False
 
         except Exception as oEx:
-            logging.error(f"GeoserverService.existsLayer. Exception {oEx}")
+            logging.error(f"GeoserverService.publishStyle. Exception {oEx}")
 
         return False
 
