@@ -141,7 +141,7 @@ class RainPlugin(RisePlugin):
 
                     # Check if the output file is in the workspace
                     if sOutputFile in asFilesInWorkspace:
-                        logging.info("RainPlugin.handleTask: output file " + sOutputFile + " is present")
+                        logging.debug("RainPlugin.handleTask: output file " + sOutputFile + " is present")
                         sLayerId = sOutputFile.replace(".tif","")
 
                         # If the layer does not exists
@@ -168,7 +168,7 @@ class RainPlugin(RisePlugin):
 
                         if aoLayers is not None and len(aoLayers)>0:
                             # Layer already existing
-                            logging.info("RainPlugin.handleTask: Layer Entity " + sLayerId + " already exists in DB")
+                            logging.debug("RainPlugin.handleTask: Layer Entity " + sLayerId + " already exists in DB")
                             continue
 
                         # Not exists, we create it: get the map engine
@@ -178,7 +178,7 @@ class RainPlugin(RisePlugin):
                         oCreatedLayer.published = True
                         # Add it to the repository
                         oLayerRepository.addEntity(oCreatedLayer)
-
+                        logging.info("RainPlugin.handleTask: Created Layer " + sLayerId)
                     else:
                         logging.warning("RainPlugin.handleTask: output file " + sOutputFile + " is NOT present, we skip it")
                         continue
