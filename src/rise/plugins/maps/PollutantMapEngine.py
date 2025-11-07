@@ -59,7 +59,7 @@ class PollutantMapEngine(RiseMapEngine):
             # here we found the pollutant element in the workspace so no need to do it again
             if sOutputFileName1 in asWorkspaceFiles or sOutputFileName2 in asWorkspaceFiles:
                 logging.info(
-                    "PollutantMapEngine.updateNewMaps: We already have this product ready for today , no need to run again , product name is " + sOutputFileName)
+                    "PollutantMapEngine.updateNewMaps: We already have this product ready for today , no need to run again , product name is " + sOutputFileName1)
                 continue
             else:
                 asPollutantsToCreateNewAppFpr.append(sPollutantName)
