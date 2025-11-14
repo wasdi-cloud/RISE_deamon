@@ -162,7 +162,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
                         logging.info("UrbanFloodMapEngine.handleTask: Update reference Bare Soil Map " + sReferenceBareSoilMap)
                         self.addAndPublishLayer(sReferenceBareSoilMap, datetime.strptime(oTask.referenceDate,"%Y-%m-%d"), True, "autofloodchain2",
                                                 sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
-                                                sInputData=oMapConfig.inputData, bForceRepublish=True)
+                                                sInputData=oMapConfig.inputData, bForceRepublish=True, sOverrideMapId="sar_flood")
 
             else:
                 logging.warning("UrbanFloodMapEngine.handleTask: NOT recognized application " + oTask.application)
@@ -264,16 +264,22 @@ class UrbanFloodMapEngine(RiseMapEngine):
                 asTargetSLCImages.append("")
 
             if not self.m_oConfig.daemon.simulate:
+                iCounter = 0
+                sBaseName = aoParameters["areaName"]
                 # For each target SLC Image found
                 for sTargetSLCImage in asTargetSLCImages:
 
                     # Trigger the event
                     aoParameters["targetPostImage"] = sTargetSLCImage
 
+                    if len(asTargetSLCImages)>1:
+                        aoParameters["areaName"] = sBaseName + "-" + str(iCounter)
+
                     # TODO: to be tested
                     # Pass the target Bare Soil Map to be updated with the new urban flood
                     aoParameters["inputBareSoilMap"] = sTargetBareSoilMap
                     sTaskId = wasdi.executeProcessor("edrift_auto_urban_flood", aoParameters)
+                    iCounter += 1
 
                     oWasdiTask = self.createNewTask(sTaskId,sTargetWorkspace,aoParameters,"edrift_auto_urban_flood",sDay)
                     oWasdiTaskRepository.addEntity(oWasdiTask)

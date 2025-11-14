@@ -82,7 +82,7 @@ class RainPlugin(RisePlugin):
         # This is not a real WASDI task, consider it DONE in any case
         oWasdiTaskRepository = WasdiTaskRepository()
         oTask.status = "DONE"
-        #oWasdiTaskRepository.updateEntity(oTask)
+        oWasdiTaskRepository.updateEntity(oTask)
 
         # Get Reference Date and Time
         sReferenceDate = oTask.referenceDate

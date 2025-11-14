@@ -71,7 +71,7 @@ class GeoserverService:
 
         try:
             oGeoClient = GeoserverClient().client
-            logging.info("GeoserverService.publishRasterLayer. Adding layer on Geoserver")
+            logging.info("GeoserverService.publishRasterLayer. Adding layer on Geoserver " + sLayerName)
             oCoverageStore = oGeoClient.create_coveragestore(layer_name=sLayerName, path=sRasterFilePath, workspace=sWorkspaceName)
 
             if oCoverageStore is None:
