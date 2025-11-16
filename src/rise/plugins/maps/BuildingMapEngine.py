@@ -14,7 +14,6 @@ class BuildingMapEngine(RiseMapEngine):
 
     def triggerNewAreaMaps(self):
         self.runFastBuildingsMap()
-        self.runBuildingsArchive(True)
 
     def triggerNewAreaArchives(self):
         self.runBuildingsArchive(False)
@@ -140,6 +139,7 @@ class BuildingMapEngine(RiseMapEngine):
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
             bAddedAtLeastOneFile = False
+            bTriggerShortArchive = False
 
             for sFile in asWorkspaceFiles:
                 asNameParts = sFile.split("_")
@@ -157,6 +157,7 @@ class BuildingMapEngine(RiseMapEngine):
 
                     if "fastBuildingMap" in oTask.pluginPayload:
                         oMapConfig = self.getMapConfig("world_cover_buildings")
+                        bTriggerShortArchive = True
                     else:
                         oMapConfig = self.getMapConfig("building_cw")
 
@@ -169,6 +170,10 @@ class BuildingMapEngine(RiseMapEngine):
 
             if not bAddedAtLeastOneFile:
                 logging.info("BuildingMapEngine.handleTask: no new files found to add, we finish here")
+
+            if bTriggerShortArchive:
+                logging.info("BuildingMapEngine.handleTask: this was the frist fast building map, we trigger now the short archive")
+                self.runBuildingsArchive(True)
                 
         except Exception as oEx:
             logging.error("BuildingMapEngine.handleTask: exception " + str(oEx))
