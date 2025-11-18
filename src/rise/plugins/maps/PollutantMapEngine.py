@@ -123,16 +123,18 @@ class PollutantMapEngine(RiseMapEngine):
                     logging.info(
                         "PollutantMapEngine.handleTask: the map does not exist in the product list ,something is wrong, we stop here ")
                     return
+                
+                oMapConfig = self.getMapConfig(sPollutantName)
+
+                if oMapConfig is None:
+                    logging.info("PollutantMapEngine.handleTask: cannot find map config for map id " + sPollutantName + " we stop here ")
+                    continue
 
                 # publish each map alone
-                self.addAndPublishLayer(sOutputFileName, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
+                self.addAndPublishLayer(sOutputFileName, oReferenceDate, bPublish=True, sMapIdForStyle=sPollutantName,
                                         bKeepLayer=False, sDataSource=oMapConfig.dataSource,
                                         sResolution=oMapConfig.resolution, sInputData=oMapConfig.inputData,
-                                        sOverrideMapId=sMapConfig)
-
-
-
-
+                                        sOverrideMapId=sPollutantName)
 
         except Exception as oEx:
             logging.error("PollutantMapEngine.handleTask: exception " + str(oEx))
