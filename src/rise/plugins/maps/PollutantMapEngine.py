@@ -54,16 +54,16 @@ class PollutantMapEngine(RiseMapEngine):
         asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
         for sPollutantName in asPollutants:
             # todo this is a temp fix for the output file name,
-            sOutputFileName1 = sBaseName + "S5_" + sPollutantName + "_" + sYesterday + "_" + sYesterday + ".tif"
-            sOutputFileName2 = sBaseName + "S5_" + sPollutantName + "_Day" + sYesterday + ".tif"
+            sOutputFileName1 = sBaseName + "_S5_" + sPollutantName + "_" + sYesterday + "_" + sYesterday
+            sOutputFileName2 = sBaseName + "_S5_" + sPollutantName + "_Day" + sYesterday
             # here we found the pollutant element in the workspace so no need to do it again
-            if sOutputFileName1 in asWorkspaceFiles or sOutputFileName2 in asWorkspaceFiles:
+            if sOutputFileName1 in asWorkspaceFiles or sOutputFileName2 in asWorkspaceFiles or sOutputFileName1 + ".tif" in asWorkspaceFiles or sOutputFileName2 + ".tif" in asWorkspaceFiles:
                 logging.info(
                     "PollutantMapEngine.updateNewMaps: We already have this product ready for today , no need to run again , product name is " + sOutputFileName1)
                 continue
             else:
                 asPollutantsToCreateNewAppFpr.append(sPollutantName)
-        # here we have product for each pollutant, so no need to lauch a new app
+        # here we have product for each pollutant, so no need to launch a new app
         if len(asPollutantsToCreateNewAppFpr) == 0:
             logging.info(
                 "PollutantMapEngine.updateNewMaps: We already have for all pollutants element a  product ready for today , no need to run again")
@@ -113,28 +113,55 @@ class PollutantMapEngine(RiseMapEngine):
             asPollutants = ["NO2", "HCHO", "CO", "O3", "CH4", "SO2"]
             asFiles = wasdi.getProductsByActiveWorkspace()
             oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
-            sMapConfig = "pollution_map"
-            oMapConfig = self.getMapConfig(sMapConfig)
+            sMapConfig = "pollutant_map"
             for sPollutantName in asPollutants:
-                sOutputFileName = sBaseName + "S5_" + sPollutantName + "_Day" + sYesterday + ".tif"
+                sOutputFileName1 = sBaseName + "_S5_" + sPollutantName + "_" + sYesterday + "_" + sYesterday
+                sOutputFileName2 = sBaseName + "_S5_" + sPollutantName + "_Day" + sYesterday
                 # checking if the file really exists in the wasdi product list
-                if sOutputFileName not in asFiles:
+                if sOutputFileName1 in asFiles or sOutputFileName1 + ".tif" in asFiles:
+                    # here we will add the .tif in case it does not exist
+                    if not sOutputFileName1.endswith(".tif"):
+                        sOutputFileName1 += ".tif"
+
+                    oMapConfig = self.getMapConfig(sPollutantName)
+
+                    if oMapConfig is None:
+                        logging.info(
+                            "PollutantMapEngine.handleTask: cannot find map config for map id " + sPollutantName + " we stop here ")
+                        continue
+                    # publish each map alone
+                    self.addAndPublishLayer(sOutputFileName1, oReferenceDate, bPublish=True,
+                                            sMapIdForStyle=sPollutantName, bKeepLayer=False,
+                                            sDataSource=oMapConfig.dataSource, sResolution=oMapConfig.resolution,
+                                            sInputData=oMapConfig.inputData, sOverrideMapId=sPollutantName)
+                elif sOutputFileName2 in asFiles or sOutputFileName2 + ".tif" in asFiles:
+
+                    # here we will add the .tif in case it does not exist
+                    if not sOutputFileName1.endswith(".tif"):
+                        sOutputFileName1 += ".tif"
+
+                    oMapConfig = self.getMapConfig(sPollutantName)
+
+                    if oMapConfig is None:
+                        logging.info(
+                            "PollutantMapEngine.handleTask: cannot find map config for map id " + sPollutantName + " we stop here ")
+                        continue
+                    # publish each map alone
+                    self.addAndPublishLayer(sOutputFileName1, oReferenceDate, bPublish=True,
+                                            sMapIdForStyle=sPollutantName, bKeepLayer=False,
+                                            sDataSource=oMapConfig.dataSource, sResolution=oMapConfig.resolution,
+                                            sInputData=oMapConfig.inputData, sOverrideMapId=sPollutantName)
+                else:
                     # should exist
                     logging.info(
                         "PollutantMapEngine.handleTask: the map does not exist in the product list ,something is wrong, we stop here ")
-                    return
-                
-                oMapConfig = self.getMapConfig(sPollutantName)
-
-                if oMapConfig is None:
-                    logging.info("PollutantMapEngine.handleTask: cannot find map config for map id " + sPollutantName + " we stop here ")
                     continue
 
-                # publish each map alone
-                self.addAndPublishLayer(sOutputFileName, oReferenceDate, bPublish=True, sMapIdForStyle=sPollutantName,
-                                        bKeepLayer=False, sDataSource=oMapConfig.dataSource,
-                                        sResolution=oMapConfig.resolution, sInputData=oMapConfig.inputData,
-                                        sOverrideMapId=sPollutantName)
+
+
+
+
+
 
         except Exception as oEx:
             logging.error("PollutantMapEngine.handleTask: exception " + str(oEx))
