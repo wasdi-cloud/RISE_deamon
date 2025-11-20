@@ -112,6 +112,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 aoIntegratedArchiveParameters["ARCHIVE_START_DATE"] = oMapConfig.startArchiveDate
                 # Until the end date of the short archive
                 aoIntegratedArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
+                # Suffix of the Flood Frequency Map
                 aoIntegratedArchiveParameters["FFM_IDENTIFIER"] = "archiveffm"
             else:
                 # Take today
@@ -121,6 +122,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 # Ok set the values!
                 aoIntegratedArchiveParameters["ARCHIVE_START_DATE"] = iStart.strftime("%Y-%m-%d")
                 aoIntegratedArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
+                # It will take the default suffix for the flood frequency map
 
             aoIntegratedArchiveParameters["MOSAICBASENAME"] = self.getBaseName()
 
@@ -155,9 +157,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTask.pluginPayload["fullArchive"] = bFullArchive
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
-                logging.info(
-                    "SarFloodMapEngine.runIntegratedArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                logging.info("SarFloodMapEngine.runIntegratedArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName( self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
                 logging.warning("SarFloodMapEngine.runIntegratedArchive: simulation mode on - we do not run nothing")
 
@@ -541,18 +541,37 @@ class SarFloodMapEngine(RiseMapEngine):
 
             # Flood Frequency Map
             sFFmMap = sBaseName + "_ffm_flood.tif"
-            oMapConfig = self.getMapConfig("flood_frequency_map")
+            sFFmDataMap = sBaseName + "_ffm_data.tif"
+            sFFmPercMap = sBaseName + "_ffm_frequency.tif"
 
             if not bFullArchive:
                 # Publish the FFM
                 if  sFFmMap in asWorkspaceFiles:
+                    oMapConfig = self.getMapConfig("flood_frequency_map")
                     oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, True, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bKeepLayer=True)
 
                     if oLayer is None:
                         logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+                # Publish the Data Count
+                if  sFFmDataMap in asWorkspaceFiles:
+                    oMapConfig = self.getMapConfig("flood_frequency_map_data")
+                    oLayer = self.addAndPublishLayer(sFFmDataMap, oActualDate, True, "flood_frequency_map_data", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bKeepLayer=True)
+
+                    if oLayer is None:
+                        logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data!")
+                # Publish the Percentage FFM
+                if  sFFmPercMap in asWorkspaceFiles:
+                    oMapConfig = self.getMapConfig("flood_frequency_map_perc")
+                    oLayer = self.addAndPublishLayer(sFFmPercMap, oActualDate, True, "flood_frequency_map_perc", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bKeepLayer=True)
+
+                    if oLayer is None:
+                        logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm perc!")
             else:
                 # This is the long term archive: we need to sum the short archive ffm with the long one
                 sFullArchiveFFmMap = sBaseName + "_archiveffm_flood.tif"
+                
+                # TODO: the update of the percentage map is not yet implemented
+                sFullArchiveFFmPercMap = sBaseName + "_archiveffm_frequency.tif"
 
                 if sFullArchiveFFmMap in asWorkspaceFiles:
 
@@ -582,19 +601,20 @@ class SarFloodMapEngine(RiseMapEngine):
 
                             sSumDataMapsId2 = wasdi.executeProcessor("tiff_images_add", aoTiffAddParams)
                             sStatus = wasdi.waitProcess(sSumDataMapsId2)
-                            # We do not publish yet the Data Sub-Map 
-                            # if sStatus == "DONE":
-                            #     oLayer = self.addAndPublishLayer(sDataMap, oActualDate, True,
-                            #                                      "flood_frequency_map", sResolution=oMapConfig.resolution,
-                            #                                      sDataSource=oMapConfig.dataSource,
-                            #                                      sInputData=oMapConfig.inputData,
-                            #                                      sOverrideMapId=oMapConfig.id, bForceRepublish=True, bKeepLayer=True)
+                            if sStatus == "DONE":
+                                oMapConfig = self.getMapConfig("flood_frequency_map_data")
+                                oLayer = self.addAndPublishLayer(sDataMap, oActualDate, True,
+                                                                 "flood_frequency_map?data", sResolution=oMapConfig.resolution,
+                                                                 sDataSource=oMapConfig.dataSource,
+                                                                 sInputData=oMapConfig.inputData,
+                                                                 sOverrideMapId=oMapConfig.id, bForceRepublish=True, bKeepLayer=True)
 
-                            #     if oLayer is None:
-                            #         logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data map!")
+                                if oLayer is None:
+                                    logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data map!")
 
                         sStatus = wasdi.waitProcess(sSumFloodMapsId)
                         if sStatus == "DONE":
+                            oMapConfig = self.getMapConfig("flood_frequency_map")
                             oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, not bFullArchive, "flood_frequency_map",
                                                              sResolution=oMapConfig.resolution,
                                                              sDataSource=oMapConfig.dataSource,

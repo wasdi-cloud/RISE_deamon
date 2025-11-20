@@ -28,25 +28,47 @@ class FloodFrequencyMapEngine(RiseMapEngine):
             if not super().handleTask(oTask):
                 return False
 
+            # We need the sar flood map entity
             oMapRepository = MapRepository()
             oSarMap = oMapRepository.getEntityById("sar_flood")
 
+            # Get the reference date
             sDate = oTask.referenceDate
-            sFileName = self.getFFMfloodMapName()
             oDate = datetime.strptime(sDate,"%Y-%m-%d")
-            oMapConfig = self.getMapConfig()
 
+            # We open the workspace
             self.m_oPluginEngine.createOrOpenWorkspace(oSarMap)
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
+
+            # We check and update the 3 maps if present
+            sFileName = self.getFFMfloodMapName()
+            oMapConfig = self.getMapConfig("flood_frequency_map")
 
             if sFileName in asWorkspaceFiles:
                 self.updateChainParamsDate(self.m_sChainParamsFile, sDate, "lastFFMUpdate")
                 self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, bForceRepublish=True)
 
+            sFileName = self.getFFMdataMapName()
+            oMapConfig = self.getMapConfig("flood_frequency_map_data")
+
+            if sFileName in asWorkspaceFiles:
+                self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map_data", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, bForceRepublish=True)
+
+            sFileName = self.getFFMpercMapName()
+            oMapConfig = self.getMapConfig("flood_frequency_map_perc")
+
+            if sFileName in asWorkspaceFiles:
+                self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map_perc", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, bForceRepublish=True)
+
         except Exception as oEx:
             logging.error("FloodFrequencyMapEngine.handleTask: exception " + str(oEx))
 
     def updateNewMaps(self):
+
+        if self.m_oMapEntity.id != "flood_frequency_map":
+            logging.debug("FloodFrequencyMapEngine.updateNewMaps: map id is not flood_frequency_map, we stop here")
+            return
+        
         # Take today as reference date
         oToday = datetime.now()
         # Go to yesterday
@@ -109,6 +131,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                 aoFFMParams["updateExistingMap"] = True
                 aoFFMParams["floodMapToUpdate"] = self.getFFMfloodMapName()
                 aoFFMParams["dataMapToUpdate"] = self.getFFMdataMapName()
+                aoFFMParams["frequencyMapToUpdate"] = self.getFFMpercMapName()
                 aoFFMParams["startDate"] = sDate
                 aoFFMParams["endDate"] = sDate
 
@@ -121,9 +144,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                     oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoFFMParams,"floodfrequencymap", sDate)
                     oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                    logging.info(
-                        "FloodFrequencyMapEngine.updateNewMaps: Started floodfrequencymap in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                            self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                    logging.info("FloodFrequencyMapEngine.updateNewMaps: Started floodfrequencymap in Workspace " + self.m_oPluginEngine.getWorkspaceName( self.m_oMapEntity) + " for Area " + self.m_oArea.name)
                 else:
                     logging.info("FloodFrequencyMapEngine.updateNewMaps: simulation mode on, like I started FFM for date " + sDate)
         else:
@@ -134,3 +155,6 @@ class FloodFrequencyMapEngine(RiseMapEngine):
 
     def getFFMdataMapName(self):
         return self.getBaseName("sar_flood")+"_ffm_data.tif"
+    
+    def getFFMpercMapName(self):
+        return self.getBaseName("sar_flood")+"_ffm_frequency.tif"    
