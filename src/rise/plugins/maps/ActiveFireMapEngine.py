@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+import datetime
+from  datetime import timedelta
 import logging
 
 import wasdi
@@ -13,7 +14,7 @@ class ActiveFireMapEngine(RiseMapEngine):
 
     def triggerNewAreaMaps(self):
         # Take today
-        iEnd = datetime.today()
+        iEnd = datetime.datetime.today()
         # Get the map config
         oMapConfig = self.getMapConfig()
         # And go back of the number of days of the short archive
@@ -68,16 +69,16 @@ class ActiveFireMapEngine(RiseMapEngine):
             return
 
         # Open the workspace
-        self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+        sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
         asFiles = wasdi.getProductsByActiveWorkspace()
 
         # Check if we have to run for today
-        oToday = datetime.now(datetime.UTC)
+        oToday = datetime.datetime.now(datetime.UTC)
         sDay = oToday.strftime("%Y-%m-%d")
 
         sTodayMapName = self.getMapNameForDate(sDay)
         if sTodayMapName not in asFiles:
-            self.runForDate(sDay)
+            self.runForDate(sDay, sWorkspaceId)
         else:
             logging.info("ActiveFireMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Today's map already exists, no need to run again.")
 
@@ -87,7 +88,7 @@ class ActiveFireMapEngine(RiseMapEngine):
 
         sYesterdayMapName = self.getMapNameForDate(sYesterday)
         if sYesterdayMapName not in asFiles:
-            self.runForDate(sYesterday)
+            self.runForDate(sYesterday, sWorkspaceId)
         else:
             logging.info("ActiveFireMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Yesterday's map already exists, no need to run again.")
 
@@ -176,7 +177,7 @@ class ActiveFireMapEngine(RiseMapEngine):
                         logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: cannot extract the reference date from the file name , we skip it " + sFile)
                         continue
 
-                    oReferenceDate = datetime.strptime(sReferenceDate, "%Y-%m-%d")
+                    oReferenceDate = datetime.datetime.strptime(sReferenceDate, "%Y-%m-%d")
                     oMapConfig = self.getMapConfig()
 
                     self.addAndPublishLayer(sFile, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
@@ -193,7 +194,7 @@ class ActiveFireMapEngine(RiseMapEngine):
                     logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: the map does not exist in the product list ,something is wrong, we stop here ")
                     return
 
-                oReferenceDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
+                oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
                 sMapConfig = "active_fire_map"
                 oMapConfig = self.getMapConfig(sMapConfig)
 
