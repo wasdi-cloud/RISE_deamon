@@ -267,6 +267,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.warning("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
         else:
             logging.info("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: the VIIRS map for " + sToday + " is already available")
+    
     def updateNewMaps(self):
         # Open our workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)

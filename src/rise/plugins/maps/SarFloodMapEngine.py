@@ -37,6 +37,30 @@ class SarFloodMapEngine(RiseMapEngine):
         if self.m_oArea.supportArchive:
             self.runIntegratedArchive(True)
 
+
+    def isFInishedFirstShortArchive(self, sWorkspaceId=""):
+        
+        # We need to wait for the initial archive to finish
+        oWasdiTaskRepository = WasdiTaskRepository()
+        aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id, sWorkspaceId, "integrated_sar_flood_archive")
+
+        if len(aoExistingTasks) > 0:
+            for oTask in aoExistingTasks:
+                bFullArchive = True
+                if oTask.pluginPayload is not None and "fullArchive" in oTask.pluginPayload:
+                    bFullArchive = oTask.pluginPayload["fullArchive"]
+
+                if not bFullArchive:
+                    if self.isRunningStatus(oTask.status):
+                        logging.info("SarFloodMapEngine.isFInishedFirstShortArchive [" + self.m_oArea.name +"]: the initial short archive is still ongoing we will wait it to finish " + oTask.id)
+                        return False
+                    else:
+                        return True
+        else:   
+            logging.info("SarFloodMapEngine.isFInishedFirstShortArchive [" + self.m_oArea.name +"]: no short archive task found")
+            
+        return False
+
     def updateNewMaps(self):
         # Open our workspace
         self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
@@ -56,14 +80,22 @@ class SarFloodMapEngine(RiseMapEngine):
             logging.warning("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: impossible to find parameters for map " + self.m_oMapEntity.id)
             return
 
+        # Open our workspace
+        sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+        # Check if the initial short archive is finished or not
+        if not self.isFInishedFirstShortArchive(sWorkspaceId):
+            logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
         oToday = datetime.today()
         sToday = oToday.strftime("%Y-%m-%d")
-        self.startDailySARFloodDetection(sToday,oMapConfig,aoFloodChainParameters)
+        self.startDailySARFloodDetection(sToday,oMapConfig,aoFloodChainParameters, sWorkspaceId)
 
         oTimeDelta = timedelta(days=1)
         oYesterday = oToday - oTimeDelta
         sYesterday = oYesterday.strftime("%Y-%m-%d")
-        self.startDailySARFloodDetection(sYesterday,oMapConfig,aoFloodChainParameters)
+        self.startDailySARFloodDetection(sYesterday,oMapConfig,aoFloodChainParameters, sWorkspaceId)
 
     def runIntegratedArchive(self, bFullArchive):
         '''
@@ -110,7 +142,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 iEnd = iEnd - timedelta(days=oMapConfig.shortArchiveDaysBack)
                 # Set from the declared beginning
                 aoIntegratedArchiveParameters["ARCHIVE_START_DATE"] = oMapConfig.startArchiveDate
-                # Until the end date of the short archive
+                # Until the start date of the short archive
                 aoIntegratedArchiveParameters["ARCHIVE_END_DATE"] = iEnd.strftime("%Y-%m-%d")
                 # Suffix of the Flood Frequency Map
                 aoIntegratedArchiveParameters["FFM_IDENTIFIER"] = "archiveffm"
@@ -452,13 +484,13 @@ class SarFloodMapEngine(RiseMapEngine):
             try:
                 oStartDay = datetime.strptime(sStartDate, '%Y-%m-%d')
             except:
-                logging.error('SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: Start Date not valid')
+                logging.error('SarFloodMapEngine.handleArchiveTask [' + self.m_oArea.name + "]: Start Date not valid")
                 return False
 
             try:
                 oEndDay = datetime.strptime(sEndDate, '%Y-%m-%d')
             except:
-                logging.error('SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: End Date not valid')
+                logging.error('SarFloodMapEngine.handleArchiveTask [' + self.m_oArea.name + "]: End Date not valid")
                 return False
 
             oTimeDelta = timedelta(days=1)
@@ -659,10 +691,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 oAreaRepository = AreaRepository()
                 oAreaRepository.updateEntity(self.m_oArea)
 
-    def startDailySARFloodDetection(self, sDay, oMapConfig, aoFloodChainParameters):
-        # Open our workspace
-        sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
-
+    def startDailySARFloodDetection(self, sDay, oMapConfig, aoFloodChainParameters, sWorkspaceId):
         # Did we already start any map today?
         oWasdiTaskRepository = WasdiTaskRepository()
 
@@ -703,7 +732,8 @@ class SarFloodMapEngine(RiseMapEngine):
             sChainOrbits = aoIntegratedChainParams["orbits"]
             sWaterMap = aoIntegratedChainParams["water_map"]
             sCopDemMap = aoIntegratedChainParams["CopDemMap"]
-            sLastMapDate = aoIntegratedChainParams["lastMapDate"]
+            if "lastMapDate" in aoIntegratedChainParams:
+                sLastMapDate = aoIntegratedChainParams["lastMapDate"]
         else:
             logging.warning("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: no chain params found, we try to recover at least orbits from past run")
             sChainOrbits = self.recoverOrbitsFromAutofloodChain()

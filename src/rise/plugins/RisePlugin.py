@@ -174,7 +174,7 @@ class RisePlugin:
 
             if len(self.m_aoMapEngines)>0:
                 for oMapEngine in self.m_aoMapEngines:
-                    logging.info("RisePlugin.updateNewMaps: Starting new Maps for Map Engine Named: " + oMapEngine.getName())
+                    logging.info("RisePlugin.updateNewMaps: Starting new Maps for Map Engine Named: " + oMapEngine.getName() + "[" + oMapEngine.getId() + "]")
                     oMapEngine.updateNewMaps()
             else:
                 logging.warning("RisePlugin.updateNewMaps:  this plugin has no map engines")

@@ -21,6 +21,8 @@ class FloodFrequencyMapEngine(RiseMapEngine):
 
     def triggerNewAreaArchives(self):
         logging.info("FloodFrequencyMapEngine.triggerNewAreaArchives[" + self.m_oArea.name +"]: Flood Frequency Map long archive is handled by the integrated chain")
+
+    
     def handleTask(self, oTask):
         try:
             # First of all we check if it is safe and done

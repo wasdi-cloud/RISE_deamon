@@ -108,6 +108,16 @@ class RiseMapEngine:
         if self.m_oMapEntity is not None:
             return self.m_oMapEntity.name
         return ""
+    
+    def getId(self):
+        if self.m_oMapEntity is not None:
+            return self.m_oMapEntity.id
+        return ""
+    
+    def getEngineClassName(self):
+        if self.m_oMapEntity is not None:
+            return self.m_oMapEntity.className
+        return ""
 
     def handleTask(self, oTask):
         '''

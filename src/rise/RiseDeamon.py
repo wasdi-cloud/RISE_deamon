@@ -38,7 +38,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.3.2")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.3.3")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False
@@ -175,6 +175,10 @@ class RiseDeamon:
 
         # For all the new area
         for oArea in aoNewAreas:
+
+            if oArea.supportArchive is False:
+                logging.debug("RiseDeamon.handleNewAreas: Area " + str(oArea.name) + " ["+oArea.id + "] does not support archives, skipping archive trigger")
+                continue
 
             logging.info("RiseDeamon.handleNewAreas: Trigger archives for new area " + str(oArea.name) + " ["+oArea.id + "]")
 
