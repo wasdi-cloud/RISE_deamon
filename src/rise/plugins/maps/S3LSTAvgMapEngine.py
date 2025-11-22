@@ -14,10 +14,10 @@ class S3LSTAvgMapEngine(RiseMapEngine):
         self.updateNewMaps()
 
     def triggerNewAreaArchives(self):
-        logging.debug("S3LSTAvgMapEngine.triggerNewAreaArchives: Map generated in the general LST Map")
+        logging.debug("S3LSTAvgMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: Map generated in the general LST Map")
 
     def updateNewMaps(self):
-        logging.debug("S3LSTAvgMapEngine.updateNewMaps: Map generated in the general LST Map")
+        logging.debug("S3LSTAvgMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Map generated in the general LST Map")
 
     def handleTask(self, oTask):
-        logging.debug("S3LSTAvgMapEngine.handleTask: Map generated in the general LST Map")
+        logging.debug("S3LSTAvgMapEngine.handleTask [" + self.m_oArea.name +"]: Map generated in the general LST Map")

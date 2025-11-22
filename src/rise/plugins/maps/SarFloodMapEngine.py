@@ -46,14 +46,14 @@ class SarFloodMapEngine(RiseMapEngine):
 
         # without this config we have a problem
         if oMapConfig is None:
-            logging.warning("SarFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
+            logging.warning("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: impossible to find configuration for map " + self.m_oMapEntity.id)
             return
 
         aoFloodChainParameters = oMapConfig.params
 
         # Well, we need the params in the config
         if aoFloodChainParameters is None:
-            logging.warning("SarFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
+            logging.warning("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: impossible to find parameters for map " + self.m_oMapEntity.id)
             return
 
         oToday = datetime.today()
@@ -79,13 +79,13 @@ class SarFloodMapEngine(RiseMapEngine):
             oMapConfig = self.getMapConfig("integrated_archive")
 
             if oMapConfig is None:
-                logging.warning("SarFloodMapEngine.runIntegratedArchive: impossible to find configuration for map " + self.m_oMapEntity.id)
+                logging.warning("SarFloodMapEngine.runIntegratedArchive [" + self.m_oArea.name +"]: impossible to find configuration for map " + self.m_oMapEntity.id)
                 return
 
             aoIntegratedArchiveParameters = oMapConfig.params
 
             if aoIntegratedArchiveParameters is None:
-                logging.warning("SarFloodMapEngine.runIntegratedArchive: impossible to find parameters for map " + self.m_oMapEntity.id)
+                logging.warning("SarFloodMapEngine.runIntegratedArchive [" + self.m_oArea.name +"]: impossible to find parameters for map " + self.m_oMapEntity.id)
                 return
 
             # We need to check if the task is alredy ongoing
@@ -96,7 +96,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 for oTask in aoExistingTasks:
                     if "integratedArchive" in oTask.pluginPayload and "fullArchive" in oTask.pluginPayload:
                         if oTask.pluginPayload["fullArchive"] == bFullArchive:
-                            logging.info("SarFloodMapEngine.runIntegratedArchive: task already on-going")
+                            logging.info("SarFloodMapEngine.runIntegratedArchive [" + self.m_oArea.name +"]: task already on-going")
                             return True
 
             # We need to prepare the parameters for the integrated archive
@@ -157,13 +157,13 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTask.pluginPayload["fullArchive"] = bFullArchive
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
-                logging.info("SarFloodMapEngine.runIntegratedArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName( self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                logging.info("SarFloodMapEngine.runIntegratedArchive [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName( self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
-                logging.warning("SarFloodMapEngine.runIntegratedArchive: simulation mode on - we do not run nothing")
+                logging.warning("SarFloodMapEngine.runIntegratedArchive [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
 
             return True
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.runIntegratedArchive: exception " + str(oEx))
+            logging.error("SarFloodMapEngine.runIntegratedArchive [" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def handleTask(self, oTask):
         try:
@@ -173,12 +173,12 @@ class SarFloodMapEngine(RiseMapEngine):
             
             sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
-            logging.info("SarFloodMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("SarFloodMapEngine.handleTask [" + self.m_oArea.name +"]: handle task " + oTask.id)
 
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
             if len(asWorkspaceFiles) == 0:
-                logging.warning("SarFloodMapEngine.handleTask: we do not have files in the workspace... ")
+                logging.warning("SarFloodMapEngine.handleTask [" + self.m_oArea.name +"]: we do not have files in the workspace... ")
 
                 return False
 
@@ -193,7 +193,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 # This was a daily map
                 return self.handleDailyTask(oTask, asWorkspaceFiles)
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.handleTask: exception " + str(oEx))
+            logging.error("SarFloodMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))
             return False
 
     def handleDailyTask(self, oTask, asWorkspaceFiles):
@@ -209,7 +209,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 self.addAndPublishLayer(sFileName, oDate, True, "autofloodchain2", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.handleDailyTask: exception " + str(oEx))
+            logging.error("SarFloodMapEngine.handleDailyTask [" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def handleEvents(self, sEventFinderId, asWorkspaceFiles, sSuffix):
         """
@@ -360,7 +360,7 @@ class SarFloodMapEngine(RiseMapEngine):
                         logging.debug("Event " + "Flood_" + oEvent["peakDate"] + " already in the db")
 
                 except Exception as oEx:
-                    logging.error("SarFloodMapEngine.handleEvents: error creating events " + str(oEx))
+                    logging.error("SarFloodMapEngine.handleEvents [" + self.m_oArea.name +"]: error creating events " + str(oEx))
             
             for oImpactDetection in aoImpactDetections:
                 try:
@@ -369,10 +369,10 @@ class SarFloodMapEngine(RiseMapEngine):
                     sDate = oImpactDetection["DATE"]
                     self.createImpactsOfTheDayWidget(sProcessObjId, sDate,sMapType)
                 except Exception as oEx:
-                    logging.error("SarFloodMapEngine.handleEvents: error processing impact detection " + str(oEx))
+                    logging.error("SarFloodMapEngine.handleEvents [" + self.m_oArea.name +"]: error processing impact detection " + str(oEx))
 
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.handleEvents: error " + str(oEx))
+            logging.error("SarFloodMapEngine.handleEvents [" + self.m_oArea.name +"]: error " + str(oEx))
         return
 
     def getInputDataForUrbanFlood(self, iEvent, aoUrbanDetections, sInputData=""):
@@ -400,7 +400,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 if "POST_VH" in aoPayload:
                     sInputData = sInputData + " POST VH Coherence: " + aoPayload["POST_VH"]
         except:
-            logging.warning("Error trying to read the inputs of Urban Detection for map")
+            logging.warning("SarFloodMapEngine.getInputDataForUrbanFlood [" + self.m_oArea.name +"]: Error  trying to read the inputs of Urban Detection for map")
         
         return sInputData
 
@@ -425,9 +425,9 @@ class SarFloodMapEngine(RiseMapEngine):
                     try:
                         sInputData = "Daily SAR Flood Maps from " + oEvent["startDate"] + " to " + oEvent["endDate"]
                     except Exception as oEx:
-                        logging.warning("handleEvents: error building input data string " + str(oEx))
+                        logging.warning("SarFloodMapEngine.getInputDateForCompositeMap [" + self.m_oArea.name +"]: error building input data string " + str(oEx))
         except:
-            logging.warning("Error trying to read the inputs of an Event Composite Map ")
+            logging.warning("SarFloodMapEngine.getInputDateForCompositeMap: Error  [" + self.m_oArea.name +"] trying to read the inputs of an Event Composite Map ")
 
     def checkAndPublishImpactLayer(self, sImpactMap, sInputData, sMapId, oEventPeakDate, oImpactsPluginConfig, asWorkspaceFiles):
         if sImpactMap in asWorkspaceFiles:
@@ -442,7 +442,7 @@ class SarFloodMapEngine(RiseMapEngine):
         fLastMapTimestamp = -1.0
 
         try:
-            logging.info("SarFloodMapEngine.handleArchiveTask: task done, lets proceed!")
+            logging.info("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: task done, lets proceed!")
 
             # We take the base name  and start/end archive date
             sBaseName = oTask.inputParams["MOSAICBASENAME"]
@@ -452,13 +452,13 @@ class SarFloodMapEngine(RiseMapEngine):
             try:
                 oStartDay = datetime.strptime(sStartDate, '%Y-%m-%d')
             except:
-                logging.error('SarFloodMapEngine.handleArchiveTask: Start Date not valid')
+                logging.error('SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: Start Date not valid')
                 return False
 
             try:
                 oEndDay = datetime.strptime(sEndDate, '%Y-%m-%d')
             except:
-                logging.error('SarFloodMapEngine.handleArchiveTask: End Date not valid')
+                logging.error('SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: End Date not valid')
                 return False
 
             oTimeDelta = timedelta(days=1)
@@ -479,11 +479,11 @@ class SarFloodMapEngine(RiseMapEngine):
                     oActualDate = oActualDate + oTimeDelta
                     continue
 
-                logging.info("SarFloodMapEngine.handleArchiveTask: Found " + sFileName + ", add the layer to db")
+                logging.info("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: Found " + sFileName + ", add the layer to db")
                 oLayer = self.addAndPublishLayer(sFileName, oActualDate, not bFullArchive, "sar_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
                 if oLayer is None:
-                    logging.warning("SarFloodMapEngine.handleArchiveTask: layer not good!")
+                    logging.warning("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: layer not good!")
                     continue
 
                 if fFirstMapTimestamp == -1.0:
@@ -534,7 +534,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTaskRepository = WasdiTaskRepository()
                 oWasdiTaskRepository.updateEntity(oTask)
             except Exception as oEx:
-                logging.error("SarFloodMapEngine.handleArchiveTask: error updating task to save Chain Params " + str(oEx))
+                logging.error("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: error updating task to save Chain Params " + str(oEx))
 
             # Handle the events array
             self.handleEvents(sEventFinderId, asWorkspaceFiles, oTask.inputParams["SUFFIX"])
@@ -551,21 +551,21 @@ class SarFloodMapEngine(RiseMapEngine):
                     oLayer = self.addAndPublishLayer(sFFmMap, oActualDate, True, "flood_frequency_map", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bKeepLayer=True)
 
                     if oLayer is None:
-                        logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+                        logging.warning("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: problems publishing ffm!")
                 # Publish the Data Count
                 if  sFFmDataMap in asWorkspaceFiles:
                     oMapConfig = self.getMapConfig("flood_frequency_map_data")
                     oLayer = self.addAndPublishLayer(sFFmDataMap, oActualDate, True, "flood_frequency_map_data", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bKeepLayer=True)
 
                     if oLayer is None:
-                        logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data!")
+                        logging.warning("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: problems publishing ffm data!")
                 # Publish the Percentage FFM
                 if  sFFmPercMap in asWorkspaceFiles:
                     oMapConfig = self.getMapConfig("flood_frequency_map_perc")
                     oLayer = self.addAndPublishLayer(sFFmPercMap, oActualDate, True, "flood_frequency_map_perc", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bKeepLayer=True)
 
                     if oLayer is None:
-                        logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm perc!")
+                        logging.warning("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: problems publishing ffm perc!")
             else:
                 # This is the long term archive: we need to sum the short archive ffm with the long one
                 sFullArchiveFFmMap = sBaseName + "_archiveffm_flood.tif"
@@ -575,7 +575,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
                 if sFullArchiveFFmMap in asWorkspaceFiles:
 
-                    logging.info("SarFloodMapEngine.handleArchiveTask: trying to sum full FFM with the short archive one")
+                    logging.info("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: trying to sum full FFM with the short archive one")
 
                     # We have the ffm done for the full archive: we need to sum it to the short-near real time one
                     aoTiffAddParams = {}
@@ -610,7 +610,7 @@ class SarFloodMapEngine(RiseMapEngine):
                                                                  sOverrideMapId=oMapConfig.id, bForceRepublish=True, bKeepLayer=True)
 
                                 if oLayer is None:
-                                    logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm data map!")
+                                    logging.warning("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: problems publishing ffm data map!")
 
                         sStatus = wasdi.waitProcess(sSumFloodMapsId)
                         if sStatus == "DONE":
@@ -621,9 +621,9 @@ class SarFloodMapEngine(RiseMapEngine):
                                                              sInputData=oMapConfig.inputData, sOverrideMapId=oMapConfig.id, bForceRepublish=True)
 
                             if oLayer is None:
-                                logging.warning("SarFloodMapEngine.handleArchiveTask: problems publishing ffm!")
+                                logging.warning("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: problems publishing ffm!")
                     else:
-                        logging.info("SarFloodMapEngine.handleArchiveTask: simulation mode on")
+                        logging.info("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: simulation mode on")
 
             self.updateChainParamsDate(self.m_sChainParamsFile, sEndDate, "lastMapDate")
 
@@ -632,7 +632,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
             return True
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.handleArchiveTask: exception " + str(oEx))
+            logging.error("SarFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: exception " + str(oEx))
             return False
         finally:
             bChanged = False
@@ -676,7 +676,7 @@ class SarFloodMapEngine(RiseMapEngine):
         # if we have existing tasks
         for oTask in aoExistingTasks:
             if self.isRunningStatus(oTask.status):
-                logging.info("SarFloodMapEngine.updateNewMaps: a task is still ongoing " + oTask.id)
+                logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: a task is still ongoing " + oTask.id)
                 return
             elif self.isDoneStatus(oTask.status):
                 if oTask.startDate>iTimestamp:
@@ -705,13 +705,13 @@ class SarFloodMapEngine(RiseMapEngine):
             sCopDemMap = aoIntegratedChainParams["CopDemMap"]
             sLastMapDate = aoIntegratedChainParams["lastMapDate"]
         else:
-            logging.warning("SarFloodMapEngine.updateNewMaps: no chain params found, we try to recover at least orbits from past run")
+            logging.warning("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: no chain params found, we try to recover at least orbits from past run")
             sChainOrbits = self.recoverOrbitsFromAutofloodChain()
             sWaterMap = "HighResWaterMap.tif"
 
         # If we have a task
         if sTodayTaskId is not None:
-            logging.info("SarFloodMapEngine.updateNewMaps: We already ran once for date " + sDay + ": read the payload of the application " + sTodayTaskId)
+            logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: We already ran once for date " + sDay + ": read the payload of the application " + sTodayTaskId)
             # And if it is done
 
             # We need to check if there are new images: take the payload
@@ -722,7 +722,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
             if "ResultsPerOrbit" in aoFloodChainPayload:
 
-                logging.info("SarFloodMapEngine.updateNewMaps: check if we find more images for day " + sDay)
+                logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: check if we find more images for day " + sDay)
                              # For each orbit
                 for sOrbit in asOrbits:
 
@@ -759,10 +759,10 @@ class SarFloodMapEngine(RiseMapEngine):
                         # Are more than before?
                         if len(aoImages)>iResults:
                             # We definitely need to re-run
-                            logging.info("SarFloodMapEngine.updateNewMaps: Found new images available for Orbit " + sOrbit + " set Force Re-Run = True")
+                            logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Found new images available for Orbit " + sOrbit + " set Force Re-Run = True")
                             bForceReRun = True
         else:
-            logging.info("This is the first run for day " + sDay)
+            logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: This is the first run for day " + sDay)
             bStillToRun = True
 
         if bForceReRun or bStillToRun:
@@ -788,17 +788,15 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoFloodChainParameters,oMapConfig.processor,sDay)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                logging.info(
-                    "SarFloodMapEngine.updateNewMaps: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name + "]: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
-                logging.warning("SarFloodMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+                logging.warning("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name + "]: simulation mode on - we do not run nothing")
         else:
-            logging.info("SarFloodMapEngine.updateNewMaps: nothing to re-start, done.")
-
+            logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name + "]: nothing to re-start, done.")
+    
     def startRainMaps(self, sEventDate):
         try:
-            logging.debug("SarFloodMapEngine.startRainMaps: Starting Rain Maps for event " + sEventDate)
+            logging.debug("SarFloodMapEngine.startRainMaps [" + self.m_oArea.name + "]: Starting Rain Maps for event " + sEventDate)
             
             oWasdiTaskRepository = WasdiTaskRepository()
 
@@ -827,12 +825,12 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTask.pluginPayload["event"] = True
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                logging.info("SarFloodMapEngine.startRainMaps: Started " + oMapConfig.processor + " for " + sEventDate)
+                logging.info("SarFloodMapEngine.startRainMaps [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " for " + sEventDate)
             else:
-                logging.warning("SarFloodMapEngine.startRainMaps: simulation mode on - we do not run nothing")
+                logging.warning("SarFloodMapEngine.startRainMaps [" + self.m_oArea.name + "]: simulation mode on - we do not run nothing")
 
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.startRainMaps:" + str(oEx))
+            logging.error("SarFloodMapEngine.startRainMaps [" + self.m_oArea.name +"]:" + str(oEx))
         finally:
             # Re-Open the right workspace
             self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)            
@@ -867,7 +865,7 @@ class SarFloodMapEngine(RiseMapEngine):
                             aoIntegratedChainParams = oIntegratedChainTask.pluginPayload["chainParams"]
                             return aoIntegratedChainParams
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.recoverChainParams: error " + str(oEx))
+            logging.error("SarFloodMapEngine.recoverChainParams [" + self.m_oArea.name +"]: error " + str(oEx))
             return None
         
     def recoverOrbitsFromAutofloodChain(self):    
@@ -884,7 +882,7 @@ class SarFloodMapEngine(RiseMapEngine):
                             return sOrbits
 
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.recoverOrbitsFromAutofloodChain: error " + str(oEx))
+            logging.error("SarFloodMapEngine.recoverOrbitsFromAutofloodChain [" + self.m_oArea.name +"]: error " + str(oEx))
             return ""        
         
     def filterImagesByPlatform(self, aoFloodChainPayload, aoImages):
@@ -918,7 +916,7 @@ class SarFloodMapEngine(RiseMapEngine):
             oPayload = wasdi.getProcessorPayloadAsJson(sTaskId)
 
             if oPayload is None:
-                logging.info("SarFloodMapEngine.createImpactsOfTheDayWidget: no payload found for task " + sTaskId)
+                logging.info("SarFloodMapEngine.createImpactsOfTheDayWidget [" + self.m_oArea.name +"]: no payload found for task " + sTaskId)
                 return
             
             oWidgetPayload = {}
@@ -941,7 +939,7 @@ class SarFloodMapEngine(RiseMapEngine):
 
             # Add or update the widget
             oWidgetInfoRepository.addEntity(oWidgetInfo)
-            logging.info("SarFloodMapEngine.createImpactsOfTheDayWidget: added daily impacts widget for " + sMapType)
+            logging.info("SarFloodMapEngine.createImpactsOfTheDayWidget [" + self.m_oArea.name + "]: added daily impacts widget for " + sMapType)
 
         except Exception as oEx:
-            logging.error("SarFloodMapEngine.createImpactsOfTheDayWidget: exception " + str(oEx))    
+            logging.error("SarFloodMapEngine.createImpactsOfTheDayWidget [" + self.m_oArea.name + "]: exception " + str(oEx))    

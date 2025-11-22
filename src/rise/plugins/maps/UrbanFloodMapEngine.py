@@ -14,10 +14,10 @@ class UrbanFloodMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        logging.info("Urban Flood Map short archive is handled by the integrated chain")
+        logging.info("UrbanFloodMapEngine.triggerNewAreaMaps [" + self.m_oArea.name +"]: Urban Flood Map short archive is handled by the integrated chain")
 
     def triggerNewAreaArchives(self):
-        logging.info("Urban Flood long archive is handled by the integrated chain")
+        logging.info("UrbanFloodMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: Urban Flood long archive is handled by the integrated chain")
 
     def updateNewMaps(self):
         oMapConfig = self.getMapConfig("sar_flood")
@@ -53,7 +53,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
         # if we have existing tasks
         if len(aoExistingTasks) > 0:
-            logging.info("UrbanFloodMapEngine.updateNewMaps: today task already done or ongoing")
+            logging.info("UrbanFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: today task already done or ongoing")
             return
 
         sBaseName = self.getBaseName("sar_flood")
@@ -61,7 +61,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
         if sBaseName in asFiles:
             try:
-                logging.info("UrbanFloodMapEngine.updateNewMaps: found a new daily sar map")
+                logging.info("UrbanFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: found a new daily sar map")
                 #oMapConfig = self.getMapConfig()
                 aoFloodFinderInArchiveParams = {}
                 aoFloodFinderInArchiveParams["FLOOD_VALUE"] = 3
@@ -75,15 +75,15 @@ class UrbanFloodMapEngine(RiseMapEngine):
                     sTaskId = wasdi.executeProcessor("flood_finder_in_archive", aoFloodFinderInArchiveParams)
                     if not self.checkProcessorId(sTaskId):
                         return
-                    logging.info("UrbanFloodMapEngine.updateNewMaps: started flood finder in archive")
+                    logging.info("UrbanFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: started flood finder in archive")
                     oWasdiTask = self.createNewTask(sTaskId,sWorkspaceId,aoFloodFinderInArchiveParams,"flood_finder_in_archive",sDay)
                     oWasdiTaskRepository.addEntity(oWasdiTask)
                 else:
-                    logging.info("UrbanFloodMapEngine.updateNewMaps: simulation mode is on, think I started a flood finder in archive for day " + sDay)
+                    logging.info("UrbanFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: simulation mode is on, think I started a flood finder in archive for day " + sDay)
             except Exception as oEx:
-                logging.error("UrbanFloodMapEngine.updateNewMaps: exception " + str(oEx))
+                logging.error("UrbanFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: exception " + str(oEx))
         else:
-            logging.info("UrbanFloodMapEngine.updateNewMaps: no flood map for date " + sDay + ", nothing to do")
+            logging.info("UrbanFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: no flood map for date " + sDay + ", nothing to do")
 
     def handleTask(self, oTask):
         try:
@@ -91,7 +91,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
             if not super().handleTask(oTask):
                 return False
 
-            logging.info("UrbanFloodMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name + "]: handle task " + oTask.id)
             oMapConfig = self.getMapConfig("sar_flood")
 
             # Open our workspace
@@ -106,18 +106,18 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
                 # Safe checks
                 if aoFinderPayload is None:
-                    logging.warning("UrbanFloodMapEngine.handleTask: impossible to read the payload of task " + oTask.id)
+                    logging.warning("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name +"]: impossible to read the payload of task " + oTask.id)
                     return
 
                 if "flooded" not in aoFinderPayload:
-                    logging.info("UrbanFloodMapEngine.handleTask: impossible to get flooded from the payload of task " + oTask.id)
+                    logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name +"]: impossible to get flooded from the payload of task " + oTask.id)
                     return
 
                 # We ran with one target image
                 aoFlooded = aoFinderPayload["flooded"]
 
                 if len(aoFlooded)<=0:
-                    logging.info("UrbanFloodMapEngine.handleTask: no flood found")
+                    logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name + "]: no flood found")
                     return
 
                 oFlooded = aoFlooded[0]
@@ -126,24 +126,24 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
                 # Do we have any flood detected
                 if fPercFlooded<=0:
-                    logging.info("UrbanFloodMapEngine.handleTask: no flood found for date " + oTask.referenceDate)
+                    logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name + "]: no flood found for date " + oTask.referenceDate)
                     return
 
                 # Yes !!
-                logging.info("UrbanFloodMapEngine.handleTask: Found some flood " + str(fPercFlooded) + "% for date " + oTask.referenceDate)                
+                logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name +"]: Found some flood " + str(fPercFlooded) + "% for date " + oTask.referenceDate)                
 
                 self.startUrbanFlood(oTask.referenceDate)
             elif oTask.application == "edrift_auto_urban_flood":
-                logging.info("UrbanFloodMapEngine.handleTask: check the urban flood output for date " + oTask.referenceDate)
+                logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name +"]: check the urban flood output for date " + oTask.referenceDate)
 
                 oUrbanFloodPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
 
                 if oUrbanFloodPayload is None:
-                    logging.info("UrbanFloodMapEngine.handleTask: Impossible to get the payload of the urban flood task, nothing to do")
+                    logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name +"]: Impossible to get the payload of the urban flood task, nothing to do")
                     return
 
                 if "outputs" not in oUrbanFloodPayload:
-                    logging.info("UrbanFloodMapEngine.handleTask: Outputs not available in the urban flood task, nothing to do")
+                    logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name +"]: Outputs not available in the urban flood task, nothing to do")
                     return
 
                 asUrbanMapFiles = oUrbanFloodPayload["outputs"]
@@ -152,24 +152,23 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
                 for sUrbanMapFile in asUrbanMapFiles:
                     if sUrbanMapFile in asFilesInWorkspace:
-                        logging.info("UrbanFloodMapEngine.handleTask: found urban map in workspace " + sUrbanMapFile)
+                        logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name + "]: found urban map in workspace " + sUrbanMapFile)
                         self.addAndPublishLayer(sUrbanMapFile, datetime.strptime(oTask.referenceDate,"%Y-%m-%d"), True, "urban_flood",
                                                 sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
                                                 sInputData=oMapConfig.inputData)
                         
                         # TODO: to be tested
                         sReferenceBareSoilMap = self.getBareSoilMapName(oTask.referenceDate)
-                        logging.info("UrbanFloodMapEngine.handleTask: Update reference Bare Soil Map " + sReferenceBareSoilMap)
+                        logging.info("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name + "]: Update reference Bare Soil Map " + sReferenceBareSoilMap)
                         self.addAndPublishLayer(sReferenceBareSoilMap, datetime.strptime(oTask.referenceDate,"%Y-%m-%d"), True, "autofloodchain2",
                                                 sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource,
                                                 sInputData=oMapConfig.inputData, bForceRepublish=True, sOverrideMapId="sar_flood")
 
             else:
-                logging.warning("UrbanFloodMapEngine.handleTask: NOT recognized application " + oTask.application)
+                logging.warning("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name + "]: NOT recognized application " + oTask.application)
 
         except Exception as oEx:
-            logging.error("UrbanFloodMapEngine.handleTask: exception " + str(oEx))
-
+            logging.error("UrbanFloodMapEngine.handleTask [" + self.m_oArea.name + "]: exception " + str(oEx))
 
     def getBareSoilMapName(self, sDay):
         """
@@ -186,7 +185,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
 
     def startUrbanFlood(self, sDay):
         try:
-            logging.info("UrbanFloodMapEngine.startUrbanFlood: Starting Urban Flood Detection for day " + sDay)
+            logging.info("UrbanFloodMapEngine.startUrbanFlood [" + self.m_oArea.name + "]: Starting Urban Flood Detection for day " + sDay)
             oMapConfig = self.getMapConfig()
 
             aoParameters = oMapConfig.params
@@ -228,10 +227,10 @@ class UrbanFloodMapEngine(RiseMapEngine):
             asTargetSLCImages = []
             if len(aoBareSoilTasks)<=0:
                 # Strange, if we are here one at least should have been found, no?
-                logging.warning("UrbanFloodMapEngine.startUrbanFlood: we cannot find any SAR autofloodchain2 run for day " + sDay)
+                logging.warning("UrbanFloodMapEngine.startUrbanFlood [" + self.m_oArea.name + "]: we cannot find any SAR autofloodchain2 run for day " + sDay)
             else:
                 # Can be more than one
-                logging.info("UrbanFloodMapEngine.startUrbanFlood: Found " + str(len(aoBareSoilTasks)) + " run for day " + sDay)
+                logging.info("UrbanFloodMapEngine.startUrbanFlood [" + self.m_oArea.name + "]: Found " + str(len(aoBareSoilTasks)) + " run for day " + sDay)
 
                 for oTask in aoBareSoilTasks:
 
@@ -257,7 +256,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
                                 # If we did not add it yet, we must add it
                                 if sImage not in asTargetSLCImages:
                                     asTargetSLCImages.append(sImage)
-                                    logging.info("Adding target S1 Image " + sImage)
+                                    logging.info("UrbanFloodMapEngine.startUrbanFlood [" + self.m_oArea.name + "]: Adding target S1 Image " + sImage)
 
             # If none is found, we will try the default app even if it will be hard..
             if len(asTargetSLCImages) == 0:
@@ -284,10 +283,10 @@ class UrbanFloodMapEngine(RiseMapEngine):
                     oWasdiTask = self.createNewTask(sTaskId,sTargetWorkspace,aoParameters,"edrift_auto_urban_flood",sDay)
                     oWasdiTaskRepository.addEntity(oWasdiTask)
             else:
-                logging.info("UrbanFloodMapEngine.startUrbanFlood: simulation mode on, I'm not really starting urban detection for " + sDay)
+                logging.info("UrbanFloodMapEngine.startUrbanFlood [" + self.m_oArea.name +"]: simulation mode on, I'm not really starting urban detection for " + sDay)
 
         except Exception as oEx:
-            logging.error("UrbanFloodMapEngine.startUrbanFlood: exception " + str(oEx))
+            logging.error("UrbanFloodMapEngine.startUrbanFlood [" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def findUrbanFootprintsInWorkspace(self, sFootprintWorkspaceName, sAreaName, oReferenceDate):
 
@@ -315,7 +314,7 @@ class UrbanFloodMapEngine(RiseMapEngine):
                             pass
 
                 if len(aoCandidates) > 0:
-                    wasdi.wasdiLog("Found " + str(len(aoCandidates)) + " Potential Footprint maps in the dedicated workspace")
+                    wasdi.wasdiLog(" UrbanFloodMapEngine.findUrbanFootprintsInWorkspace [" + self.m_oArea.name + "]: Found " + str(len(aoCandidates)) + " Potential Footprint maps in the dedicated workspace")
                     sSelectedFile = aoCandidates[0]["file"]
                     iDistance = aoCandidates[0]["distance"]
 

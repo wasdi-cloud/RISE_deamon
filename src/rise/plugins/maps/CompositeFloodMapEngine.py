@@ -9,16 +9,16 @@ class CompositeFloodMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        logging.info("CompositeFloodMapEngine.triggerNewAreaMaps: handled by SarFloodMapEngine")
+        logging.info("CompositeFloodMapEngine.triggerNewAreaMaps [" + self.m_oArea.name +"]: handled by SarFloodMapEngine")
 
     def triggerNewAreaArchives(self):
-        logging.info("CompositeFloodMapEngine.triggerNewAreaArchives: handled by SarFloodMapEngine")
+        logging.info("CompositeFloodMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: handled by SarFloodMapEngine")
 
     def updateNewMaps(self):
-        logging.info("CompositeFloodMapEngine.updateNewMaps: handled by SarFloodMapEngine")
+        logging.info("CompositeFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: handled by SarFloodMapEngine")
 
     def handleTask(self, oTask):
         try:
-            logging.info("CompositeFloodMapEngine.handleTask: handled by SarFloodMapEngine " + oTask.id)
+            logging.info("CompositeFloodMapEngine.handleTask [" + self.m_oArea.name +"]: handled by SarFloodMapEngine " + oTask.id)
         except Exception as oEx:
-            logging.error("CompositeFloodMapEngine.handleTask: exception " + str(oEx))
+            logging.error("CompositeFloodMapEngine.handleTask [" + self.m_oArea.name + "]: exception " + str(oEx))

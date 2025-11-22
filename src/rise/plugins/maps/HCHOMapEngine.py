@@ -11,10 +11,10 @@ class HCHOMapEngine(RiseMapEngine):
         self.updateNewMaps()
 
     def triggerNewAreaArchives(self):
-        logging.debug("HCHOMapEngine.triggerNewAreaArchives: Map generated in the general Pollutant Map")
+        logging.debug("HCHOMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: Map generated in the general Pollutant Map")
 
     def updateNewMaps(self):
-        logging.debug("HCHOMapEngine.updateNewMaps: Map generated in the general Pollutant Map")
+        logging.debug("HCHOMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Map generated in the general Pollutant Map")
 
     def handleTask(self, oTask):
-        logging.debug("HCHOMapEngine.handleTask: Map generated in the general Pollutant Map")
+        logging.debug("HCHOMapEngine.handleTask [" + self.m_oArea.name +"]: Map generated in the general Pollutant Map")

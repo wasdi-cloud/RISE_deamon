@@ -19,10 +19,10 @@ class ImpactMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        logging.info("ImpactMapEngine.triggerNewAreaMaps: short term archive is handled by the integrated chain")
+        logging.info("ImpactMapEngine.triggerNewAreaMaps [" + self.m_oArea.name +"]: short term archive is handled by the integrated chain")
 
     def triggerNewAreaArchives(self):
-        logging.info("ImpactMapEngine.triggerNewAreaArchives: long archive is handled by the integrated chain")
+        logging.info("ImpactMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: long archive is handled by the integrated chain")
 
     def updateNewMaps(self):
 
@@ -69,10 +69,10 @@ class ImpactMapEngine(RiseMapEngine):
                     sTargetMapType = oTask.pluginPayload["targetMapType"]
                     if sTargetMapType == "baresoil":
                         bRunForBareSoil = False
-                        logging.info("ImpactMapEngine.updateNewMaps: run on bare soil already done today")
+                        logging.info("ImpactMapEngine.updateNewMaps [" + self.m_oArea.name +"]: run on bare soil already done today")
                     elif sTargetMapType == "urban":
                         bRunForUrban = False
-                        logging.info("ImpactMapEngine.updateNewMaps: run on urban already done today")
+                        logging.info("ImpactMapEngine.updateNewMaps [" + self.m_oArea.name +"]: run on urban already done today")
 
         sOriginalBaseName = self.getBaseName("sar_flood")
 
@@ -80,7 +80,7 @@ class ImpactMapEngine(RiseMapEngine):
             sBaseName = sOriginalBaseName + "_" + sDay + "_" + sSuffix
 
             if sBaseName in asFiles:
-                logging.info("ImpactMapEngine.updateImpactMapsForDay: found a new daily sar map")
+                logging.info("ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: found a new daily sar map")
 
                 aoParams = oMapConfig.params
                 aoParams = vars(aoParams)
@@ -100,7 +100,7 @@ class ImpactMapEngine(RiseMapEngine):
                     if not self.checkProcessorId(sTaskId):
                         return
 
-                    logging.info("ImpactMapEngine.updateImpactMapsForDay: started impact detection for " + sBaseName)
+                    logging.info("ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: started impact detection for " + sBaseName)
 
                     oWasdiTask = self.createNewTask(sTaskId,sWorkspaceId,aoParams, oMapConfig.processor, sDay)
                     oWasdiTask.pluginPayload["targetMapType"] = "baresoil"
@@ -109,9 +109,9 @@ class ImpactMapEngine(RiseMapEngine):
                     oWasdiTaskRepository.addEntity(oWasdiTask)
                 else:
                     logging.info(
-                        "ImpactMapEngine.updateImpactMapsForDay: simulation mode is on, think I started an impact detection on bare soil for day " + sDay)
+                        "ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: simulation mode is on, think I started an impact detection on bare soil for day " + sDay)
             else:
-                logging.info("ImpactMapEngine.updateImpactMapsForDay: No Bare Soil Flood Map found for date " + sDay)
+                logging.info("ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: No Bare Soil Flood Map found for date " + sDay)
 
         if bRunForUrban:
             sBaseName = self.getBaseName("urban_flood")
@@ -123,11 +123,11 @@ class ImpactMapEngine(RiseMapEngine):
                     asDailyUrbanFloodMaps.append(sFile)
 
             if len(asDailyUrbanFloodMaps)<=0:
-                logging.info("ImpactMapEngine.updateImpactMapsForDay: No Urban Flood Maps found for " + sDay)
+                logging.info("ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: No Urban Flood Maps found for " + sDay)
             else:
                 for sUrbanFloodFile in asDailyUrbanFloodMaps:
                     if sUrbanFloodFile in asFiles:
-                        logging.info("ImpactMapEngine.updateImpactMapsForDay: found a new daily Urban Flood map for " + sDay)
+                        logging.info("ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: found a new daily Urban Flood map for " + sDay)
 
                         aoParams = oMapConfig.params
                         aoParams = vars(aoParams)
@@ -147,7 +147,7 @@ class ImpactMapEngine(RiseMapEngine):
                         if not self.m_oConfig.daemon.simulate:
                             sTaskId = wasdi.executeProcessor(oMapConfig.processor, aoParams)
 
-                            logging.info("ImpactMapEngine.updateImpactMapsForDay: started impact detection for " + sBaseName)
+                            logging.info("ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: started impact detection for " + sBaseName)
 
                             oWasdiTask = self.createNewTask(sTaskId,sWorkspaceId,aoParams,oMapConfig.processor,sDay)
                             oWasdiTask.pluginPayload["targetMapType"] = "urban"
@@ -155,7 +155,7 @@ class ImpactMapEngine(RiseMapEngine):
 
                             oWasdiTaskRepository.addEntity(oWasdiTask)
                         else:
-                            logging.info("ImpactMapEngine.updateImpactMapsForDay: simulation mode is on, think I started an impact detection for Urban for day " + sDay)
+                            logging.info("ImpactMapEngine.updateImpactMapsForDay [" + self.m_oArea.name +"]: simulation mode is on, think I started an impact detection for Urban for day " + sDay)
 
     def handleTask(self, oTask):
         try:
@@ -163,10 +163,10 @@ class ImpactMapEngine(RiseMapEngine):
             if not super().handleTask(oTask):
                 return False
 
-            logging.info("ImpactMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("ImpactMapEngine.handleTask [" + self.m_oArea.name +"]: task id " + oTask.id)
 
             if not "targetMapType" in oTask.pluginPayload:
-                logging.info("ImpactMapEngine.handleTask: the task does not have the targetMapType tag, I can only exit" )
+                logging.info("ImpactMapEngine.handleTask [" + self.m_oArea.name +"]: the task does not have the targetMapType tag, I can only exit" )
                 return False
             
             sTargetMapType = oTask.pluginPayload["targetMapType"]
@@ -216,12 +216,12 @@ class ImpactMapEngine(RiseMapEngine):
             self.createWidgetInfo(oTask)
         
         except Exception as oEx:
-            logging.error("ImpactMapEngine.handleTask: exception " + str(oEx))
+            logging.error("ImpactMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def checkAndPublishImpactLayer(self, sFile, asFiles, oTask, sMapId):
         if sFile in asFiles:
             oMapConfig = self.getMapConfig()
-            logging.info("ImpactMapEngine.checkAndPublishImpactLayer: found impacts Map to publish " + sFile)
+            logging.info("ImpactMapEngine.checkAndPublishImpactLayer [" + self.m_oArea.name +"]: found impacts Map to publish " + sFile)
             self.addAndPublishLayer(sFile, datetime.strptime(oTask.referenceDate, "%Y-%m-%d"), bPublish=True,
                                     sMapIdForStyle=sMapId,
                                     sOverrideMapId=sMapId,
@@ -337,7 +337,7 @@ class ImpactMapEngine(RiseMapEngine):
                         self.addOrUpdateIntegerWidget(oWidgetInfo, oTask, "WIDGET.AFFECTED_BUILDINGS")
 
         except Exception as oEx:
-            logging.error("ImpactMapEngine.createWidgetInfo: exception " + str(oEx))
+            logging.error("ImpactMapEngine.createWidgetInfo [" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def addOrUpdateIntegerWidget(self, oWidgetInfo, oTask, sTitle=None):
 
@@ -383,7 +383,7 @@ class ImpactMapEngine(RiseMapEngine):
                 oWidgetInfoRepository.updateEntity(oExistingWidget)
             else:
                 # We have the same map, we do not need to update
-                logging.info("ImpactMapEngine.addOrUpdateIntegerWidget: widget already exists for this area and date")        
+                logging.info("ImpactMapEngine.addOrUpdateIntegerWidget [" + self.m_oArea.name +"]: widget already exists for this area and date")        
     
     def createImpactsOfTheDayWidget(self, oTask, sMapType):
         try:
@@ -399,7 +399,7 @@ class ImpactMapEngine(RiseMapEngine):
             oPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
 
             if oPayload is None:
-                logging.info("ImpactMapEngine.createImpactsOfTheDayWidget: no payload found for task " + oTask.id)
+                logging.info("ImpactMapEngine.createImpactsOfTheDayWidget [" + self.m_oArea.name +"]: no payload found for task " + oTask.id)
                 return
             
             oWidgetPayload = {}
@@ -422,10 +422,10 @@ class ImpactMapEngine(RiseMapEngine):
 
             # Add or update the widget
             oWidgetInfoRepository.addEntity(oWidgetInfo)
-            logging.info("ImpactMapEngine.createImpactsOfTheDayWidget: added daily impacts widget for " + sMapType)
+            logging.info("ImpactMapEngine.createImpactsOfTheDayWidget [" + self.m_oArea.name +"]: added daily impacts widget for " + sMapType)
 
         except Exception as oEx:
-            logging.error("ImpactMapEngine.createImpactsOfTheDayWidget: exception " + str(oEx))
+            logging.error("ImpactMapEngine.createImpactsOfTheDayWidget [" + self.m_oArea.name +"]: exception " + str(oEx))
 
     
     def countRoadsFromPayload(self, oPayload):
@@ -461,7 +461,7 @@ class ImpactMapEngine(RiseMapEngine):
             return iRoadsCount
 
         except Exception as oEx:
-            logging.error("ImpactMapEngine.countRoadsFromPayload: exception " + str(oEx))
+            logging.error("ImpactMapEngine.countRoadsFromPayload [" + self.m_oArea.name +"]: exception " + str(oEx))
             if "Roads" in oPayload:
                 # Try to return the length of the roads array
                 len(oPayload["Roads"])

@@ -16,7 +16,7 @@ class FloodDepthMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        self.updateNewMaps()
+        logging.info("FloodDepthMapEngine.triggerNewAreaMaps: Flood Depth short archive is handled by the integrated chain")
 
     def triggerNewAreaArchives(self):
         logging.info("FloodDepthMapEngine.triggerNewAreaArchives: Flood Depth long Archive Not supported")

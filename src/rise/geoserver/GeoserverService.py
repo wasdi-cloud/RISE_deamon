@@ -78,7 +78,7 @@ class GeoserverService:
                 logging.warning("GeoserverService.publishRasterLayer. Layer not published on Geoserver")
                 return None
 
-            logging.info("GeoserverService.publishRasterLayer. Layer published on Geoserver")
+            logging.debug("GeoserverService.publishRasterLayer. Layer published on Geoserver")
 
             bStyleResult = self.publishStyle(sStyleName, sLayerName, sWorkspaceName)
 
@@ -275,7 +275,7 @@ class GeoserverService:
             return oLayer is not None
 
         except Exception as oEx:
-            logging.warning(f"GeoserverService.existsLayer. Exception {oEx}")
+            logging.debug(f"GeoserverService.existsLayer. Exception {oEx}")
 
         return None
 

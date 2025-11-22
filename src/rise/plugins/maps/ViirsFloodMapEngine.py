@@ -28,7 +28,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
             aoViirsArchiveParameters = oMapConfig.params
 
             if aoViirsArchiveParameters is None:
-                logging.warning("ViirsFloodMapEngine.runViirsArchive: impossible to find parameters for map " + self.m_oMapEntity.id)
+                logging.warning("ViirsFloodMapEngine.runViirsArchive [" + self.m_oArea.name +"]: impossible to find parameters for map " + self.m_oMapEntity.id)
                 return
 
             oWasdiTaskRepository = WasdiTaskRepository()
@@ -39,7 +39,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                     for oTask in aoExistingTasks:
                         if "shortArchive" in oTask.pluginPayload:
                             if oTask.pluginPayload["shortArchive"] == bShortArchive:
-                                logging.info("ViirsFloodMapEngine.runViirsArchive: task already on-going")
+                                logging.info("ViirsFloodMapEngine.runViirsArchive [" + self.m_oArea.name + "]: task already on-going")
                                 return True
 
             aoViirsArchiveParameters = vars(aoViirsArchiveParameters)
@@ -67,20 +67,19 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
                 logging.info(
-                    "ViirsFloodMapEngine.runViirsArchive: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                    "ViirsFloodMapEngine.runViirsArchive [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName(self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
-                logging.warning("ViirsFloodMapEngine.runViirsArchive: simulation mode on - we do not run nothing")
+                logging.warning("ViirsFloodMapEngine.runViirsArchive [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
 
             return True
         except Exception as oEx:
-            logging.error("ViirsFloodMapEngine.runViirsArchive: exception " + str(oEx))
-
+            logging.error("ViirsFloodMapEngine.runViirsArchive [" + self.m_oArea.name + "]: exception " + str(oEx))
     def handleTask(self, oTask):
         try:
             if not super().handleTask(oTask):
                 return False
 
-            logging.info("ViirsFloodMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("ViirsFloodMapEngine.handleTask [" + self.m_oArea.name +"]: handle task " + oTask.id)
 
             asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
@@ -89,7 +88,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oTask.status = "DONE"
                 oTaskRepository = WasdiTaskRepository()
                 oTaskRepository.updateEntity(oTask)
-                logging.warning("ViirsFloodMapEngine.handleTask: we do not have files in the workspace... ")
+                logging.warning("ViirsFloodMapEngine.handleTask [" + self.m_oArea.name +"]: we do not have files in the workspace... ")
                 return False
 
             if oTask.application == "viirs_flood":
@@ -102,7 +101,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 return self.handleArchiveTask(oTask, asWorkspaceFiles, bShortArchive)
 
         except Exception as oEx:
-            logging.error("ViirsFloodMapEngine.handleTask: exception " + str(oEx))
+            logging.error("ViirsFloodMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))
             return False
 
     def handleDailyMap(self, oTask, asWorkspaceFiles):
@@ -129,10 +128,10 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 self.addAndPublishLayer(sFileName, oYesterday, True, "viirs_daily_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
 
             if not bFileAdded:
-                logging.info("ViirsFloodMapEngine.handleDailyMap: no new maps found to publish, we finish here")                
+                logging.info("ViirsFloodMapEngine.handleDailyMap [" + self.m_oArea.name +"]: no new maps found to publish, we finish here")                
 
         except Exception as oEx:
-            logging.error("ViirsFloodMapEngine.handleDailyMap: exception " + str(oEx))
+            logging.error("ViirsFloodMapEngine.handleDailyMap [" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def handleArchiveTask(self, oTask, asWorkspaceFiles, bOnlyLastWeek):
 
@@ -140,7 +139,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
         fLastMapTimestamp = -1.0
 
         try:
-            logging.info("ViirsFloodMapEngine.handleArchiveTask: task done, lets proceed!")
+            logging.info("ViirsFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: task done, lets proceed!")
 
             sBaseName = oTask.inputParams["VIIRS_BASENAME"]
             sStartDate = oTask.inputParams["ARCHIVE_START_DATE"]
@@ -149,13 +148,13 @@ class ViirsFloodMapEngine(RiseMapEngine):
             try:
                 oStartDay = datetime.strptime(sStartDate, '%Y-%m-%d')
             except:
-                logging.error('ViirsFloodMapEngine.handleArchiveTask: Start Date not valid')
+                logging.error('ViirsFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: Start Date not valid')
                 return False
 
             try:
                 oEndDay = datetime.strptime(sEndDate, '%Y-%m-%d')
             except:
-                logging.error('ViirsFloodMapEngine.handleArchiveTask: End Date not valid')
+                logging.error('ViirsFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: End Date not valid')
                 return False
 
             oTimeDelta = timedelta(days=1)
@@ -170,7 +169,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
                     oActualDate = oActualDate + oTimeDelta
                     continue
 
-                logging.info("ViirsFloodMapEngine.handleArchiveTask: Found " + sFileName + ", publish it")
+                logging.info("ViirsFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: Found " + sFileName + ", publish it")
 
                 oMapConfig = self.getMapConfig("viirs_flood")
                 oLayer = self.addAndPublishLayer(sFileName, oActualDate, bOnlyLastWeek, sMapIdForStyle="viirs_flood", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData)
@@ -193,7 +192,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
             return True
         except Exception as oEx:
-            logging.error("ViirsFloodMapEngine.handleArchiveTask: exception " + str(oEx))
+            logging.error("ViirsFloodMapEngine.handleArchiveTask [" + self.m_oArea.name +"]: exception " + str(oEx))
             return False
         finally:
             bChanged = False
@@ -238,7 +237,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
         # if we have existing tasks
         for oTask in aoExistingTasks:
             if self.isRunningStatus(oTask.status):
-                logging.info("ViirsFloodMapEngine.viirsMapFromDate: a task is still ongoing  for day " + sToday + " we will wait it to finish " + oTask.id)
+                logging.info("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: a task is still ongoing  for day " + sToday + " we will wait it to finish " + oTask.id)
                 return
 
         sBaseName = self.getBaseName()
@@ -263,12 +262,11 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoViirsParameters,oMapConfig.processor,sToday)
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                logging.info("ViirsFloodMapEngine.viirsMapFromDate: Started " + oMapConfig.processor + " for date " + sToday)
+                logging.info("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " for date " + sToday)
             else:
-                logging.warning("ViirsFloodMapEngine.viirsMapFromDate: simulation mode on - we do not run nothing")
+                logging.warning("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
         else:
-            logging.info("ViirsFloodMapEngine.viirsMapFromDate: the VIIRS map for " + sToday + " is already available")
-
+            logging.info("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: the VIIRS map for " + sToday + " is already available")
     def updateNewMaps(self):
         # Open our workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
@@ -278,14 +276,14 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
         # without this config we have a problem
         if oMapConfig is None:
-            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find configuration for map " + self.m_oMapEntity.id)
+            logging.warning("ViirsFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: impossible to find configuration for map " + self.m_oMapEntity.id)
             return
 
         aoViirsParameters = oMapConfig.params
 
         # Well, we need the params in the config
         if aoViirsParameters is None:
-            logging.warning("ViirsFloodMapEngine.updateNewMaps: impossible to find parameters for map " + self.m_oMapEntity.id)
+            logging.warning("ViirsFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: impossible to find parameters for map " + self.m_oMapEntity.id)
             return
 
         oToday = datetime.today()

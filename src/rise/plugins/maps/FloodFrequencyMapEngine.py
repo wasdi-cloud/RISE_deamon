@@ -16,12 +16,11 @@ class FloodFrequencyMapEngine(RiseMapEngine):
         self.m_sChainParamsFile = "integratedSarChainParams.json"
 
     def triggerNewAreaMaps(self):
-        logging.info("Flood Frequency Map short archive is handled by the integrated chain")
+        logging.info("FloodFrequencyMapEngine.triggerNewAreaMaps [" + self.m_oArea.name +"]: Flood Frequency Map short archive is handled by the integrated chain")
 
 
     def triggerNewAreaArchives(self):
-        logging.info("Flood Frequency Map long archive is handled by the integrated chain")
-
+        logging.info("FloodFrequencyMapEngine.triggerNewAreaArchives[" + self.m_oArea.name +"]: Flood Frequency Map long archive is handled by the integrated chain")
     def handleTask(self, oTask):
         try:
             # First of all we check if it is safe and done
@@ -61,12 +60,12 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                 self.addAndPublishLayer(sFileName, oDate, True, "flood_frequency_map_perc", sResolution=oMapConfig.resolution, sDataSource=oMapConfig.dataSource, sInputData=oMapConfig.inputData, bForceRepublish=True)
 
         except Exception as oEx:
-            logging.error("FloodFrequencyMapEngine.handleTask: exception " + str(oEx))
+            logging.error("FloodFrequencyMapEngine.handleTask [" + self.m_oArea.name + "]: exception " + str(oEx))
 
     def updateNewMaps(self):
 
         if self.m_oMapEntity.id != "flood_frequency_map":
-            logging.debug("FloodFrequencyMapEngine.updateNewMaps: map id is not flood_frequency_map, we stop here")
+            logging.debug("FloodFrequencyMapEngine.updateNewMaps [" + self.m_oArea.name + "]: map id is not flood_frequency_map, we stop here")
             return
         
         # Take today as reference date
@@ -95,7 +94,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
 
         # if we have existing tasks
         if len(aoExistingTasks)>0:
-            logging.info("FloodFrequencyMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
+            logging.info("FloodFrequencyMapEngine.updateNewMaps[" + self.m_oArea.name +"]: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
             return
 
         # We read the params of the floodchain to have the suffix
@@ -116,7 +115,7 @@ class FloodFrequencyMapEngine(RiseMapEngine):
             aoChainParams = self.getWorkspaceUpdatedJsonFile(self.m_sChainParamsFile)
 
             if aoChainParams is None:
-                logging.warning("FloodFrequencyMapEngine.updateNewMaps: the chain params file is not available: likely, the archive still have to finish. We stop here")
+                logging.warning("FloodFrequencyMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the chain params file is not available: likely, the archive still have to finish. We stop here")
                 return
 
             # Check the last date of the FFM
@@ -144,11 +143,11 @@ class FloodFrequencyMapEngine(RiseMapEngine):
                     oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoFFMParams,"floodfrequencymap", sDate)
                     oWasdiTaskRepository.addEntity(oWasdiTask)
 
-                    logging.info("FloodFrequencyMapEngine.updateNewMaps: Started floodfrequencymap in Workspace " + self.m_oPluginEngine.getWorkspaceName( self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                    logging.info("FloodFrequencyMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Started floodfrequencymap in Workspace " + self.m_oPluginEngine.getWorkspaceName( self.m_oMapEntity) + " for Area " + self.m_oArea.name)
                 else:
-                    logging.info("FloodFrequencyMapEngine.updateNewMaps: simulation mode on, like I started FFM for date " + sDate)
+                    logging.info("FloodFrequencyMapEngine.updateNewMaps [" + self.m_oArea.name +"]: simulation mode on, like I started FFM for date " + sDate)
         else:
-            logging.info("FloodFrequencyMapEngine.updateNewMaps: there is no new flood Map for date " + sDate)
+            logging.info("FloodFrequencyMapEngine.updateNewMaps [" + self.m_oArea.name +"]: there is no new flood Map for date " + sDate)
 
     def getFFMfloodMapName(self):
         return self.getBaseName("sar_flood")+"_ffm_flood.tif"

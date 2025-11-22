@@ -16,10 +16,10 @@ class ImergMapEngine(RiseMapEngine):
         self.updateNewMaps()
 
     def triggerNewAreaArchives(self):
-        logging.info("ImergMapEngine.triggerNewAreaArchives: IMERG long Archive Not supported")
+        logging.info("ImergMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: IMERG long Archive Not supported")
 
     def updateNewMaps(self):
-        logging.info("ImergMapEngine.updateNewMaps: Update New Maps")
+        logging.info("ImergMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Update New Maps")
 
         oNow = datetime.datetime.now(datetime.UTC)
         sDay = oNow.strftime("%Y-%m-%d")
@@ -46,7 +46,7 @@ class ImergMapEngine(RiseMapEngine):
                     break
 
         if bWaitNextHour:
-            logging.info("ImergMapEngine.triggerNewAreaArchives: found task for " + sDay + " " + sHour + ", we wait next hour")
+            logging.info("ImergMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: found task for " + sDay + " " + sHour + ", we wait next hour")
             return
 
         aoParameters = oMapConfig.params
@@ -69,9 +69,9 @@ class ImergMapEngine(RiseMapEngine):
             oWasdiTask.pluginPayload["time"] = sHour
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info("ImergMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
+            logging.info("ImergMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " for " + sDay + " " + sHour)
         else:
-            logging.warning("ImergMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+            logging.warning("ImergMapEngine.updateNewMaps [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
 
     def handleTask(self, oTask):
         try:
@@ -79,22 +79,22 @@ class ImergMapEngine(RiseMapEngine):
             if not super().handleTask(oTask):
                 return False
 
-            logging.info("ImergMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("ImergMapEngine.handleTask [" + self.m_oArea.name +"]: task id" + oTask.id)
 
             aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
 
             if aoPayload is None:
-                logging.info("ImergMapEngine.handleTask: cannot read the payload, we stop here ")
+                logging.info("ImergMapEngine.handleTask [" + self.m_oArea.name +"]: cannot read the payload, we stop here ")
                 return
 
             if "OUTPUTS" not in aoPayload:
-                logging.info("ImergMapEngine.handleTask: OUTPUTS not in the payload, we stop here ")
+                logging.info("ImergMapEngine.handleTask [" + self.m_oArea.name +"]: OUTPUTS not in the payload, we stop here ")
                 return
 
             asOutputs = aoPayload["OUTPUTS"]
 
             if len(asOutputs)<=0:
-                logging.info("ImergMapEngine.handleTask: OUTPUTS array is empty, we stop here ")
+                logging.info("ImergMapEngine.handleTask  [" + self.m_oArea.name +"]: OUTPUTS array is empty, we stop here ")
                 return
 
             sTime = "00"
@@ -102,7 +102,7 @@ class ImergMapEngine(RiseMapEngine):
             try:
                 sTime = oTask.pluginPayload["time"]
             except Exception as oInEx:
-                logging.warning("ImergMapEngine.handleTask:  error reading the time from task payload " + str(oInEx))
+                logging.warning("ImergMapEngine.handleTask [" + self.m_oArea.name +"]:  error reading the time from task payload " + str(oInEx))
 
             sInputData = ""
 
@@ -114,7 +114,7 @@ class ImergMapEngine(RiseMapEngine):
 
             for sFile in asOutputs:
                 if sFile in asFiles:
-                    logging.info("ImergMapEngine.handleTask: publishing " + sFile)
+                    logging.info("ImergMapEngine.handleTask [" + self.m_oArea.name +"]: publishing " + sFile)
 
                     oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
                     oReferenceDate = oReferenceDate.replace(hour=int(sTime))
@@ -135,7 +135,7 @@ class ImergMapEngine(RiseMapEngine):
                     bKeepLayer=False
                     if "event" in oTask.pluginPayload:
                         if oTask.pluginPayload["event"]:
-                            logging.info("ImergMapEngine.handleTask: rain map related to an event, set Keep Layer = true")
+                            logging.info("ImergMapEngine.handleTask [" + self.m_oArea.name +"]: rain map related to an event, set Keep Layer = true")
                             bKeepLayer = True
 
                     self.addAndPublishLayer(sFile, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
@@ -143,4 +143,4 @@ class ImergMapEngine(RiseMapEngine):
                                             sResolution=oMapConfig.resolution, sInputData=sInputData, sOverrideMapId=sMapConfig)
 
         except Exception as oEx:
-            logging.error("ImergMapEngine.handleTask: exception " + str(oEx))
+            logging.error("ImergMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))

@@ -14,7 +14,7 @@ class DroughtEcostressMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        logging.info("DroughtEcostressMapEngine.triggerNewAreaMaps: we just call Update New Maps")
+        logging.info("DroughtEcostressMapEngine.triggerNewAreaMaps  [" + self.m_oArea.name +"]: we just call Update New Maps")
         self.updateNewMaps()
 
     def triggerNewAreaArchives(self):
@@ -68,7 +68,7 @@ class DroughtEcostressMapEngine(RiseMapEngine):
             return 3
 
     def updateNewMaps(self):
-        logging.info("DroughtEcostressMapEngine.updateNewMaps: Update New Maps")
+        logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: Update New Maps")
 
         oNow = datetime.datetime.now(datetime.UTC)
 
@@ -102,14 +102,14 @@ class DroughtEcostressMapEngine(RiseMapEngine):
                     break
 
         if bIsRunning:            
-            logging.info("DroughtEcostrexssMapEngine.updateNewMaps: a task is still ongoing or executed for day " + sDay + ". Nothing to do")
+            logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: a task is still ongoing or executed for day " + sDay + ". Nothing to do")
             return        
         
         sOutput = self.getBaseName() + "_" + oEndDate.strftime("%Y-%m") + "_" + str(iDecade) + ".tif"
         aoFiles = wasdi.getProductsByActiveWorkspace()
 
         if sOutput in aoFiles:
-            logging.info("DroughtEcostressMapEngine.updateNewMaps: file " + sOutput + " already exists. Nothing to do")
+            logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: file " + sOutput + " already exists. Nothing to do")
             return
 
         aoParameters = oMapConfig.params
@@ -130,9 +130,9 @@ class DroughtEcostressMapEngine(RiseMapEngine):
             oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sReferenceDate)
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info("DroughtEcostressMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay)
+            logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: Started " + oMapConfig.processor + " for " + sDay)
         else:
-            logging.warning("DroughtEcostressMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+            logging.warning("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: simulation mode on - we do not run nothing")
 
 
     def handleTask(self, oTask):
@@ -152,13 +152,13 @@ class DroughtEcostressMapEngine(RiseMapEngine):
             sOutput = self.getBaseName() + "_" + oReferenceDate.strftime("%Y_%m") + "_"  + str(iDecade) + ".tif"
 
             if sOutput in asFiles:
-                logging.info("DroughtEcostressMapEngine.handleTask: publishing " + sOutput)
+                logging.info("DroughtEcostressMapEngine.handleTask [" + self.m_oArea.name + "]: publishing " + sOutput)
 
                 self.addAndPublishLayer(sOutput, oReferenceDate, bPublish=True, sMapIdForStyle=oMapConfig.id,
                                         bKeepLayer=False, sDataSource=oMapConfig.dataSource,
                                         sResolution=oMapConfig.resolution, sInputData=oMapConfig.inputData)            
             else:
-                logging.info("DroughtEcostressMapEngine.handleTask: file " + sOutput + " not found in workspace")
+                logging.info("DroughtEcostressMapEngine.handleTask [" + self.m_oArea.name + "]: file " + sOutput + " not found in workspace")
         
         except Exception as oEx:
-            logging.error("DroughtEcostressMapEngine.handleTask: exception " + str(oEx))
+            logging.error("DroughtEcostressMapEngine.handleTask [" + self.m_oArea.name + "]: exception " + str(oEx))

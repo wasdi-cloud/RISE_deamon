@@ -16,12 +16,10 @@ class PollutantMapEngine(RiseMapEngine):
         self.updateNewMaps()
 
     def triggerNewAreaArchives(self):
-        # logging.info("PollutantMapEngine.triggerNewAreaArchives: IMERG long Archive Not supported")
-        logging.info("PollutantMapEngine.triggerNewAreaArchives: long Archive Not supported.")
+        logging.info("PollutantMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: long Archive Not supported.")
 
     def updateNewMaps(self):
-        logging.info("PollutantMapEngine.updateNewMaps: Update New Maps")
-
+        logging.info("PollutantMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Update New Maps")
         oNow = datetime.datetime.now(datetime.UTC)
 
         sDay = oNow.strftime("%Y-%m-%d")
@@ -39,8 +37,7 @@ class PollutantMapEngine(RiseMapEngine):
         # if we have existing tasks
         for oTask in aoExistingTasks:
             if self.isRunningStatus(oTask.status):
-                logging.info(
-                    "PollutantMapEngine.updateNewMaps: a task is still ongoing  for day " + sDay + " we will wait it to finish " + oTask.id)
+                logging.info("PollutantMapEngine.updateNewMaps [" + self.m_oArea.name +"]: a task is still ongoing  for day " + sDay + " we will wait it to finish " + oTask.id)
                 return
         # oToday = datetime.datetime.today()
         # sToday = oToday.strftime("%Y-%m-%d")
@@ -58,15 +55,13 @@ class PollutantMapEngine(RiseMapEngine):
             sOutputFileName2 = sBaseName + "_S5_" + sPollutantName + "_Day" + sYesterday
             # here we found the pollutant element in the workspace so no need to do it again
             if sOutputFileName1 in asWorkspaceFiles or sOutputFileName2 in asWorkspaceFiles or sOutputFileName1 + ".tif" in asWorkspaceFiles or sOutputFileName2 + ".tif" in asWorkspaceFiles:
-                logging.info(
-                    "PollutantMapEngine.updateNewMaps: We already have this product ready for today , no need to run again , product name is " + sOutputFileName1)
+                logging.info("PollutantMapEngine.updateNewMaps [" + self.m_oArea.name +"]: We already have this product ready for today , no need to run again , product name is " + sOutputFileName1)
                 continue
             else:
                 asPollutantsToCreateNewAppFpr.append(sPollutantName)
         # here we have product for each pollutant, so no need to launch a new app
         if len(asPollutantsToCreateNewAppFpr) == 0:
-            logging.info(
-                "PollutantMapEngine.updateNewMaps: We already have for all pollutants element a  product ready for today , no need to run again")
+            logging.info("PollutantMapEngine.updateNewMaps [" + self.m_oArea.name +"]: We already have for all pollutants element a  product ready for today , no need to run again")
             return
 
         aoParameters = oMapConfig.params
@@ -89,19 +84,19 @@ class PollutantMapEngine(RiseMapEngine):
             oWasdiTask.mapId = "pollutant_map"
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info("PollutantMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay)
+            logging.info("PollutantMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " for " + sDay)
         else:
-            logging.warning("PollutantMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+            logging.warning("PollutantMapEngine.updateNewMaps [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
 
     def handleTask(self, oTask):
         try:
             # First, we check if it is safe and done
             if not super().handleTask(oTask):
                 return False
-            logging.info("PollutantMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]: handle task " + oTask.id)
             aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
             if aoPayload is None:
-                logging.info("PollutantMapEngine.handleTask: cannot read the payload, we stop here ")
+                logging.info("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]  : cannot read the payload, we stop here ")
                 return
             # oToday = datetime.datetime.today()
             # sToday = oToday.strftime("%Y-%m-%d")
@@ -126,8 +121,7 @@ class PollutantMapEngine(RiseMapEngine):
                     oMapConfig = self.getMapConfig(sPollutantName)
 
                     if oMapConfig is None:
-                        logging.info(
-                            "PollutantMapEngine.handleTask: cannot find map config for map id " + sPollutantName + " we stop here ")
+                        logging.info("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]: cannot find map config for map id " + sPollutantName + " we stop here ")
                         continue
                     # publish each map alone
                     self.addAndPublishLayer(sOutputFileName1, oReferenceDate, bPublish=True,
@@ -143,8 +137,7 @@ class PollutantMapEngine(RiseMapEngine):
                     oMapConfig = self.getMapConfig(sPollutantName)
 
                     if oMapConfig is None:
-                        logging.info(
-                            "PollutantMapEngine.handleTask: cannot find map config for map id " + sPollutantName + " we stop here ")
+                        logging.info("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]: cannot find map config for map id " + sPollutantName + " we stop here ")
                         continue
                     # publish each map alone
                     self.addAndPublishLayer(sOutputFileName1, oReferenceDate, bPublish=True,
@@ -153,15 +146,8 @@ class PollutantMapEngine(RiseMapEngine):
                                             sInputData=oMapConfig.inputData, sOverrideMapId=sPollutantName)
                 else:
                     # should exist
-                    logging.info(
-                        "PollutantMapEngine.handleTask: the map does not exist in the product list ,something is wrong, we stop here ")
+                    logging.info("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]: the map does not exist in the product list ,something is wrong, we stop here ")
                     continue
 
-
-
-
-
-
-
         except Exception as oEx:
-            logging.error("PollutantMapEngine.handleTask: exception " + str(oEx))
+            logging.error("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))

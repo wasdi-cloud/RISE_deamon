@@ -15,11 +15,10 @@ class ActiveFireMapEngine(RiseMapEngine):
         self.updateNewMaps()
 
     def triggerNewAreaArchives(self):
-        # logging.info("ActiveFireMapEngine.triggerNewAreaArchives: IMERG long Archive Not supported")
-        logging.info("ActiveFireMapEngine.triggerNewAreaArchives: Currently not developed.")
+        logging.info("ActiveFireMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: Currently not developed.")
 
     def updateNewMaps(self):
-        logging.info("ActiveFireMapEngine.updateNewMaps: Update New Maps")
+        logging.info("ActiveFireMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Update New Maps")
 
         oNow = datetime.datetime.now(datetime.UTC)
         sDay = oNow.strftime("%Y-%m-%d")
@@ -39,7 +38,7 @@ class ActiveFireMapEngine(RiseMapEngine):
         # if we have existing tasks
         for oTask in aoExistingTasks:
             if self.isRunningStatus(oTask.status):
-                logging.info("ActiveFireMapEngine.updateNewMaps: a task is still ongoing  for day " + sDay + " we will wait it to finish " + oTask.id)
+                logging.info("ActiveFireMapEngine.updateNewMaps [" + self.m_oArea.name +"]: a task is still ongoing  for day " + sDay + " we will wait it to finish " + oTask.id)
                 return
         oToday = datetime.datetime.today()
         sToday = oToday.strftime("%Y-%m-%d")
@@ -49,7 +48,7 @@ class ActiveFireMapEngine(RiseMapEngine):
         asWorkspaceFiles = wasdi.getProductsByActiveWorkspace()
 
         if sOutputFileName in asWorkspaceFiles:
-            logging.info("ActiveFireMapEngine.updateNewMaps: We already have this product ready for today , no need to run again , product name is " + sOutputFileName)
+            logging.info("ActiveFireMapEngine.updateNewMaps [" + self.m_oArea.name +"]: We already have this product ready for today , no need to run again , product name is " + sOutputFileName)
             return
 
 
@@ -70,9 +69,9 @@ class ActiveFireMapEngine(RiseMapEngine):
             oWasdiTask.mapId = "active_fire_map"
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info("ActiveFireMapEngine.updateNewMaps: Started " + oMapConfig.processor + " for " + sDay)
+            logging.info("ActiveFireMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " for " + sDay)
         else:
-            logging.warning("ActiveFireMapEngine.updateNewMaps: simulation mode on - we do not run nothing")
+            logging.warning("ActiveFireMapEngine.updateNewMaps [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
 
     def handleTask(self, oTask):
         try:
@@ -80,22 +79,22 @@ class ActiveFireMapEngine(RiseMapEngine):
             if not super().handleTask(oTask):
                 return False
 
-            logging.info("ActiveFireMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: handle task " + oTask.id)
 
             aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
 
             if aoPayload is None:
-                logging.info("ActiveFireMapEngine.handleTask: cannot read the payload, we stop here ")
+                logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: cannot read the payload, we stop here ")
                 return
 
             if "Daily Fire Maps" not in aoPayload:
-                logging.info("ActiveFireMapEngine.handleTask: Daily Fire Maps not in the payload, we stop here ")
+                logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: Daily Fire Maps not in the payload, we stop here ")
                 return
 
             asDailyFireMaps = aoPayload["Daily Fire Maps"]
 
             if len(asDailyFireMaps) <= 0:
-                logging.info("ActiveFireMapEngine.handleTask: Daily Fire Maps array is empty, we stop here ")
+                logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: Daily Fire Maps array is empty, we stop here ")
                 return
 
             # Take the first one item from asDailyFireMap
@@ -107,7 +106,7 @@ class ActiveFireMapEngine(RiseMapEngine):
 
             if sFile not in asFiles:
                 # should exist
-                logging.info("ActiveFireMapEngine.handleTask: the map does not exist in the product list ,something is wrong, we stop here ")
+                logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: the map does not exist in the product list ,something is wrong, we stop here ")
                 return
 
             oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
@@ -120,4 +119,4 @@ class ActiveFireMapEngine(RiseMapEngine):
                                     sOverrideMapId=sMapConfig)
 
         except Exception as oEx:
-            logging.error("ActiveFireMapEngine.handleTask: exception " + str(oEx))
+            logging.error("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))

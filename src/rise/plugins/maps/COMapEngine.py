@@ -11,10 +11,10 @@ class COMapEngine(RiseMapEngine):
         self.updateNewMaps()
 
     def triggerNewAreaArchives(self):
-        logging.debug("COMapEngine.triggerNewAreaArchives: Map generated in the general Pollutant Map")
+        logging.debug("COMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: Map generated in the general Pollutant Map")
 
     def updateNewMaps(self):
-        logging.debug("COMapEngine.updateNewMaps: Map generated in the general Pollutant Map")
+        logging.debug("COMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Map generated in the general Pollutant Map")
 
     def handleTask(self, oTask):
-        logging.debug("COMapEngine.handleTask: Map generated in the general Pollutant Map")
+        logging.debug("COMapEngine.handleTask [" + self.m_oArea.name +"]: Map generated in the general Pollutant Map")

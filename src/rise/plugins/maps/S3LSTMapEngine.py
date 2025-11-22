@@ -96,22 +96,22 @@ class S3LSTMapEngine(RiseMapEngine):
             if not super().handleTask(oTask):
                 return False
 
-            logging.info("S3LSTMapEngine.handleTask: handle task " + oTask.id)
+            logging.info("S3LSTMapEngine.handleTask [" + self.m_oArea.name +"]: task id " + oTask.id)
 
             aoPayload = wasdi.getProcessorPayloadAsJson(oTask.id)
 
             if aoPayload is None:
-                logging.info("S3LSTMapEngine.handleTask: cannot read the payload, we stop here ")
+                logging.info("S3LSTMapEngine.handleTask [" + self.m_oArea.name +"]: cannot read the payload, we stop here ")
                 return
 
             if "output daily" not in aoPayload:
-                logging.info("S3LSTMapEngine.handleTask: output not in the payload, we stop here ")
+                logging.info("S3LSTMapEngine.handleTask [" + self.m_oArea.name +"]: output not in the payload, we stop here ")
                 return
 
             asOutputs = aoPayload["output daily"]
 
             if asOutputs is None or len(asOutputs) == 0:
-                logging.info("S3LSTMapEngine.handleTask: output is empty, we stop here ")
+                logging.info("S3LSTMapEngine.handleTask [" + self.m_oArea.name +"]: output is empty, we stop here ")
                 return
 
             oMapConfig = self.getMapConfig()
@@ -127,14 +127,14 @@ class S3LSTMapEngine(RiseMapEngine):
                             # Convert to string if it's not a string
                             sInputData += str(sInputFile) + " "
             except Exception as oEx:
-                logging.error("S3LSTMapEngine.handleTask: error parsing input S3 files " + str(oEx))
+                logging.error("S3LSTMapEngine.handleTask [" + self.m_oArea.name +"]: error parsing input S3 files " + str(oEx))
                 
 
             asFiles = wasdi.getProductsByActiveWorkspace()
 
             for sOutput in asOutputs:        
                 if sOutput in asFiles:
-                    logging.info("S3LSTMapEngine.handleTask: publishing " + sOutput)
+                    logging.info("S3LSTMapEngine.handleTask [" + self.m_oArea.name +"]: publishing " + sOutput)
 
                     oReferenceDate = datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
 
@@ -150,4 +150,4 @@ class S3LSTMapEngine(RiseMapEngine):
                                             sResolution=oMapConfig.resolution, sInputData=sInputData, sOverrideMapId=sMapId)
 
         except Exception as oEx:
-            logging.error("S3LSTMapEngine.handleTask: exception " + str(oEx))
+            logging.error("S3LSTMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))

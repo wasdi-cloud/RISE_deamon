@@ -20,10 +20,10 @@ class FloodEventFinderMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        self.updateNewMaps()
+        logging.info("FloodEventFinderMapEngine.triggerNewAreaMaps [" + self.m_oArea.name +"]: Flood Depth short archive is handled by the integrated chain")
 
     def triggerNewAreaArchives(self):
-        logging.info("FloodEventFinderMapEngine.triggerNewAreaArchives: Flood Depth long Archive Not supported")
+        logging.info("FloodEventFinderMapEngine.triggerNewAreaArchives[" + self.m_oArea.name +"]: Flood Depth long Archive Not supported")
 
     def updateNewMaps(self):
         # Take today as reference date
@@ -64,7 +64,7 @@ class FloodEventFinderMapEngine(RiseMapEngine):
                     for oOutputEvent in aoOutputEvents:
                         if  str(oOutputEvent["endDate"]) == "Ongoing":
                             bAreThereOngoingEvents = True
-                            logging.info("FloodEventFinderMapEngine.handleTask: there is an ongoing flood event for date " + sDate)
+                            logging.info("FloodEventFinderMapEngine.handleTask [" + self.m_oArea.name +"]: there is an ongoing flood event for date " + sDate)
 
                             if len(aoEvents) == 0:
                                 oEvent = Event()
@@ -79,12 +79,12 @@ class FloodEventFinderMapEngine(RiseMapEngine):
                                 try:
                                     iStartDate = datetime.strptime(oOutputEvent["startDate"], "%Y-%m-%d").timestamp()
                                 except:
-                                    logging.warning("Error converting event start date " + str(oOutputEvent["startDate"]))
+                                    logging.warning("FloodEventFinderMapEngine.handleTask[" + self.m_oArea.name +"]: Error converting event start date " + str(oOutputEvent["startDate"]))
                                 
                                 try:
                                     iPeakDate = datetime.strptime(oOutputEvent["peakDate"], "%Y-%m-%d").timestamp()
                                 except:
-                                    logging.warning("Error converting event end date " + str(oOutputEvent["peakDate"]))
+                                    logging.warning("FloodEventFinderMapEngine.handleTask[" + self.m_oArea.name +"]: Error converting event end date " + str(oOutputEvent["peakDate"]))
 
                                 oEvent.peakDate = iPeakDate
                                 oEvent.startDate = iStartDate
@@ -99,7 +99,7 @@ class FloodEventFinderMapEngine(RiseMapEngine):
                                 oEventRepository.addEntity(oEvent)
 
                             else:
-                                logging.info("FloodEventFinderMapEngine.handleTask: there is already an ongoing flood event for date " + sDate)
+                                logging.info("FloodEventFinderMapEngine.handleTask[" + self.m_oArea.name +"]: there is already an ongoing flood event for date " + sDate)
                                 oEvent = aoEvents[0]
                                 oEvent.peakStringDate = oOutputEvent["peakDate"]
 
@@ -109,10 +109,10 @@ class FloodEventFinderMapEngine(RiseMapEngine):
                             oEvent = aoEvents[0]
                             oEvent.inGoing = False
                             oEventRepository.updateEntity(oEvent)
-                            logging.info("FloodEventFinderMapEngine.handleTask: flood event ended for date " + sDate)
+                            logging.info("FloodEventFinderMapEngine.handleTask[" + self.m_oArea.name +"]: flood event ended for date " + sDate)
                             
         except Exception as oEx:
-            logging.error("FloodEventFinderMapEngine.handleTask: exception " + str(oEx))
+            logging.error("FloodEventFinderMapEngine.handleTask[" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def runForDate(self, sDate):
         # Get the flood depth map config
@@ -129,7 +129,7 @@ class FloodEventFinderMapEngine(RiseMapEngine):
 
         # if we have existing tasks
         if len(aoExistingTasks)>0:
-            logging.info("FloodEventFinderMapEngine.runForDate: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
+            logging.info("FloodEventFinderMapEngine.runForDate [" + self.m_oArea.name +"]: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
             return True
 
         # We read the params of the floodchain to have the suffix        
@@ -163,13 +163,13 @@ class FloodEventFinderMapEngine(RiseMapEngine):
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
                 logging.info(
-                    "FloodEventFinderMapEngine.updateNewMaps: Started event finder in Workspace " + self.m_oPluginEngine.getWorkspaceName(
+                    "FloodEventFinderMapEngine.updateNewMaps [" + self.m_oArea.name +"]: Started event finder in Workspace " + self.m_oPluginEngine.getWorkspaceName(
                         self.m_oMapEntity) + " for Area " + self.m_oArea.name)
             else:
-                logging.info("FloodEventFinderMapEngine.updateNewMaps: simulation mode on, like I started event finder for date " + sDate)
+                logging.info("FloodEventFinderMapEngine.updateNewMaps [" + self.m_oArea.name +"]: simulation mode on, like I started event finder for date " + sDate)
             return True
         else:
-            logging.info("FloodEventFinderMapEngine.updateNewMaps: there is no new flood Map for date " + sDate)
+            logging.info("FloodEventFinderMapEngine.updateNewMaps [" + self.m_oArea.name +"]: there is no new flood Map for date " + sDate)
             return False
 
 
