@@ -3,7 +3,7 @@ import logging
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
 
 
-class O3MapEngine(RiseMapEngine):
+class CH4MapEngine(RiseMapEngine):
     def __init__(self, oConfig, oArea, oPlugin, oPluginEngine, oMap):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
