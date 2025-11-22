@@ -26,6 +26,12 @@ class FloodEventFinderMapEngine(RiseMapEngine):
         logging.info("FloodEventFinderMapEngine.triggerNewAreaArchives[" + self.m_oArea.name +"]: Flood Depth long Archive Not supported")
 
     def updateNewMaps(self):
+
+        # Check if the initial short archive is finished or not
+        if not self.isShortArchiveFinished("integrated_archive"):
+            logging.info("FloodEventFinderMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
         # Take today as reference date
         oToday = datetime.now()
 

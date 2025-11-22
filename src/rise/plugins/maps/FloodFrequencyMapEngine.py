@@ -70,6 +70,12 @@ class FloodFrequencyMapEngine(RiseMapEngine):
             logging.debug("FloodFrequencyMapEngine.updateNewMaps [" + self.m_oArea.name + "]: map id is not flood_frequency_map, we stop here")
             return
         
+        # Check if the initial short archive is finished or not
+        if not self.isShortArchiveFinished("integrated_archive"):
+            logging.info("FloodFrequencyMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
+        
         # Take today as reference date
         oToday = datetime.now()
         # Go to yesterday

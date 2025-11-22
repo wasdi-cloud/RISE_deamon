@@ -20,6 +20,12 @@ class UrbanFloodMapEngine(RiseMapEngine):
         logging.info("UrbanFloodMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: Urban Flood long archive is handled by the integrated chain")
 
     def updateNewMaps(self):
+
+        # Check if the initial short archive is finished or not
+        if not self.isShortArchiveFinished("integrated_archive"):
+            logging.info("UrbanFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
         oMapConfig = self.getMapConfig("sar_flood")
 
         aoParams = oMapConfig.params

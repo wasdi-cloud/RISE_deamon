@@ -39,6 +39,50 @@ class RiseMapEngine:
         except Exception as oEx:
             logging.error("RiseMapEngine.init: exception " + str(oEx))
 
+    def triggerNewAreaMaps(self):
+        logging.info("RiseMapEngine.triggerNewAreaMaps")
+
+    def triggerNewAreaArchives(self):
+        logging.info("RiseMapEngine.triggerNewAreaArchives")
+
+    def updateNewMaps(self):
+        pass
+
+    def handleTask(self, oTask):
+        '''
+        Handle a Task created by this map engine
+        :param oTask:
+        :return:
+        '''
+        try:
+            # We open the wasdi workspace
+            logging.debug("RiseMapEngine.handleTask: handle task " + oTask.id)
+            oTaskRepo = WasdiTaskRepository()
+            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
+
+            # Get the status from WASDI
+            sNewStatus = wasdi.getProcessStatus(oTask.id)
+
+            if sNewStatus == "ERROR" or sNewStatus == "STOPPED":
+                logging.warning("RiseMapEngine.handleTask: the new status is not done but " + sNewStatus + " update status and exit. Task id: " + oTask.id)
+                oTask.status = sNewStatus
+                oTaskRepo.updateEntity(oTask)
+                return False
+
+            if sNewStatus == "DONE":
+                logging.debug("RiseMapEngine.handleTask: task done, lets proceed!")
+                # In any case, this task is done
+                oTask.status = sNewStatus
+                oTaskRepo.updateEntity(oTask)
+                return True
+            else:
+                logging.debug("RiseMapEngine.handleTask: task is still ongoing, for now we do nothing (state = " + sNewStatus + ")")
+                return False
+
+        except Exception as oEx:
+            logging.error("RiseMapEngine.handleTask: exception " + str(oEx))
+            return False
+    
     def getMapConfig(self, sMapId=None):
 
         # get the map id
@@ -98,12 +142,6 @@ class RiseMapEngine:
 
         return sStyle
 
-    def triggerNewAreaMaps(self):
-        logging.info("RiseMapEngine.triggerNewAreaMaps")
-
-    def triggerNewAreaArchives(self):
-        logging.info("RiseMapEngine.triggerNewAreaArchives")
-
     def getName(self):
         if self.m_oMapEntity is not None:
             return self.m_oMapEntity.name
@@ -118,41 +156,6 @@ class RiseMapEngine:
         if self.m_oMapEntity is not None:
             return self.m_oMapEntity.className
         return ""
-
-    def handleTask(self, oTask):
-        '''
-        Handle a Task created by this map engine
-        :param oTask:
-        :return:
-        '''
-        try:
-            # We open the wasdi workspace
-            logging.debug("RiseMapEngine.handleTask: handle task " + oTask.id)
-            oTaskRepo = WasdiTaskRepository()
-            sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
-
-            # Get the status from WASDI
-            sNewStatus = wasdi.getProcessStatus(oTask.id)
-
-            if sNewStatus == "ERROR" or sNewStatus == "STOPPED":
-                logging.warning("RiseMapEngine.handleTask: the new status is not done but " + sNewStatus + " update status and exit. Task id: " + oTask.id)
-                oTask.status = sNewStatus
-                oTaskRepo.updateEntity(oTask)
-                return False
-
-            if sNewStatus == "DONE":
-                logging.debug("RiseMapEngine.handleTask: task done, lets proceed!")
-                # In any case, this task is done
-                oTask.status = sNewStatus
-                oTaskRepo.updateEntity(oTask)
-                return True
-            else:
-                logging.debug("RiseMapEngine.handleTask: task is still ongoing, for now we do nothing (state = " + sNewStatus + ")")
-                return False
-
-        except Exception as oEx:
-            logging.error("RiseMapEngine.handleTask: exception " + str(oEx))
-            return False
 
     def getLayerEntity(self, sLayerName, fTimestamp, sDataSource="", oCreationDate=None, sResolution="", sInputData="", aoProperties=None):
 
@@ -367,9 +370,6 @@ class RiseMapEngine:
             logging.error("RiseMapEngine.isShapeFile:  " + str(oEx))
 
         return False
-
-    def updateNewMaps(self):
-        pass
     
     def saveChainParams(self, sFile, aoChainParams):
         try:
@@ -519,12 +519,15 @@ class RiseMapEngine:
 
             for oUser in aoUsersToNotify:
                 RiseUtils.sendEmailMailJet(self.m_oConfig, self.m_oConfig.notifications.riseAdminMail,
-                                           oUser.email, sMailTitle, sMailMessage, True)
-
+                                           oUser.email, sMailTitle, sMailMessage, False)
+            
+            # Notify also the RISE admin
+            RiseUtils.sendEmailMailJet(self.m_oConfig, self.m_oConfig.notifications.riseAdminMail,
+                                                    self.m_oConfig.notifications.riseAdminMail, sMailTitle, sMailMessage, False)
         except Exception as oEx:
             logging.error(f"RiseMapEngine.notifyEndOfTask. Error {oEx}")
 
-    def createNewTask(self, sTaskId=None, sWorkspaceId=None, aoParameters=None, sApplication=None, sReferenceDate=None):
+    def createNewTask(self, sTaskId=None, sWorkspaceId=None, aoParameters=None, sApplication=None, sReferenceDate=None, bIsShortArchive=False):
         oWasdiTask = WasdiTask()
         oWasdiTask.areaId = self.m_oArea.id
         oWasdiTask.mapId = self.m_oMapEntity.id
@@ -536,6 +539,7 @@ class RiseMapEngine:
         oWasdiTask.status = "CREATED"
         oWasdiTask.application = sApplication
         oWasdiTask.referenceDate = sReferenceDate
+        oWasdiTask.isShortArchive = bIsShortArchive
         oWasdiTask.pluginPayload = {}
         return oWasdiTask
 
@@ -648,7 +652,36 @@ class RiseMapEngine:
             else:
                 logging.error("RiseMapEngine.checkProcessorId: cannot start the processor and also mapEntity is null")
                 return False
-
-
-        
         return True
+    
+    def isShortArchiveFinished(self, sMapId=None, sPluginId=None, sProcessor=None):
+        try:
+            # get the map Config
+            oMapConfig = self.getMapConfig(sMapId)
+
+            if sMapId is None:
+                sMapId = self.m_oMapEntity.id
+
+            if sPluginId is None:
+                sPluginId = self.m_oPluginEntity.id
+
+            if sProcessor is None:
+                sProcessor = oMapConfig.processor
+
+            # Create the task repo
+            oWasdiTaskRepo = WasdiTaskRepository()
+            # Search for a short archive task for this area, map, plugin and processor
+            aoOngoingShortArchiveTasks = oWasdiTaskRepo.findByParams(self.m_oArea.id, sMapId, sPluginId, None, sProcessor, None, True)
+
+            if aoOngoingShortArchiveTasks is None or len(aoOngoingShortArchiveTasks) == 0:
+                return True
+            else:
+                # More than one short archive task found, we check if all are finished
+                for oTask in aoOngoingShortArchiveTasks:
+                    if not self.isFinishedStatus(oTask.status):
+                        return False
+                return True
+            
+        except Exception as oEx:
+            logging.error("RiseMapEngine.isShortArchiveFinshed: exception " + str(oEx))
+            return False

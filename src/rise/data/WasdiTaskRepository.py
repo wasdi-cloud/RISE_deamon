@@ -36,7 +36,7 @@ class WasdiTaskRepository(RiseMongoRepository):
 
         return []
 
-    def findByParams(self, sAreaId="", sMapId="", sPluginId="", sWorkspaceId="", sApplication="", sReferenceDate=""):
+    def findByParams(self, sAreaId="", sMapId="", sPluginId="", sWorkspaceId="", sApplication="", sReferenceDate="", bIsShortArchive=None):
         try:
             oCollection = self.getCollection()
 
@@ -71,7 +71,9 @@ class WasdiTaskRepository(RiseMongoRepository):
                 aoFilters["application"] = sApplication
             if sReferenceDate != "":
                 aoFilters["referenceDate"] = sReferenceDate
-
+            if bIsShortArchive is not None:
+                aoFilters["isShortArchive"] = bIsShortArchive
+            
             oRetrievedResult = oCollection.find(aoFilters)
 
             if oRetrievedResult is None:

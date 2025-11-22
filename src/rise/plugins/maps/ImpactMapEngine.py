@@ -26,6 +26,11 @@ class ImpactMapEngine(RiseMapEngine):
 
     def updateNewMaps(self):
 
+        # Check if the initial short archive is finished or not
+        if not self.isShortArchiveFinished("integrated_archive", "rise_flood_plugin", "integrated_sar_flood_archive"):
+            logging.info("ImpactMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
         # Open our workspace
         sWorkspaceId = self.openSarFloodWorkspace()
         # Get the baresoil flood Suffix

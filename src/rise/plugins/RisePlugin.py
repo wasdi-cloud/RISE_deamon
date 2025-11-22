@@ -171,7 +171,6 @@ class RisePlugin:
         :return:
         """
         try:
-
             if len(self.m_aoMapEngines)>0:
                 for oMapEngine in self.m_aoMapEngines:
                     logging.info("RisePlugin.updateNewMaps: Starting new Maps for Map Engine Named: " + oMapEngine.getName() + "[" + oMapEngine.getId() + "]")

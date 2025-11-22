@@ -15,6 +15,7 @@ class WasdiTask(RiseEntity):
         self.status = str()
         self.application = str()
         self.referenceDate = str()
+        self.isShortArchive = False
 
         for key, value in kwargs.items():
             setattr(self, key, value)

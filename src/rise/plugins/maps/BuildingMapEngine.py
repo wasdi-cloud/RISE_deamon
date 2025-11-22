@@ -6,7 +6,6 @@ import wasdi
 from src.rise.data.WasdiTaskRepository import WasdiTaskRepository
 from src.rise.plugins.maps.RiseMapEngine import RiseMapEngine
 
-
 class BuildingMapEngine(RiseMapEngine):
 
     def __init__(self, oConfig, oArea, oPlugin, oPluginEngine, oMap):
@@ -124,6 +123,7 @@ class BuildingMapEngine(RiseMapEngine):
             return True
         except Exception as oEx:
             logging.error("BuildingMapEngine.runFastBuildingsMap [" + self.m_oArea.name +"]: exception " + str(oEx))
+    
     def handleTask(self, oTask):
         try:
             logging.info("BuildingMapEngine.handleTask [" + self.m_oArea.name +"]: handle task " + oTask.id)
@@ -172,6 +172,7 @@ class BuildingMapEngine(RiseMapEngine):
                 
         except Exception as oEx:
             logging.error("BuildingMapEngine.handleTask [" + self.m_oArea.name +"]: exception " + str(oEx))
+    
     def updateNewMaps(self):
         # Open our workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)

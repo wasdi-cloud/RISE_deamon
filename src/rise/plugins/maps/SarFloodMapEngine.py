@@ -38,30 +38,14 @@ class SarFloodMapEngine(RiseMapEngine):
             self.runIntegratedArchive(True)
 
 
-    def isFInishedFirstShortArchive(self, sWorkspaceId=""):
-        
-        # We need to wait for the initial archive to finish
-        oWasdiTaskRepository = WasdiTaskRepository()
-        aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, self.m_oMapEntity.id, self.m_oPluginEntity.id, sWorkspaceId, "integrated_sar_flood_archive")
-
-        if len(aoExistingTasks) > 0:
-            for oTask in aoExistingTasks:
-                bFullArchive = True
-                if oTask.pluginPayload is not None and "fullArchive" in oTask.pluginPayload:
-                    bFullArchive = oTask.pluginPayload["fullArchive"]
-
-                if not bFullArchive:
-                    if self.isRunningStatus(oTask.status):
-                        logging.info("SarFloodMapEngine.isFInishedFirstShortArchive [" + self.m_oArea.name +"]: the initial short archive is still ongoing we will wait it to finish " + oTask.id)
-                        return False
-                    else:
-                        return True
-        else:   
-            logging.info("SarFloodMapEngine.isFInishedFirstShortArchive [" + self.m_oArea.name +"]: no short archive task found")
-            
-        return False
 
     def updateNewMaps(self):
+
+        # Check if the initial short archive is finished or not
+        if not self.isShortArchiveFinished():
+            logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
         # Open our workspace
         self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 
@@ -82,11 +66,6 @@ class SarFloodMapEngine(RiseMapEngine):
 
         # Open our workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
-
-        # Check if the initial short archive is finished or not
-        if not self.isFInishedFirstShortArchive(sWorkspaceId):
-            logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
-            return
 
         oToday = datetime.today()
         sToday = oToday.strftime("%Y-%m-%d")
@@ -187,6 +166,7 @@ class SarFloodMapEngine(RiseMapEngine):
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoIntegratedArchiveParameters,oMapConfig.processor,"")
                 oWasdiTask.pluginPayload["integratedArchive"] = True
                 oWasdiTask.pluginPayload["fullArchive"] = bFullArchive
+                oWasdiTask.isShortArchive = not bFullArchive
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
                 logging.info("SarFloodMapEngine.runIntegratedArchive [" + self.m_oArea.name +"]: Started " + oMapConfig.processor + " in Workspace " + self.m_oPluginEngine.getWorkspaceName( self.m_oMapEntity) + " for Area " + self.m_oArea.name)

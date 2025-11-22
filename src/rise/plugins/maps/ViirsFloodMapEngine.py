@@ -64,6 +64,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
 
                 oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoViirsArchiveParameters,oMapConfig.processor,"")
                 oWasdiTask.pluginPayload["shortArchive"] = bShortArchive
+                oWasdiTask.isShortArchive = bShortArchive
 
                 oWasdiTaskRepository.addEntity(oWasdiTask)
                 logging.info(
@@ -74,6 +75,7 @@ class ViirsFloodMapEngine(RiseMapEngine):
             return True
         except Exception as oEx:
             logging.error("ViirsFloodMapEngine.runViirsArchive [" + self.m_oArea.name + "]: exception " + str(oEx))
+    
     def handleTask(self, oTask):
         try:
             if not super().handleTask(oTask):
@@ -267,8 +269,13 @@ class ViirsFloodMapEngine(RiseMapEngine):
                 logging.warning("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: simulation mode on - we do not run nothing")
         else:
             logging.info("ViirsFloodMapEngine.viirsMapFromDate [" + self.m_oArea.name +"]: the VIIRS map for " + sToday + " is already available")
-    
+
     def updateNewMaps(self):
+        # Check if the initial short arcive is finished or not
+        if not self.isShortArchiveFinished():
+            logging.info("ViirsFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
         # Open our workspace
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
 

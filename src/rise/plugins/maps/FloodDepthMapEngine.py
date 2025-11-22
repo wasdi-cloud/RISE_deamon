@@ -16,12 +16,18 @@ class FloodDepthMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        logging.info("FloodDepthMapEngine.triggerNewAreaMaps: Flood Depth short archive is handled by the integrated chain")
+        logging.info("FloodDepthMapEngine.triggerNewAreaMaps[" + self.m_oArea.name + "]: Flood Depth short archive is handled by the integrated chain")
 
     def triggerNewAreaArchives(self):
-        logging.info("FloodDepthMapEngine.triggerNewAreaArchives: Flood Depth long Archive Not supported")
+        logging.info("FloodDepthMapEngine.triggerNewAreaArchives[" + self.m_oArea.name + "]: Flood Depth long Archive Not supported")
 
     def updateNewMaps(self):
+
+        # Check if the initial short archive is finished or not
+        if not self.isShortArchiveFinished("integrated_archive"):
+            logging.info("FloodDepthMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+        
         # Take today as reference date
         oToday = datetime.now()
 
@@ -61,7 +67,7 @@ class FloodDepthMapEngine(RiseMapEngine):
             # NOTE: the surface?
             
         except Exception as oEx:
-            logging.error("FloodDepthMapEngine.handleTask: exception " + str(oEx))
+            logging.error("FloodDepthMapEngine.handleTask[" + self.m_oArea.name + "]: exception " + str(oEx))
 
     def runForDate(self, sDate):
         # Get the flood depth map config
@@ -78,7 +84,7 @@ class FloodDepthMapEngine(RiseMapEngine):
 
         # if we have existing tasks
         if len(aoExistingTasks)>0:
-            logging.info("FloodDepthMapEngine.runForDate: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
+            logging.info("FloodDepthMapEngine.runForDate[" + self.m_oArea.name + "]: a task is still ongoing or executed for day " + sDate + ". Nothing to do")
             return
 
         # We read the params of the floodchain to have the suffix        
@@ -122,12 +128,11 @@ class FloodDepthMapEngine(RiseMapEngine):
                 oWasdiTaskRepository.addEntity(oWasdiTask)
 
                 logging.info(
-                    "FloodDepthMapEngine.updateNewMaps: Started flood depth in Workspace " + self.m_oPluginEngine.getWorkspaceName(
-                        self.m_oMapEntity) + " for Area " + self.m_oArea.name)
+                    "FloodDepthMapEngine.updateNewMaps[" + self.m_oArea.name + "]: Started flood depth in Workspace " + self.m_oPluginEngine.getWorkspaceName(self.m_oMapEntity))
             else:
-                logging.info("FloodDepthMapEngine.updateNewMaps: simulation mode on, like I started flood depth for date " + sDate)
+                logging.info("FloodDepthMapEngine.updateNewMaps[" + self.m_oArea.name + "]: simulation mode on, like I started flood depth for date " + sDate)
         else:
-            logging.info("FloodDepthMapEngine.updateNewMaps: there is no new flood Map for date " + sDate)
+            logging.info("FloodDepthMapEngine.updateNewMaps[" + self.m_oArea.name + "]: there is no new flood Map for date " + sDate)
 
 
     def openSarFloodWorkspace(self):

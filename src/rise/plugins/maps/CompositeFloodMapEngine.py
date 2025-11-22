@@ -15,6 +15,12 @@ class CompositeFloodMapEngine(RiseMapEngine):
         logging.info("CompositeFloodMapEngine.triggerNewAreaArchives [" + self.m_oArea.name +"]: handled by SarFloodMapEngine")
 
     def updateNewMaps(self):
+
+        # Check if the initial short archive is finished or not
+        if not self.isShortArchiveFinished("integrated_archive"):
+            logging.info("CompositeFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
+            return
+
         logging.info("CompositeFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: handled by SarFloodMapEngine")
 
     def handleTask(self, oTask):
