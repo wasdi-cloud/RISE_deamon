@@ -20,15 +20,15 @@ class FloodEventFinderMapEngine(RiseMapEngine):
         super().__init__(oConfig, oArea, oPlugin, oPluginEngine, oMap)
 
     def triggerNewAreaMaps(self):
-        logging.info("FloodEventFinderMapEngine.triggerNewAreaMaps [" + self.m_oArea.name +"]: Flood Depth short archive is handled by the integrated chain")
+        logging.info("FloodEventFinderMapEngine.triggerNewAreaMaps [" + self.m_oArea.name +"]: Event Finder short archive is handled by the integrated chain")
 
     def triggerNewAreaArchives(self):
-        logging.info("FloodEventFinderMapEngine.triggerNewAreaArchives[" + self.m_oArea.name +"]: Flood Depth long Archive Not supported")
+        logging.info("FloodEventFinderMapEngine.triggerNewAreaArchives[" + self.m_oArea.name +"]: Event Finder long Archive Not supported")
 
     def updateNewMaps(self):
 
         # Check if the initial short archive is finished or not
-        if not self.isShortArchiveFinished("integrated_archive"):
+        if not self.isShortArchiveFinished(sMapId="sar_flood", sProcessor="integrated_sar_flood_archive"):
             logging.info("FloodEventFinderMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
             return
 

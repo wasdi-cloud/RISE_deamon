@@ -19,39 +19,32 @@ class RainPlugin(RisePlugin):
         super().__init__(oConfig, oArea, oPlugin)
 
     def triggerNewAreaArchives(self):
-        logging.info("RainPlugin.triggerNewAreaArchives: long archive is handled by the integrated chain")
+        """
+        Trigger new area long archive for this plugin
+        :return:
+        """
         try:
-            for oMapEngine in self.m_aoMapEngines:
-                if oMapEngine.m_oMapEntity.id == "imerg_cumulate_12":
-                    logging.info("RainPlugin.triggerNewAreaArchives: Starting ONCE new Maps for all the Sub Maps: " + oMapEngine.getName())
-                    oMapEngine.triggerNewAreaArchives()
-                    break
-
+            logging.info("RainPlugin.triggerNewAreaArchives[" + self.m_oArea.name +"]: NOT supported (yet)")
         except Exception as oEx:
-            logging.error("RainPlugin.triggerNewAreaArchives: exception " + str(oEx))
+            logging.error("RainPlugin.triggerNewAreaArchives[" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def triggerNewAreaMaps(self):
         """
-        Trigger new area processors for this plugin
+        Trigger new area short archive for this plugin
         :return:
         """
-        logging.debug("RainPlugin.triggerNewAreaMaps OVERRIDE")
+        logging.debug("RainPlugin.triggerNewAreaMaps[" + self.m_oArea.name +"] OVERRIDE")
         try:
-            for oMapEngine in self.m_aoMapEngines:
-                if oMapEngine.m_oMapEntity.id == "imerg_cumulate_12":
-                    logging.info("RainPlugin.triggerNewAreaMaps: Starting ONCE new Maps for all the Sub Maps: " + oMapEngine.getName())
-                    oMapEngine.triggerNewAreaMaps()
-                    break
-
+            self.updateNewMaps()
         except Exception as oEx:
-            logging.error("RainPlugin.triggerNewAreaMaps: exception " + str(oEx))
+            logging.error("RainPlugin.triggerNewAreaMaps[" + self.m_oArea.name +"]: exception " + str(oEx))
 
     def updateNewMaps(self):
         """
         Trigger new area processors for this plugin
         :return:
         """
-        logging.debug("RainPlugin.updateNewMaps OVERRIDE")
+        logging.debug("RainPlugin.updateNewMaps[" + self.m_oArea.name +"] OVERRIDE")
 
         sWorkspaceName = self.m_oPluginConfig.workspace
         sWorkspaceId = wasdi.openWorkspace(sWorkspaceName)
@@ -62,19 +55,17 @@ class RainPlugin(RisePlugin):
         sDay = oNow.strftime("%Y-%m-%d")
         sHour = oNow.strftime("%H")
 
-        try:
-            for oMapEngine in self.m_aoMapEngines:
-                if oMapEngine.m_oMapEntity.id == "imerg_cumulate_12":
-                    oWasdiTaskRepository = WasdiTaskRepository()
-                    oTask = oMapEngine.createNewTask(sProcessorId,sWorkspaceId,aoParameters,sProcessor,sDay)
-                    oTask.mapId = "imerg_cumulate"
-                    oTask.pluginPayload["time"] = sHour
-                    oWasdiTaskRepository.addEntity(oTask)
+        oMapEngine = self.getMapEngineFromMapId("imerg_cumulate_12")
 
-                    break
+        try:
+            oWasdiTaskRepository = WasdiTaskRepository()
+            oTask = oMapEngine.createNewTask(sProcessorId,sWorkspaceId,aoParameters,sProcessor,sDay)
+            oTask.mapId = "imerg_cumulate"
+            oTask.pluginPayload["time"] = sHour
+            oWasdiTaskRepository.addEntity(oTask)
 
         except Exception as oEx:
-            logging.error("RainPlugin.updateNewMaps: exception " + str(oEx))        
+            logging.error("RainPlugin.updateNewMaps[" + self.m_oArea.name +"]: exception " + str(oEx))        
 
 
     def handleTask(self, oTask):
@@ -91,7 +82,7 @@ class RainPlugin(RisePlugin):
         try:
             sTime = oTask.pluginPayload["time"]
         except Exception as oInEx:
-            logging.warning("RainPlugin.handleTask:  error reading the time from task payload " + str(oInEx))
+            logging.warning("RainPlugin.handleTask[" + self.m_oArea.name +"]:  error reading the time from task payload " + str(oInEx))
 
         # Open the workspace
         wasdi.openWorkspace(self.m_oPluginConfig.workspace)
@@ -141,7 +132,7 @@ class RainPlugin(RisePlugin):
 
                     # Check if the output file is in the workspace
                     if sOutputFile in asFilesInWorkspace:
-                        logging.debug("RainPlugin.handleTask: output file " + sOutputFile + " is present")
+                        logging.debug("RainPlugin.handleTask[" + self.m_oArea.name +"]: output file " + sOutputFile + " is present")
                         sLayerId = sOutputFile.replace(".tif","")
 
                         # If the layer does not exists
@@ -168,7 +159,7 @@ class RainPlugin(RisePlugin):
 
                         if aoLayers is not None and len(aoLayers)>0:
                             # Layer already existing
-                            logging.debug("RainPlugin.handleTask: Layer Entity " + sLayerId + " already exists in DB")
+                            logging.debug("RainPlugin.handleTask[" + self.m_oArea.name +"]: Layer Entity " + sLayerId + " already exists in DB")
                             continue
 
                         # Not exists, we create it: get the map engine
@@ -178,9 +169,9 @@ class RainPlugin(RisePlugin):
                         oCreatedLayer.published = True
                         # Add it to the repository
                         oLayerRepository.addEntity(oCreatedLayer)
-                        logging.info("RainPlugin.handleTask: Created Layer " + sLayerId)
+                        logging.info("RainPlugin.handleTask[" + self.m_oArea.name +"]: Created Layer " + sLayerId)
                     else:
-                        logging.warning("RainPlugin.handleTask: output file " + sOutputFile + " is NOT present, we skip it")
+                        logging.warning("RainPlugin.handleTask[" + self.m_oArea.name +"]: output file " + sOutputFile + " is NOT present, we skip it")
                         continue
         
         return
@@ -204,7 +195,7 @@ class RainPlugin(RisePlugin):
             else:
                 return False
         except Exception as oEx:
-            logging.error("RiseMapRainPluginEngine.publishRasterLayer exception " + str(oEx))
+            logging.error("RiseMapRainPluginEngine.publishRasterLayer[" + self.m_oArea.name +"]: exception " + str(oEx))
 
         return False
 

@@ -21,6 +21,12 @@ class DroughtEcostressMapEngine(RiseMapEngine):
         pass
 
     def getStartEndDateFromDate(self, oDate):
+        '''
+        Given a date, return the start and end date of the decade before.
+        For example, if the date is 2024-06-15, return (2024-06-01, 2024-06-10)
+        if the date is 2024-06-25, return (2024-06-11, 2024-06-20)
+        if the date is 2024-06-05, return (2024-05-21, 2024-05-31)
+        '''
 
         iStartDay = 1
         iEndDay = 10
@@ -71,11 +77,16 @@ class DroughtEcostressMapEngine(RiseMapEngine):
         logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: Update New Maps")
 
         oNow = datetime.datetime.now(datetime.UTC)
+        self.runForDate(oNow)
 
-        (oStartDate, oEndDate) = self.getStartEndDateFromDate(oNow)
+    def runForDate(self, oRunDate):
+        logging.info("DroughtEcostressMapEngine.runForDate [" + self.m_oArea.name + "]: run for date " + oRunDate.strftime("%Y-%m-%d") )
+
+        # We search the decade before
+        (oStartDate, oEndDate) = self.getStartEndDateFromDate(oRunDate)
         iDecade = self.getDecadeFromDate(oStartDate)
 
-        sDay = oNow.strftime("%Y-%m-%d")
+        sDay = oRunDate.strftime("%Y-%m-%d")
 
         sWorkspaceId = self.m_oPluginEngine.createOrOpenWorkspace(self.m_oMapEntity)
         oMapConfig = self.getMapConfig()
@@ -90,26 +101,23 @@ class DroughtEcostressMapEngine(RiseMapEngine):
                                                             self.m_oPluginEntity.id, sWorkspaceId,
                                                             oMapConfig.processor, sReferenceDate)
 
-        
-
         bIsRunning = False
 
         if len(aoExistingTasks) > 0:
-
             for oTask in aoExistingTasks:
                 if self.isRunningStatus(oTask.status):
                     bIsRunning = True
                     break
 
         if bIsRunning:            
-            logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: a task is still ongoing or executed for day " + sDay + ". Nothing to do")
+            logging.info("DroughtEcostressMapEngine.runForDate [" + self.m_oArea.name + "]: a task is still ongoing or executed for day " + sDay + ". Nothing to do")
             return        
         
         sOutput = self.getBaseName() + "_" + oEndDate.strftime("%Y-%m") + "_" + str(iDecade) + ".tif"
         aoFiles = wasdi.getProductsByActiveWorkspace()
 
         if sOutput in aoFiles:
-            logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: file " + sOutput + " already exists. Nothing to do")
+            logging.info("DroughtEcostressMapEngine.runForDate [" + self.m_oArea.name + "]: file " + sOutput + " already exists. Nothing to do")
             return
 
         aoParameters = oMapConfig.params
@@ -130,9 +138,9 @@ class DroughtEcostressMapEngine(RiseMapEngine):
             oWasdiTask = self.createNewTask(sProcessorId,sWorkspaceId,aoParameters,oMapConfig.processor,sReferenceDate)
             oWasdiTaskRepository.addEntity(oWasdiTask)
 
-            logging.info("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: Started " + oMapConfig.processor + " for " + sDay)
+            logging.info("DroughtEcostressMapEngine.runForDate [" + self.m_oArea.name + "]: Started " + oMapConfig.processor + " for " + sDay)
         else:
-            logging.warning("DroughtEcostressMapEngine.updateNewMaps [" + self.m_oArea.name + "]: simulation mode on - we do not run nothing")
+            logging.warning("DroughtEcostressMapEngine.runForDate [" + self.m_oArea.name + "]: simulation mode on - we do not run nothing")
 
 
     def handleTask(self, oTask):

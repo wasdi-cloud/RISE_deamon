@@ -42,7 +42,7 @@ class SarFloodMapEngine(RiseMapEngine):
     def updateNewMaps(self):
 
         # Check if the initial short archive is finished or not
-        if not self.isShortArchiveFinished():
+        if not self.isShortArchiveFinished(sProcessor="integrated_sar_flood_archive"):
             logging.info("SarFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
             return
 

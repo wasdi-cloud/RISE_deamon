@@ -23,7 +23,7 @@ from src.rise.utils import RiseUtils
 class RiseDeamon:
     def __init__(self, oConfig):
         self.m_oConfig = oConfig
-        self.m_aoPluginEntities = []
+        self.m_aoPluginEntities = []      
     
     def run(self):
         """
@@ -38,7 +38,7 @@ class RiseDeamon:
         :return:
         """
 
-        logging.info("RiseDeamon.run: Rise deamon start v.1.3.3")
+        logging.info("RiseDeamon.run: Rise deamon start v.1.3.4")
 
         logging.getLogger("requests").propagate = False
         logging.getLogger("urllib3").propagate = False
@@ -150,7 +150,7 @@ class RiseDeamon:
         # For all the new area
         for oArea in aoNewAreas:
 
-            logging.info("RiseDeamon.handleNewAreas: Trigger last maps for new area " + str(oArea.name) + " ["+oArea.id + "]")
+            logging.info("RiseDeamon.handleNewAreas: Trigger Short Archive for new area " + str(oArea.name) + " ["+oArea.id + "]")
 
             # For all the plugins activated
             for sPluginId in oArea.plugins:

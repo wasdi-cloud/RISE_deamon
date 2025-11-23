@@ -17,7 +17,7 @@ class CompositeFloodMapEngine(RiseMapEngine):
     def updateNewMaps(self):
 
         # Check if the initial short archive is finished or not
-        if not self.isShortArchiveFinished("integrated_archive"):
+        if not self.isShortArchiveFinished(sMapId="sar_flood", sProcessor="integrated_sar_flood_archive"):
             logging.info("CompositeFloodMapEngine.updateNewMaps [" + self.m_oArea.name +"]: the initial short archive is not yet finished we will wait it to finish")
             return
 

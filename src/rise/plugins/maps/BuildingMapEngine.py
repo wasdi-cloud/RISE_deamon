@@ -167,7 +167,7 @@ class BuildingMapEngine(RiseMapEngine):
             if not bAddedAtLeastOneFile:
                 logging.info("BuildingMapEngine.handleTask [" + self.m_oArea.name +"]: no new files found to add, we finish here")
             if bTriggerShortArchive:
-                logging.info("BuildingMapEngine.handleTask [" + self.m_oArea.name +"]: this was the frist fast building map, we trigger now the short archive")
+                logging.info("BuildingMapEngine.handleTask [" + self.m_oArea.name +"]: this was the first fast building map, we trigger now the short archive")
                 self.runBuildingsArchive(True)
                 
         except Exception as oEx:
