@@ -146,7 +146,7 @@ class PollutantMapEngine(RiseMapEngine):
                                             sInputData=oMapConfig.inputData, sOverrideMapId=sPollutantName)
                 else:
                     # should exist
-                    logging.info("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]: the map does not exist in the product list ,something is wrong, we stop here ")
+                    logging.warning("PollutantMapEngine.handleTask [" + self.m_oArea.name +"]: the map does not exist in the product list ,something is wrong, we stop here ")
                     continue
 
         except Exception as oEx:

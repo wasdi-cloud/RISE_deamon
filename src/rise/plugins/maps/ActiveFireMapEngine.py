@@ -191,7 +191,7 @@ class ActiveFireMapEngine(RiseMapEngine):
 
                 if sFile not in asFiles:
                     # should exist
-                    logging.info("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: the map does not exist in the product list ,something is wrong, we stop here ")
+                    logging.warning("ActiveFireMapEngine.handleTask [" + self.m_oArea.name +"]: the map does not exist in the product list ,something is wrong, we stop here ")
                     return
 
                 oReferenceDate = datetime.datetime.strptime(oTask.referenceDate, "%Y-%m-%d")
