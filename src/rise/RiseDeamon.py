@@ -257,33 +257,36 @@ class RiseDeamon:
         oAreaRepository = AreaRepository()
         # For each task created
         for oTask in aoTaskToProcess:
-            # Get the area
-            oArea = oAreaRepository.getEntityById(oTask.areaId)
+            try:
+                # Get the area
+                oArea = oAreaRepository.getEntityById(oTask.areaId)
 
-            if oArea is not None:
-                # Create the Plugin Engine
-                oPluginEngine = self.getRisePluginEngine(oTask.pluginId, oArea)
+                if oArea is not None:
+                    # Create the Plugin Engine
+                    oPluginEngine = self.getRisePluginEngine(oTask.pluginId, oArea)
 
-                if oPluginEngine is None:
-                    # We should find it!
-                    logging.warning("RiseDeamon.checkResultsAndPublishLayers:  Task " + oTask.id + " - plugin not existing " + oTask.pluginId)
-                    continue
+                    if oPluginEngine is None:
+                        # We should find it!
+                        logging.warning("RiseDeamon.checkResultsAndPublishLayers:  Task " + oTask.id + " - plugin not existing " + oTask.pluginId)
+                        continue
 
-                asFilterPlugins = None
+                    asFilterPlugins = None
 
-                if hasattr(self.m_oConfig.daemon, 'filterPlugins'):
-                    if self.m_oConfig.daemon.filterPlugins is not None and len(self.m_oConfig.daemon.filterPlugins)>0:
-                        asFilterPlugins = self.m_oConfig.daemon.filterPlugins
+                    if hasattr(self.m_oConfig.daemon, 'filterPlugins'):
+                        if self.m_oConfig.daemon.filterPlugins is not None and len(self.m_oConfig.daemon.filterPlugins)>0:
+                            asFilterPlugins = self.m_oConfig.daemon.filterPlugins
 
-                if asFilterPlugins is not None and oTask.pluginId not in asFilterPlugins:
-                    logging.info("RiseDeamon.checkResultsAndPublishLayers: Skipping plugin " + oTask.pluginId + " not in the filter list")
-                    continue
+                    if asFilterPlugins is not None and oTask.pluginId not in asFilterPlugins:
+                        logging.info("RiseDeamon.checkResultsAndPublishLayers: Skipping plugin " + oTask.pluginId + " not in the filter list")
+                        continue
 
-                # Handle this task!
-                oPluginEngine.handleTask(oTask)
-            else:
-                logging.warning("RiseDeamon.checkResultsAndPublishLayers: Task " + oTask.id + " belong to a not anymore existing area. We delete it")
-                oTaskRepository.deleteEntity(oTask.id)
+                    # Handle this task!
+                    oPluginEngine.handleTask(oTask)
+                else:
+                    logging.warning("RiseDeamon.checkResultsAndPublishLayers: Task " + oTask.id + " belong to a not anymore existing area. We delete it")
+                    oTaskRepository.deleteEntity(oTask.id)
+            except Exception as oEx:
+                logging.error(f"RiseDeamon.checkResultsAndPublishLayers: exception {oEx}")
 
 
     def cleanLayers(self):

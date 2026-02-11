@@ -113,7 +113,7 @@ class RainPlugin(RisePlugin):
             # Default reference datetime
             sReferenceDateTime = sReferenceDate + " " + sTime + ":00"
 
-            aoInputs = aoPayload["INPUTS"]
+            aoInputs = aoPayload["INPUT"]
 
             if "REFERENCE_DATETIME" in aoInputs:
                 # But better if declared in the payload
