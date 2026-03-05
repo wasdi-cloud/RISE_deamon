@@ -248,18 +248,29 @@ class RiseMongoRepository:
                 return iUpdatedEntities
 
             for oEntity in aoEntities:
-                if not hasattr(oEntity, 'id'):
-                    logging.warning(f"RiseMongoRepository.updateAllEntities. Entity missing 'id' {oEntity}")
-                    continue
-                oQuery = {"id": oEntity.id}
-                oUpdatedDocument = {"$set": vars(oEntity)}
-                oResult = oCollection.update_one(oQuery, oUpdatedDocument)
 
-                if oResult.modified_count > 0:
-                    iUpdatedEntities += 1
-                else:
-                    logging.warning(f"RiseMongoRepository.updateAllEntities. Entity {oEntity.id} not updated")
+                try: 
+                    if not hasattr(oEntity, 'id'):
+                        logging.warning(f"RiseMongoRepository.updateAllEntities. Entity missing 'id' {oEntity}")
+                        continue
+                    oQuery = {"id": oEntity.id}
+                    oUpdatedDocument = {"$set": vars(oEntity)}
 
+                    try:
+                        if "_id" in oUpdatedDocument["$set"]:
+                            del oUpdatedDocument["$set"]["_id"]
+                    except Exception as oEx:
+                        logging.error(f"RiseMongoRepository.updateAllEntities. Exception removing _id from updated document: {oEx}")
+
+                    oResult = oCollection.update_one(oQuery, oUpdatedDocument)
+
+                    if oResult.modified_count > 0:
+                        iUpdatedEntities += 1
+                    else:
+                        logging.warning(f"RiseMongoRepository.updateAllEntities. Entity {oEntity.id} not updated")
+            
+                except Exception as oEx2:
+                    logging.error(f"RiseMongoRepository.updateAllEntities. Exception while processing one entity: {oEx2}")
         except Exception as oEx:
             logging.error(f"RiseMongoRepository.updateAllEntities. Exception {oEx}")
 
