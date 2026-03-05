@@ -262,7 +262,7 @@ class RiseMongoRepository:
                     except Exception as oEx:
                         logging.error(f"RiseMongoRepository.updateAllEntities. Exception removing _id from updated document: {oEx}")
 
-                    oResult = oCollection.update_one(oQuery, oUpdatedDocument)
+                    oResult = oCollection.update_many(oQuery, oUpdatedDocument)
 
                     if oResult.modified_count > 0:
                         iUpdatedEntities += 1
