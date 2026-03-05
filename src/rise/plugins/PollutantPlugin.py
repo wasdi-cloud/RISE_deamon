@@ -39,23 +39,6 @@ class PollutantPlugin(RisePlugin):
             logging.error("PollutantPlugin.triggerNewAreaArchives: exception " + str(oEx))
 
 
-    def updateNewMaps(self):
-        """
-        Trigger new area processors for this plugin
-        :return:
-        """
-        # logging.debug("PollutantPlugin.updateNewMaps OVERRIDE")
-        # try:
-        #     for oMapEngine in self.m_aoMapEngines:
-        #         if oMapEngine.m_oMapEntity.id == "pollutant_map":
-        #             logging.info("PollutantPlugin.updateNewMaps: Starting ONCE new Maps for all the Sub Maps: " + oMapEngine.getName())
-        #             oMapEngine.updateNewMaps()
-        #             break
-        #
-        # except Exception as oEx:
-        #     logging.error("PollutantPlugin.updateNewMaps: exception " + str(oEx))
-
-
     def handleTask(self, oTask):
         oTask.mapId = "pollutant_map"
         super().handleTask(oTask)
