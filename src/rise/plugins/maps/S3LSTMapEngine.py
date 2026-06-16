@@ -32,7 +32,7 @@ class S3LSTMapEngine(RiseMapEngine):
         # Did we already start any map today?
         oWasdiTaskRepository = WasdiTaskRepository()
 
-        # Take all our task for today
+        # Take all our task for yesterday
         aoExistingTasks = oWasdiTaskRepository.findByParams(self.m_oArea.id, oMapConfig.id,
                                                             self.m_oPluginEntity.id, sWorkspaceId,
                                                             oMapConfig.processor, sYesterday)
