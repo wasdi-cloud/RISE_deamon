@@ -102,6 +102,7 @@ class RiseMapEngine:
         oMapsParametersRepo = MapsParametersRepository()
         oFilter = {
             'areaId': sAreaId,
+            'pluginId': self.m_oPluginEntity.id,
             'mapId': sMapId
         }
         aoParameters = oMapsParametersRepo.getEntitiesByField(oFilter)
