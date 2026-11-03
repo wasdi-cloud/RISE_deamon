@@ -113,6 +113,29 @@ def mergeShapeFiles(asShapeFiles, sOutputFileName, sStyle=""):
         
         oMergedShape = gpd.GeoDataFrame(pd.concat(aoShapeDataFrames, ignore_index=True))
 
+        # RASOR's ID and OSM_TYPE identify an OSM element. Dissolving retains
+        # separate road segments while preventing repeated elements appearing twice.
+        if "ID" in oMergedShape.columns:
+            asIdentityFields = ["ID"]
+            if "OSM_TYPE" in oMergedShape.columns:
+                oMergedShape["OSM_TYPE"] = oMergedShape["OSM_TYPE"].fillna("")
+                asIdentityFields.append("OSM_TYPE")
+
+            abHasOsmId = oMergedShape["ID"].notna()
+            oWithOsmId = oMergedShape.loc[abHasOsmId]
+            oWithoutOsmId = oMergedShape.loc[~abHasOsmId]
+
+            if not oWithOsmId.empty:
+                oDeduplicatedShape = oWithOsmId.dissolve(by=asIdentityFields, as_index=False, aggfunc="first")
+                if oWithoutOsmId.empty:
+                    oMergedShape = oDeduplicatedShape
+                else:
+                    oMergedShape = gpd.GeoDataFrame(
+                        pd.concat([oDeduplicatedShape, oWithoutOsmId], ignore_index=True),
+                        geometry=oMergedShape.geometry.name,
+                        crs=oMergedShape.crs,
+                    )
+
         # Ensure the CRS is set to EPSG:4326
         oMergedShape = oMergedShape.set_crs("EPSG:4326", allow_override=True)
 

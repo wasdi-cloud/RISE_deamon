@@ -254,7 +254,7 @@ class SarFloodMapEngine(RiseMapEngine):
             if "CompositeMaps" in aoEventFinderPayload:
                 asCompositeMaps = aoEventFinderPayload["CompositeMaps"]
 
-            # List of Urban Detections
+            # List of composites Detections
             aoCompositeDetections =  []
             if "Composites" in aoEventFinderPayload:
                 aoCompositeDetections = aoEventFinderPayload["Composites"]
@@ -307,7 +307,7 @@ class SarFloodMapEngine(RiseMapEngine):
                     self.mergeOrPublishImpactsShape(sExtensionRoadImpacts, sUrbanRoadImpacts, sCompositeMap, sUrbanMap, "roads", sBaseName, oEvent["peakDate"], oImpactsPluginConfig, asWorkspaceFiles, True)
 
                     # Exposures
-                    sExtensionExposureImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_exposure.shp"
+                    sExtensionExposureImpacts = sBaseName +"_event_" + oEvent["endDate"] + "_max_extension_impacts_exposure.shp" 
                     sUrbanExposureImpacts = sBaseName.replace("sarflood", "buildingcw") +"_urban_" + oEvent["peakDate"] + "_urbanflood_impacts_exposure.shp"
                     self.mergeOrPublishImpactsShape(sExtensionExposureImpacts, sUrbanExposureImpacts, sCompositeMap, sUrbanMap, "exposures", sBaseName, oEvent["peakDate"], oImpactsPluginConfig, asWorkspaceFiles, True)
 
